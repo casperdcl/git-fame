@@ -14,6 +14,7 @@ Arguments:
   [<gitdir>]     Git directory (default: .).
 """
 from __future__ import print_function
+from __future__ import division
 import subprocess
 from tqdm import tqdm
 import re
@@ -26,6 +27,13 @@ RE_AUTHS = re.compile('^author (.+)$', flags=re.M)
 
 def tr_hline(col_widths):
   return '+' + '+'.join('-' * i for i in col_widths) + '+'
+
+
+def int_cast_or_len(i):
+  try:
+    return int(i)
+  except:
+    return len(i)
 
 
 def main(args):
@@ -59,24 +67,44 @@ def main(args):
       # print (auth_ncom_em.group(1))
       auth_stats[auth]["commits"] = int(auth_ncom_em.group(1))
 
-  TR_HLINE = tr_hline([32, 8, 9, 7])
+  stats_tot = dict((k, 0) for stats in auth_stats.itervalues() for k in stats)
+  # print (stats_tot)
+  for k in stats_tot:
+    stats_tot[k] = sum(int_cast_or_len(stats.get(k, 0))
+                       for stats in auth_stats.itervalues())
+  # print (stats_tot)
+  stats_tot[k]
+
+  COL_NAMES = [
+      "Author" + ' ' * (min(30, max(len(a) for a in auth_stats)) - 6),
+      "   loc",
+      "coms",
+      "fils",
+      " distribution "
+  ]
+  TR_HLINE = tr_hline([len(i) + 2 for i in COL_NAMES])
   print (TR_HLINE)
-  print ("| {0:30s} | {1:>6s} | {2:>7s} | {3:>5s} |".format(
-      "Author", "loc", "commits", "files"))
+  print (("| {0:s} | {1:>6s} | {2:>4s} | {3:>4s} | {4} |").format(*COL_NAMES))
   print (TR_HLINE)
   for (auth, stats) in auth_stats.iteritems():
     # print (stats)
-    print ("| {0:30s} | {1:6d} | {2:7d} | {3:5d} |".format(
-        auth, stats["loc"], stats.get("commits", 0),
-        len(stats.get("files", []))))
-    # TODO: distribution loc/com/fil
+    loc = stats["loc"]
+    commits = stats.get("commits", 0)
+    files = len(stats.get("files", []))
+    print (("| {0:" + str(len(COL_NAMES[0])) +
+            "s} | {1:6d} | {2:4d} | {3:4d}"
+            " | {4:4.1f}/{5:4.1f}/{6:4.1f} |").format(
+           auth, loc, commits, files,
+           100 * loc / stats_tot["loc"],
+           100 * commits / stats_tot["commits"],
+           100 * files / stats_tot["files"]).replace('100.0', ' 100'))
     # TODO: --bytype
     print (TR_HLINE)
 
 
 if __name__ == '__main__':
   from docopt import docopt
-  args = docopt(__doc__, version='0.1.1')
+  args = docopt(__doc__, version='0.2.0')
   # raise(Warning(str(args)))
   if args['<gitdir>'] is None:
     args['<gitdir>'] = '.'
