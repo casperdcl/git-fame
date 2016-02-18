@@ -46,11 +46,12 @@ def main(args):
   auth_stats = {}
 
   for fname in tqdm(file_list, desc="Blame", disable=args["--silent-progress"]):
-    blame_cmd = ["git", "blame", fname, "--line-porcelain"]
+    git_blame_cmd = ["git", "blame", fname, "--line-porcelain"]
     if args["--ignore-whitespace"]:
-      blame_cmd.append("-w")
+      git_blame_cmd.append("-w")
     try:
-      blame_out = subprocess.check_output(blame_cmd, stderr=subprocess.STDOUT)
+      blame_out = subprocess.check_output(git_blame_cmd,
+                                          stderr=subprocess.STDOUT)
     except:
       continue
     auths = RE_AUTHS.findall(blame_out)
@@ -90,7 +91,6 @@ def main(args):
   print (TR_HLINE)
   print (("| {0:s} | {1:>6s} | {2:>4s} | {3:>4s} | {4} |").format(*COL_NAMES))
   print (TR_HLINE)
-  # tbl_out = ""
   for (auth, stats) in sorted(auth_stats.iteritems(),
                               key=lambda (x, y): y.get(args["--sort"], 0),
                               reverse=True):
@@ -98,7 +98,6 @@ def main(args):
     loc = stats["loc"]
     commits = stats.get("commits", 0)
     files = len(stats.get("files", []))
-    # tbl_out +=
     print (("| {0:" + str(len(COL_NAMES[0])) +
             "s} | {1:6d} | {2:4d} | {3:4d}"
             " | {4:4.1f}/{5:4.1f}/{6:4.1f} |").format(
@@ -107,10 +106,6 @@ def main(args):
         100 * commits / stats_tot["commits"],
         100 * files / stats_tot["files"]).replace('100.0', ' 100'))
     # TODO: --bytype
-  # sorter = subprocess.Popen(["sort", "-n", "-r", "-k3", "-t|"],
-  #                           stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-  # sorter.stdin.write(tbl_out)
-  # print (sorter.communicate()[0].strip())
   print (TR_HLINE)
 
 
