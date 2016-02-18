@@ -6,10 +6,11 @@ Usage:
 Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
+  --sort=<key>   Options: [default: loc], files, commits.
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
                            came from (default: False).
-  -n, --no-progress  Suppress `tqdm`.
+  -s, --silent-progress    Suppress `tqdm`.
 Arguments:
   [<gitdir>]     Git directory (default: .).
 """
@@ -44,11 +45,14 @@ def main(args):
 
   auth_stats = {}
 
-  for fname in tqdm(file_list, disable=args["--no-progress"]):
+  for fname in tqdm(file_list, desc="Blame", disable=args["--silent-progress"]):
     blame_cmd = ["git", "blame", fname, "--line-porcelain"]
     if args["--ignore-whitespace"]:
       blame_cmd.append("-w")
-    blame_out = subprocess.check_output(blame_cmd)
+    try:
+      blame_out = subprocess.check_output(blame_cmd, stderr=subprocess.STDOUT)
+    except:
+      continue
     auths = RE_AUTHS.findall(blame_out)
 
     for auth in auths:
@@ -72,8 +76,8 @@ def main(args):
   for k in stats_tot:
     stats_tot[k] = sum(int_cast_or_len(stats.get(k, 0))
                        for stats in auth_stats.itervalues())
-  # print (stats_tot)
-  stats_tot[k]
+  print ('Total ' + '\nTotal '.join("{0:s}: {1:d}".format(k, v)
+         for (k, v) in stats_tot.iteritems()))
 
   COL_NAMES = [
       "Author" + ' ' * (min(30, max(len(a) for a in auth_stats)) - 6),
@@ -86,27 +90,37 @@ def main(args):
   print (TR_HLINE)
   print (("| {0:s} | {1:>6s} | {2:>4s} | {3:>4s} | {4} |").format(*COL_NAMES))
   print (TR_HLINE)
-  for (auth, stats) in auth_stats.iteritems():
+  # tbl_out = ""
+  for (auth, stats) in sorted(auth_stats.iteritems(),
+                              key=lambda (x, y): y.get(args["--sort"], 0),
+                              reverse=True):
     # print (stats)
     loc = stats["loc"]
     commits = stats.get("commits", 0)
     files = len(stats.get("files", []))
+    # tbl_out +=
     print (("| {0:" + str(len(COL_NAMES[0])) +
             "s} | {1:6d} | {2:4d} | {3:4d}"
             " | {4:4.1f}/{5:4.1f}/{6:4.1f} |").format(
-           auth, loc, commits, files,
-           100 * loc / stats_tot["loc"],
-           100 * commits / stats_tot["commits"],
-           100 * files / stats_tot["files"]).replace('100.0', ' 100'))
+        auth, loc, commits, files,
+        100 * loc / stats_tot["loc"],
+        100 * commits / stats_tot["commits"],
+        100 * files / stats_tot["files"]).replace('100.0', ' 100'))
     # TODO: --bytype
-    print (TR_HLINE)
+  # sorter = subprocess.Popen(["sort", "-n", "-r", "-k3", "-t|"],
+  #                           stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+  # sorter.stdin.write(tbl_out)
+  # print (sorter.communicate()[0].strip())
+  print (TR_HLINE)
 
 
 if __name__ == '__main__':
   from docopt import docopt
-  args = docopt(__doc__, version='0.2.0')
+  args = docopt(__doc__, version='0.3.0')
   # raise(Warning(str(args)))
   if args['<gitdir>'] is None:
     args['<gitdir>'] = '.'
     # sys.argv[0][:sys.argv[0].replace('\\','/').rfind('/')]
+  if args["--sort"] not in ["loc", "commits", "files"]:
+    raise(Warning("--sort argument unrecognised\n" + __doc__))
   main(args)
