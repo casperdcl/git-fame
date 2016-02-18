@@ -28,13 +28,6 @@ def tr_hline(col_widths):
   return '+' + '+'.join('-' * i for i in col_widths) + '+'
 
 
-def remove_all(s, remove_chars, replace=''):
-  res = s
-  for c in remove_chars:
-    res = res.replace(c, replace)
-  return res
-
-
 def main(args):
   # gitdir = args["<gitdir>"]
 
@@ -63,6 +56,7 @@ def main(args):
     auth_ncom_em = re.search(r"^\s*(\d+)\s+(" + auth + ")\s+<(.+?)>",
                              auth_commits, flags=re.M)
     if auth_ncom_em:
+      # print (auth_ncom_em.group(1))
       auth_stats[auth]["commits"] = int(auth_ncom_em.group(1))
 
   TR_HLINE = tr_hline([32, 8, 9])
@@ -71,8 +65,8 @@ def main(args):
   print (TR_HLINE)
   for (auth, stats) in auth_stats.iteritems():
     # print (stats)
-    print ("| {0:30s} | {1:6d} | {1:7d} |".format(
-        auth, stats["loc"], stats.get("commits", 0)))
+    print ("| {0:30s} | {1:6d} | {2:7d} |".format(
+        auth, stats["loc"], stats["commits"] if "commits" in stats else 0))
     # TODO: (n)commits
     # TODO: (n)files
     # TODO: distribution loc/com/fil
@@ -82,9 +76,9 @@ def main(args):
 
 if __name__ == '__main__':
   from docopt import docopt
-  args = docopt(__doc__, version='0.1.3')
+  args = docopt(__doc__, version='0.1.1')
   # raise(Warning(str(args)))
-  # if args['<gitdir>'] is None:
-  #   args['<gitdir>'] = '.'
-  #   # sys.argv[0][:sys.argv[0].replace('\\','/').rfind('/')]
+  if args['<gitdir>'] is None:
+    args['<gitdir>'] = '.'
+    # sys.argv[0][:sys.argv[0].replace('\\','/').rfind('/')]
   main(args)
