@@ -9,6 +9,7 @@ Options:
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
                            came from (default: False).
+  -n, --no-progress  Suppress `tqdm`.
 Arguments:
   [<gitdir>]     Git directory (default: .).
 """
@@ -23,7 +24,7 @@ __licence__ = "MPLv2.0"
 RE_AUTHS = re.compile('^author (.+)$', flags=re.M)
 
 
-def line_break(*col_widths):
+def tr_hline(col_widths):
   return '+' + '+'.join('-' * i for i in col_widths) + '+'
 
 
@@ -42,7 +43,7 @@ def main(args):
 
   auth_stats = {}
 
-  for fname in tqdm(file_list):
+  for fname in tqdm(file_list, disable=args["--no-progress"]):
     blame_cmd = ["git", "blame", fname, "--line-porcelain"]
     if args["--ignore-whitespace"]:
       blame_cmd.append("-w")
@@ -64,16 +65,19 @@ def main(args):
     if auth_ncom_em:
       auth_stats[auth]["commits"] = int(auth_ncom_em.group(1))
 
-  LINE_BREAK = (line_break(32, 8))
-  print (LINE_BREAK)
-  print ("| {0:30s} | {1:>6s} |".format("Author", "loc"))
-  print (LINE_BREAK)
+  TR_HLINE = tr_hline([32, 8, 9])
+  print (TR_HLINE)
+  print ("| {0:30s} | {1:>6s} | {2:>7s} |".format("Author", "loc", "commits"))
+  print (TR_HLINE)
   for (auth, stats) in auth_stats.iteritems():
     # print (stats)
-    print ("| {0:30s} | {1:6d} |".format(auth, stats["loc"]))
+    print ("| {0:30s} | {1:6d} | {1:7d} |".format(
+        auth, stats["loc"], stats.get("commits", 0)))
+    # TODO: (n)commits
+    # TODO: (n)files
+    # TODO: distribution loc/com/fil
     # TODO: --bytype
-    # TODO: --progress
-    print (LINE_BREAK)
+    print (TR_HLINE)
 
 
 if __name__ == '__main__':
