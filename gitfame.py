@@ -29,7 +29,7 @@ def tr_hline(col_widths):
 
 
 def main(args):
-  # gitdir = args["<gitdir>"]
+  # TODO: gitdir = args["<gitdir>"]
 
   file_list = subprocess.check_output(["git", "ls-files"]).strip().split('\n')
   # TODO: --exclude
@@ -59,16 +59,16 @@ def main(args):
       # print (auth_ncom_em.group(1))
       auth_stats[auth]["commits"] = int(auth_ncom_em.group(1))
 
-  TR_HLINE = tr_hline([32, 8, 9])
+  TR_HLINE = tr_hline([32, 8, 9, 7])
   print (TR_HLINE)
-  print ("| {0:30s} | {1:>6s} | {2:>7s} |".format("Author", "loc", "commits"))
+  print ("| {0:30s} | {1:>6s} | {2:>7s} | {3:>5s} |".format(
+      "Author", "loc", "commits", "files"))
   print (TR_HLINE)
   for (auth, stats) in auth_stats.iteritems():
     # print (stats)
-    print ("| {0:30s} | {1:6d} | {2:7d} |".format(
-        auth, stats["loc"], stats["commits"] if "commits" in stats else 0))
-    # TODO: (n)commits
-    # TODO: (n)files
+    print ("| {0:30s} | {1:6d} | {2:7d} | {3:5d} |".format(
+        auth, stats["loc"], stats.get("commits", 0),
+        len(stats.get("files", []))))
     # TODO: distribution loc/com/fil
     # TODO: --bytype
     print (TR_HLINE)
