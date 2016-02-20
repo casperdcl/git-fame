@@ -92,7 +92,8 @@ def main(args):
   print (("| {0:s} | {1:>6s} | {2:>4s} | {3:>4s} | {4} |").format(*COL_NAMES))
   print (TR_HLINE)
   for (auth, stats) in sorted(auth_stats.iteritems(),
-                              key=lambda (x, y): y.get(args["--sort"], 0),
+                              key=lambda (x, y): int_cast_or_len(
+                                  y.get(args["--sort"], 0)),
                               reverse=True):
     # print (stats)
     loc = stats["loc"]
@@ -111,7 +112,7 @@ def main(args):
 
 if __name__ == '__main__':
   from docopt import docopt
-  args = docopt(__doc__, version='0.3.1')
+  args = docopt(__doc__, version='0.3.2')
   # raise(Warning(str(args)))
   if args['<gitdir>'] is None:
     args['<gitdir>'] = '.'
