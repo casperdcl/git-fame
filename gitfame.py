@@ -12,7 +12,7 @@ Options:
                            came from (default: False).
   -s, --silent-progress    Suppress `tqdm`.
 Arguments:
-  [<gitdir>]     Git directory (default: .).
+  [<gitdir>]     Git directory (default: ./).
 """
 from __future__ import print_function
 from __future__ import division
@@ -98,10 +98,10 @@ def main(args):
     loc = stats["loc"]
     commits = stats.get("commits", 0)
     files = len(stats.get("files", []))
-    print (("| {0:" + str(len(COL_NAMES[0])) +
-            "s} | {1:6d} | {2:4d} | {3:4d}"
+    print (("| {0:<" + str(len(COL_NAMES[0]) + 1) +
+            "s}| {1:6d} | {2:4d} | {3:4d}"
             " | {4:4.1f}/{5:4.1f}/{6:4.1f} |").format(
-        auth, loc, commits, files,
+        auth[:len(COL_NAMES[0]) + 1], loc, commits, files,
         100 * loc / stats_tot["loc"],
         100 * commits / stats_tot["commits"],
         100 * files / stats_tot["files"]).replace('100.0', ' 100'))
@@ -111,7 +111,7 @@ def main(args):
 
 if __name__ == '__main__':
   from docopt import docopt
-  args = docopt(__doc__, version='0.3.0')
+  args = docopt(__doc__, version='0.3.1')
   # raise(Warning(str(args)))
   if args['<gitdir>'] is None:
     args['<gitdir>'] = '.'
