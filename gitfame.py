@@ -10,7 +10,7 @@ Options:
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
                            came from (default: False).
-  -s, --silent-progress    Suppress `tqdm`.
+  -s, --silent-progress    Suppress `tqdm` (default: False).
 Arguments:
   [<gitdir>]     Git directory (default: ./).
 """
@@ -20,7 +20,8 @@ import subprocess
 from tqdm import tqdm
 import re
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
-__licence__ = "MPLv2.0"
+__licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
+__date__ = "2016"
 
 
 RE_AUTHS = re.compile('^author (.+)$', flags=re.M)
@@ -38,15 +39,17 @@ def int_cast_or_len(i):
 
 
 def main(args):
-  # TODO: gitdir = args["<gitdir>"]
+  gitdir = args["<gitdir>"].rstrip('\\/')
+  git_cmd = ["git", "--git-dir", gitdir + "/.git", "--work-tree", gitdir]
 
-  file_list = subprocess.check_output(["git", "ls-files"]).strip().split('\n')
+  file_list = subprocess.check_output(git_cmd +
+                                      ["ls-files"]).strip().split('\n')
   # TODO: --exclude
 
   auth_stats = {}
 
   for fname in tqdm(file_list, desc="Blame", disable=args["--silent-progress"]):
-    git_blame_cmd = ["git", "blame", fname, "--line-porcelain"]
+    git_blame_cmd = git_cmd + ["blame", fname, "--line-porcelain"]
     if args["--ignore-whitespace"]:
       git_blame_cmd.append("-w")
     try:
@@ -65,7 +68,8 @@ def main(args):
         auth_stats[auth]["files"].add(fname)
 
   for auth in auth_stats.iterkeys():
-    auth_commits = subprocess.check_output(["git", "shortlog", "-s", "-e"])
+    auth_commits = subprocess.check_output(git_cmd +
+                                           ["shortlog", "-s", "-e"])
     auth_ncom_em = re.search(r"^\s*(\d+)\s+(" + auth + ")\s+<(.+?)>",
                              auth_commits, flags=re.M)
     if auth_ncom_em:
@@ -112,11 +116,14 @@ def main(args):
 
 if __name__ == '__main__':
   from docopt import docopt
-  args = docopt(__doc__, version='0.3.2')
+  args = docopt(__doc__, version='0.4.0')
   # raise(Warning(str(args)))
+
   if args['<gitdir>'] is None:
-    args['<gitdir>'] = '.'
+    args['<gitdir>'] = './'
     # sys.argv[0][:sys.argv[0].replace('\\','/').rfind('/')]
+
   if args["--sort"] not in ["loc", "commits", "files"]:
     raise(Warning("--sort argument unrecognised\n" + __doc__))
+
   main(args)
