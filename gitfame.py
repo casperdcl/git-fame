@@ -7,6 +7,7 @@ Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
   --sort=<key>   Options: [default: loc], files, commits.
+  --exclude-files=<f>      Comma-separated list (default: "").
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
                            came from (default: False).
@@ -27,8 +28,8 @@ __date__ = "2016"
 RE_AUTHS = re.compile('^author (.+)$', flags=re.M)
 
 
-def tr_hline(col_widths):
-  return '+' + '+'.join('-' * i for i in col_widths) + '+'
+def tr_hline(col_widths, hl='-', x='+'):
+  return x + x.join(hl * i for i in col_widths) + x
 
 
 def int_cast_or_len(i):
@@ -38,17 +39,30 @@ def int_cast_or_len(i):
     return len(i)
 
 
+def Max(it):
+  try:
+    return max(it)
+  except ValueError as e:
+    if 'empty sequence' in str(e):
+      return 0
+    raise
+
+
 def main(args):
   gitdir = args["<gitdir>"].rstrip('\\/')
   git_cmd = ["git", "--git-dir", gitdir + "/.git", "--work-tree", gitdir]
+  exclude_files = args["--exclude-files"].split(',')
 
   file_list = subprocess.check_output(git_cmd +
                                       ["ls-files"]).strip().split('\n')
-  # TODO: --exclude
+  # TODO: --exclude-regex
 
   auth_stats = {}
 
   for fname in tqdm(file_list, desc="Blame", disable=args["--silent-progress"]):
+    if fname in exclude_files:
+      continue
+
     git_blame_cmd = git_cmd + ["blame", fname, "--line-porcelain"]
     if args["--ignore-whitespace"]:
       git_blame_cmd.append("-w")
@@ -76,6 +90,9 @@ def main(args):
       # print (auth_ncom_em.group(1))
       auth_stats[auth]["commits"] = int(auth_ncom_em.group(1))
 
+  if not len(auth_stats):
+    auth_stats[""] = {"loc": 0, "files": set(), "commits": 0}
+
   stats_tot = dict((k, 0) for stats in auth_stats.itervalues() for k in stats)
   # print (stats_tot)
   for k in stats_tot:
@@ -94,7 +111,7 @@ def main(args):
   TR_HLINE = tr_hline([len(i) + 2 for i in COL_NAMES])
   print (TR_HLINE)
   print (("| {0:s} | {1:>6s} | {2:>4s} | {3:>4s} | {4} |").format(*COL_NAMES))
-  print (TR_HLINE)
+  print (tr_hline([len(i) + 2 for i in COL_NAMES], '='))
   for (auth, stats) in sorted(auth_stats.iteritems(),
                               key=lambda (x, y): int_cast_or_len(
                                   y.get(args["--sort"], 0)),
@@ -107,23 +124,26 @@ def main(args):
             "s}| {1:6d} | {2:4d} | {3:4d}"
             " | {4:4.1f}/{5:4.1f}/{6:4.1f} |").format(
         auth[:len(COL_NAMES[0]) + 1], loc, commits, files,
-        100 * loc / stats_tot["loc"],
-        100 * commits / stats_tot["commits"],
-        100 * files / stats_tot["files"]).replace('100.0', ' 100'))
+        100 * loc / max(1, stats_tot["loc"]),
+        100 * commits / max(1, stats_tot["commits"]),
+        100 * files / max(1, stats_tot["files"])).replace('100.0', ' 100'))
     # TODO: --bytype
   print (TR_HLINE)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   from docopt import docopt
-  args = docopt(__doc__, version='0.4.0')
+  args = docopt(__doc__, version="0.5.0")
   # raise(Warning(str(args)))
 
-  if args['<gitdir>'] is None:
-    args['<gitdir>'] = './'
+  if args["<gitdir>"] is None:
+    args["<gitdir>"] = './'
     # sys.argv[0][:sys.argv[0].replace('\\','/').rfind('/')]
 
   if args["--sort"] not in ["loc", "commits", "files"]:
     raise(Warning("--sort argument unrecognised\n" + __doc__))
+
+  if not args["--exclude-files"]:
+    args["--exclude-files"] = ""
 
   main(args)
