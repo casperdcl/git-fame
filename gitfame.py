@@ -39,12 +39,12 @@ def int_cast_or_len(i):
     return len(i)
 
 
-def Max(it):
+def Max(it, empty_default=0):
   try:
     return max(it)
   except ValueError as e:
     if 'empty sequence' in str(e):
-      return 0
+      return empty_default
     raise
 
 
@@ -90,9 +90,6 @@ def main(args):
       # print (auth_ncom_em.group(1))
       auth_stats[auth]["commits"] = int(auth_ncom_em.group(1))
 
-  if not len(auth_stats):
-    auth_stats[""] = {"loc": 0, "files": set(), "commits": 0}
-
   stats_tot = dict((k, 0) for stats in auth_stats.itervalues() for k in stats)
   # print (stats_tot)
   for k in stats_tot:
@@ -103,14 +100,14 @@ def main(args):
 
   # Columns: Author | loc | coms | fils | distribution
   COL_LENS = [
-    max(6, max(len(a) for a in auth_stats)),
-    max(3, max(len(str(stats["loc"]))
-               for stats in auth_stats.itervalues())),
-    max(4, max(len(str(stats.get("commits", 0)))
-               for stats in auth_stats.itervalues())),
-    max(4, max(len(str(len(stats.get("files", []))))
-               for stats in auth_stats.itervalues())),
-    12
+      max(6, Max(len(a) for a in auth_stats)),
+      max(3, Max(len(str(stats["loc"]))
+                 for stats in auth_stats.itervalues())),
+      max(4, Max(len(str(stats.get("commits", 0)))
+                 for stats in auth_stats.itervalues())),
+      max(4, Max(len(str(len(stats.get("files", []))))
+                 for stats in auth_stats.itervalues())),
+      12
   ]
 
   COL_NAMES = [
