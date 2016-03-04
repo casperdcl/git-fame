@@ -101,16 +101,32 @@ def main(args):
   print ('Total ' + '\nTotal '.join("{0:s}: {1:d}".format(k, v)
          for (k, v) in stats_tot.iteritems()))
 
+  # Columns: Author | loc | coms | fils | distribution
+  COL_LENS = [
+    max(6, max(len(a) for a in auth_stats)),
+    max(3, max(len(str(stats["loc"]))
+               for stats in auth_stats.itervalues())),
+    max(4, max(len(str(stats.get("commits", 0)))
+               for stats in auth_stats.itervalues())),
+    max(4, max(len(str(len(stats.get("files", []))))
+               for stats in auth_stats.itervalues())),
+    12
+  ]
+
   COL_NAMES = [
-      "Author" + ' ' * (min(30, max(len(a) for a in auth_stats)) - 6),
-      "   loc",
-      "coms",
-      "fils",
+      "Author" + ' ' * (COL_LENS[0] - 6),
+      ' ' * (COL_LENS[1] - 3) + "loc",
+      ' ' * (COL_LENS[2] - 4) + "coms",
+      ' ' * (COL_LENS[3] - 4) + "fils",
       " distribution "
   ]
+
+  tbl_row_fmt = "| {0:<%ds} | {1:>%dd} | {2:>%dd} | {3:>%dd} |" \
+                " {4:4.1f}/{5:4.1f}/{6:4.1f} |" % tuple(COL_LENS[:4])
+
   TR_HLINE = tr_hline([len(i) + 2 for i in COL_NAMES])
   print (TR_HLINE)
-  print (("| {0:s} | {1:>6s} | {2:>4s} | {3:>4s} | {4} |").format(*COL_NAMES))
+  print (("| {0:s} | {1:s} | {2:s} | {3:s} | {4} |").format(*COL_NAMES))
   print (tr_hline([len(i) + 2 for i in COL_NAMES], '='))
   for (auth, stats) in sorted(auth_stats.iteritems(),
                               key=lambda (x, y): int_cast_or_len(
@@ -120,9 +136,7 @@ def main(args):
     loc = stats["loc"]
     commits = stats.get("commits", 0)
     files = len(stats.get("files", []))
-    print (("| {0:<" + str(len(COL_NAMES[0]) + 1) +
-            "s}| {1:6d} | {2:4d} | {3:4d}"
-            " | {4:4.1f}/{5:4.1f}/{6:4.1f} |").format(
+    print (tbl_row_fmt.format(
         auth[:len(COL_NAMES[0]) + 1], loc, commits, files,
         100 * loc / max(1, stats_tot["loc"]),
         100 * commits / max(1, stats_tot["commits"]),
@@ -133,7 +147,7 @@ def main(args):
 
 if __name__ == "__main__":
   from docopt import docopt
-  args = docopt(__doc__, version="0.5.0")
+  args = docopt(__doc__, version="0.5.1")
   # raise(Warning(str(args)))
 
   if args["<gitdir>"] is None:
