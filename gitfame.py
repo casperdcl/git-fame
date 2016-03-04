@@ -100,7 +100,7 @@ def main(args):
 
   # Columns: Author | loc | coms | fils | distribution
   COL_LENS = [
-      max(6, Max(len(a) for a in auth_stats)),
+      max(6, Max(len(a.decode('utf-8')) for a in auth_stats)),
       max(3, Max(len(str(stats["loc"]))
                  for stats in auth_stats.itervalues())),
       max(4, Max(len(str(stats.get("commits", 0)))
@@ -144,7 +144,7 @@ def main(args):
 
 if __name__ == "__main__":
   from docopt import docopt
-  args = docopt(__doc__, version="0.5.1")
+  args = docopt(__doc__, version="0.6.0")
   # raise(Warning(str(args)))
 
   if args["<gitdir>"] is None:
