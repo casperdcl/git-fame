@@ -17,6 +17,10 @@ Arguments:
 """
 from __future__ import print_function
 from __future__ import division
+from __future__ import absolute_import
+from _utils import TERM_WIDTH, int_cast_or_len, Max
+
+
 import subprocess
 from tqdm import tqdm
 import re
@@ -32,24 +36,8 @@ def tr_hline(col_widths, hl='-', x='+'):
   return x + x.join(hl * i for i in col_widths) + x
 
 
-def int_cast_or_len(i):
-  try:
-    return int(i)
-  except:
-    return len(i)
-
-
-def Max(it, empty_default=0):
-  try:
-    return max(it)
-  except ValueError as e:
-    if 'empty sequence' in str(e):
-      return empty_default
-    raise
-
-
 def main(args):
-  gitdir = args["<gitdir>"].rstrip('\\/')
+  gitdir = args["<gitdir>"].rstrip(r'\/')
   git_cmd = ["git", "--git-dir", gitdir + "/.git", "--work-tree", gitdir]
   exclude_files = args["--exclude-files"].split(',')
 
@@ -110,6 +98,9 @@ def main(args):
       12
   ]
 
+  COL_LENS[0] = min(TERM_WIDTH - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 3,
+                    COL_LENS[0])
+
   COL_NAMES = [
       "Author" + ' ' * (COL_LENS[0] - 6),
       ' ' * (COL_LENS[1] - 3) + "loc",
@@ -118,8 +109,11 @@ def main(args):
       " distribution "
   ]
 
-  tbl_row_fmt = "| {0:<%ds} | {1:>%dd} | {2:>%dd} | {3:>%dd} |" \
-                " {4:4.1f}/{5:4.1f}/{6:4.1f} |" % tuple(COL_LENS[:4])
+  tbl_row_fmt = "| {0:<%ds}| {1:>%dd} | {2:>%dd} | {3:>%dd} |" \
+                " {4:4.1f}/{5:4.1f}/{6:4.1f} |" % (COL_LENS[0] + 1,
+                                                   COL_LENS[1],
+                                                   COL_LENS[2],
+                                                   COL_LENS[3])
 
   TR_HLINE = tr_hline([len(i) + 2 for i in COL_NAMES])
   print (TR_HLINE)
@@ -144,7 +138,7 @@ def main(args):
 
 if __name__ == "__main__":
   from docopt import docopt
-  args = docopt(__doc__, version="0.6.0")
+  args = docopt(__doc__, version="0.7.0")
   # raise(Warning(str(args)))
 
   if args["<gitdir>"] is None:
