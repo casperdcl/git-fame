@@ -8,6 +8,10 @@ Options:
   -v, --version  Print module version and exit.
   --sort=<key>   Options: [default: loc], files, commits.
   --exclude-files=<f>      Comma-separated list (default: "").
+                           Escape (\,) for a literal comma
+                           (may require \\, in shell).
+  -r, --regex              Assume <f> are comma-separated regular expressions
+                           rather than exact matches (default: false).
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
                            came from (default: False).
@@ -30,6 +34,7 @@ __date__ = "2016"
 
 
 RE_AUTHS = re.compile('^author (.+)$', flags=re.M)
+RE_CSPILT = re.compile(r'(?<!\\),')
 
 
 def tr_hline(col_widths, hl='-', x='+'):
@@ -39,16 +44,18 @@ def tr_hline(col_widths, hl='-', x='+'):
 def main(args):
   gitdir = args["<gitdir>"].rstrip(r'\/')
   git_cmd = ["git", "--git-dir", gitdir + "/.git", "--work-tree", gitdir]
-  exclude_files = args["--exclude-files"].split(',')
+  exclude_files = RE_CSPILT.split(args["--exclude-files"])
 
   file_list = subprocess.check_output(git_cmd +
                                       ["ls-files"]).strip().split('\n')
-  # TODO: --exclude-regex
+  RE_EXCL = None
+  if args['--regex']:
+    RE_EXCL = re.compile('|'.join(i for i in exclude_files), flags=re.M)
 
   auth_stats = {}
 
   for fname in tqdm(file_list, desc="Blame", disable=args["--silent-progress"]):
-    if fname in exclude_files:
+    if RE_EXCL.search(fname) if args['--regex'] else (fname in exclude_files):
       continue
 
     git_blame_cmd = git_cmd + ["blame", fname, "--line-porcelain"]
@@ -138,7 +145,7 @@ def main(args):
 
 if __name__ == "__main__":
   from docopt import docopt
-  args = docopt(__doc__, version="0.7.0")
+  args = docopt(__doc__, version="0.8.0")
   # raise(Warning(str(args)))
 
   if args["<gitdir>"] is None:
