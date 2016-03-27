@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 r"""
 Usage:
-  gitfame.py [options] [<gitdir>]
+  gitfame [--help | options] [<gitdir>]
 
 Options:
   -h, --help     Print this help and exit.
@@ -12,22 +12,22 @@ Options:
                            (may require \\, in shell).
   -r, --regex              Assume <f> are comma-separated regular expressions
                            rather than exact matches (default: false).
+  -s, --silent-progress    Suppress `tqdm` (default: False).
+  -t, --bytype             Show stats per file extension.
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
                            came from (default: False).
-  -s, --silent-progress    Suppress `tqdm` (default: False).
 Arguments:
-  <gitdir>     Git directory [default: ./].
+  <gitdir>       Git directory [default: ./].
 """
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-from _utils import TERM_WIDTH, int_cast_or_len, Max
-
-
 import subprocess
-from tqdm import tqdm
 import re
+from _utils import TERM_WIDTH, int_cast_or_len, Max, fext
+from tqdm import tqdm
+
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
@@ -37,6 +37,8 @@ __license__ = __licence__  # weird foreign language
 
 
 RE_AUTHS = re.compile('^author (.+)$', flags=re.M)
+# finds all non-escaped commas
+# NB: does not support escaping of escaped character
 RE_CSPILT = re.compile(r'(?<!\\),')
 
 
@@ -44,7 +46,7 @@ def tr_hline(col_widths, hl='-', x='+'):
   return x + x.join(hl * i for i in col_widths) + x
 
 
-def tabulate(auth_stats, stats_tot, args_sort):
+def tabulate(auth_stats, stats_tot, args_sort="loc", args_bytype=False):
   res = ''
   # Columns: Author | loc | coms | fils | distribution
   COL_LENS = [
@@ -79,14 +81,18 @@ def tabulate(auth_stats, stats_tot, args_sort):
   res += TR_HLINE + '\n'
   res += ("| {0:s} | {1:s} | {2:s} | {3:s} | {4} |").format(*COL_NAMES) + '\n'
   res += tr_hline([len(i) + 2 for i in COL_NAMES], '=') + '\n'
+
   for (auth, stats) in tqdm(sorted(auth_stats.iteritems(),
-                                   key=lambda (x, y): int_cast_or_len(
-                                       y.get(args_sort, 0)),
+                                   key=lambda k: int_cast_or_len(
+                                       k[1].get(args_sort, 0)),
                                    reverse=True), leave=False):
     # print (stats)
     loc = stats["loc"]
     commits = stats.get("commits", 0)
     files = len(stats.get("files", []))
+    # TODO:
+    # if args_bytype:
+    #   print ([stats.get("files", []) ])
     res += (tbl_row_fmt.format(
         auth[:len(COL_NAMES[0]) + 1], loc, commits, files,
         100 * loc / max(1, stats_tot["loc"]),
@@ -97,9 +103,20 @@ def tabulate(auth_stats, stats_tot, args_sort):
   return res + TR_HLINE
 
 
-def main(args):
+def run(args):
   """ args: dict (docopt format) """
-  gitdir = args["<gitdir>"].rstrip(r'\/')
+
+  if args["<gitdir>"] is None:
+    args["<gitdir>"] = './'
+    # sys.argv[0][:sys.argv[0].replace('\\','/').rfind('/')]
+
+  if args["--sort"] not in ["loc", "commits", "files"]:
+    raise(Warning("--sort argument unrecognised\n" + __doc__))
+
+  if not args["--exclude-files"]:
+    args["--exclude-files"] = ""
+
+  gitdir = args["<gitdir>"].rstrip(r'\/').rstrip('\\')
   git_cmd = ["git", "--git-dir", gitdir + "/.git", "--work-tree", gitdir]
   exclude_files = RE_CSPILT.split(args["--exclude-files"])
 
@@ -108,6 +125,8 @@ def main(args):
   RE_EXCL = None
   if args['--regex']:
     RE_EXCL = re.compile('|'.join(i for i in exclude_files), flags=re.M)
+
+  # finished parsing args
 
   auth_stats = {}
 
@@ -133,6 +152,13 @@ def main(args):
       else:
         auth_stats[auth]["files"].add(fname)
 
+      if args["--bytype"]:
+        fext_key = ("." + fext(fname)) if fext(fname) else "._None_ext"
+        try:
+          auth_stats[auth][fext_key] += 1
+        except KeyError:
+          auth_stats[auth][fext_key] = 1
+
   for auth in auth_stats.iterkeys():
     auth_commits = subprocess.check_output(git_cmd +
                                            ["shortlog", "-s", "-e"])
@@ -147,24 +173,26 @@ def main(args):
   for k in stats_tot:
     stats_tot[k] = sum(int_cast_or_len(stats.get(k, 0))
                        for stats in auth_stats.itervalues())
+
+  extns = set()
+  if args["--bytype"]:
+    for stats in auth_stats.itervalues():
+      extns.update([fext(i) for i in stats["files"]])
+  # print (extns)
+
   print ('Total ' + '\nTotal '.join("{0:s}: {1:d}".format(k, v)
-         for (k, v) in stats_tot.iteritems()))
+         for (k, v) in sorted(stats_tot.iteritems())))
+
   print (tabulate(auth_stats, stats_tot, args["--sort"]))
 
 
-if __name__ == "__main__":
+def main():
   from docopt import docopt
-  args = docopt(__doc__, version="0.8.1")
+  args = docopt(__doc__, version="0.8.2")
   # raise(Warning(str(args)))
 
-  if args["<gitdir>"] is None:
-    args["<gitdir>"] = './'
-    # sys.argv[0][:sys.argv[0].replace('\\','/').rfind('/')]
+  run(args)
 
-  if args["--sort"] not in ["loc", "commits", "files"]:
-    raise(Warning("--sort argument unrecognised\n" + __doc__))
 
-  if not args["--exclude-files"]:
-    args["--exclude-files"] = ""
-
-  main(args)
+if __name__ == "__main__":
+  main()
