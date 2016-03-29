@@ -7,16 +7,16 @@ Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
   --sort=<key>   Options: [default: loc], files, commits.
-  --exclude-files=<f>      Comma-separated list (default: "").
+  --exclude-files=<f>      Comma-separated list [default: None].
                            Escape (\,) for a literal comma
                            (may require \\, in shell).
   -r, --regex              Assume <f> are comma-separated regular expressions
-                           rather than exact matches (default: false).
-  -s, --silent-progress    Suppress `tqdm` (default: False).
-  -t, --bytype             Show stats per file extension.
+                           rather than exact matches [default: false].
+  -s, --silent-progress    Suppress `tqdm` [default: False].
+  -t, --bytype             Show stats per file extension [default: False].
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
-                           came from (default: False).
+                           came from [default: False].
 Arguments:
   <gitdir>       Git directory [default: ./].
 """
@@ -32,7 +32,7 @@ __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
-__copyright__ = ' '.join((__author__, __date__, __licence__))
+__copyright__ = ' '.join((__author__, "(c)", __date__, __licence__))
 __license__ = __licence__  # weird foreign language
 
 
@@ -40,6 +40,7 @@ RE_AUTHS = re.compile('^author (.+)$', flags=re.M)
 # finds all non-escaped commas
 # NB: does not support escaping of escaped character
 RE_CSPILT = re.compile(r'(?<!\\),')
+RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*)\s+<(.*)>\s*$', flags=re.M)
 
 
 def tr_hline(col_widths, hl='-', x='+'):
@@ -154,19 +155,23 @@ def run(args):
 
       if args["--bytype"]:
         fext_key = ("." + fext(fname)) if fext(fname) else "._None_ext"
+        # auth_stats[auth].setdefault(fext_key, 0)
         try:
           auth_stats[auth][fext_key] += 1
         except KeyError:
           auth_stats[auth][fext_key] = 1
 
-  for auth in auth_stats.iterkeys():
-    auth_commits = subprocess.check_output(git_cmd +
-                                           ["shortlog", "-s", "-e"])
-    auth_ncom_em = re.search(r"^\s*(\d+)\s+(" + auth + ")\s+<(.+?)>",
-                             auth_commits, flags=re.M)
-    if auth_ncom_em:
-      # print (auth_ncom_em.group(1))
-      auth_stats[auth]["commits"] = int(auth_ncom_em.group(1))
+  # print (auth_stats.keys())
+  auth_commits = subprocess.check_output(git_cmd + ["shortlog", "-s", "-e"])
+  for stats in auth_stats.itervalues():
+    stats.setdefault("commits", 0)
+  # print (RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
+  for (ncom, auth, _) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
+    try:
+      auth_stats[auth]["commits"] += int(ncom)
+    except KeyError:
+      # pass
+      auth_stats[auth] = {"loc": 0, "files": set([]), "commits": int(ncom)}
 
   stats_tot = dict((k, 0) for stats in auth_stats.itervalues() for k in stats)
   # print (stats_tot)
@@ -188,7 +193,7 @@ def run(args):
 
 def main():
   from docopt import docopt
-  args = docopt(__doc__, version="0.8.2")
+  args = docopt(__doc__ + '\n' + __copyright__, version="0.9.0")
   # raise(Warning(str(args)))
 
   run(args)
