@@ -7,11 +7,15 @@ Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
   --sort=<key>   Options: [default: loc], files, commits.
-  --exclude-files=<f>      Comma-separated list [default: None].
+  --exclude-files=<f>      [default: None].
+                           In no-regex mode, may be a comma-separated list.
                            Escape (\,) for a literal comma
                            (may require \\, in shell).
-  -r, --regex              Assume <f> are comma-separated regular expressions
-                           rather than exact matches [default: false].
+  --include-files=<f>      [default: .*]. Must match *entire* file name & path
+                           (e.g.: ".*\\.[ch]p*$", not just "\\.[ch]p*$")
+  -n, --no-regex           Assume <f> are comma-separated exact matches
+                           rather than regular expressions [default: False].
+                           NB: if regex is enabled `,` is equivalent to `|`.
   -s, --silent-progress    Suppress `tqdm` [default: False].
   -t, --bytype             Show stats per file extension [default: False].
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
@@ -107,6 +111,8 @@ def tabulate(auth_stats, stats_tot, args_sort="loc", args_bytype=False):
 def run(args):
   """ args: dict (docopt format) """
 
+  # ! parsing args
+
   if args["<gitdir>"] is None:
     args["<gitdir>"] = './'
     # sys.argv[0][:sys.argv[0].replace('\\','/').rfind('/')]
@@ -118,23 +124,41 @@ def run(args):
     args["--exclude-files"] = ""
 
   gitdir = args["<gitdir>"].rstrip(r'\/').rstrip('\\')
+
+  exclude_files = None
+  include_files = None
+  if args["--no-regex"]:
+    exclude_files = set(RE_CSPILT.split(args["--exclude-files"]))
+    include_files = set(RE_CSPILT.split(args["--include-files"]))
+  else:
+    # cannot use findall in case of grouping:
+    # for i in include_files:
+    # for i in [include_files]:
+    #   for j in range(1, len(i)):
+    #     if i[j] == '(' and i[j - 1] != '\\':
+    #       raise ValueError('Parenthesis must be escaped'
+    #                        ' in include-files:\n\t' + i)
+    exclude_files = re.compile(args["--exclude-files"])
+    include_files = re.compile(args["--include-files"])
+    # include_files = re.compile(args["--include-files"], flags=re.M)
+
+  # ! iterating over files
+
   git_cmd = ["git", "--git-dir", gitdir + "/.git", "--work-tree", gitdir]
-  exclude_files = RE_CSPILT.split(args["--exclude-files"])
-
-  file_list = subprocess.check_output(git_cmd +
-                                      ["ls-files"]).strip().split('\n')
-  RE_EXCL = None
-  if args['--regex']:
-    RE_EXCL = re.compile('|'.join(i for i in exclude_files), flags=re.M)
-
-  # finished parsing args
+  file_list = subprocess.check_output(
+      git_cmd + ["ls-files"]).strip().split('\n')
+  if args['--no-regex']:
+    file_list = [i for i in file_list
+                 if (not include_files or (i in include_files))
+                 if not (i in exclude_files)]
+  else:
+    file_list = [i for i in file_list
+                 if include_files.search(i)
+                 if not exclude_files.search(i)]
+  # print (file_list)
 
   auth_stats = {}
-
   for fname in tqdm(file_list, desc="Blame", disable=args["--silent-progress"]):
-    if RE_EXCL.search(fname) if args['--regex'] else (fname in exclude_files):
-      continue
-
     git_blame_cmd = git_cmd + ["blame", fname, "--line-porcelain"]
     if args["--ignore-whitespace"]:
       git_blame_cmd.append("-w")
@@ -193,7 +217,7 @@ def run(args):
 
 def main():
   from docopt import docopt
-  args = docopt(__doc__ + '\n' + __copyright__, version="0.9.0")
+  args = docopt(__doc__ + '\n' + __copyright__, version="0.10.0")
   # raise(Warning(str(args)))
 
   run(args)
