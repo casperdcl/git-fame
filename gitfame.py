@@ -144,7 +144,7 @@ def run(args):
 
   # ! iterating over files
 
-  git_cmd = ["git", "--git-dir", gitdir + "/.git", "--work-tree", gitdir]
+  git_cmd = ["git", "-C", gitdir]
   file_list = subprocess.check_output(
       git_cmd + ["ls-files"]).strip().split('\n')
   if args['--no-regex']:
@@ -217,7 +217,7 @@ def run(args):
 
 def main():
   from docopt import docopt
-  args = docopt(__doc__ + '\n' + __copyright__, version="0.10.0")
+  args = docopt(__doc__ + '\n' + __copyright__, version="0.10.1")
   # raise(Warning(str(args)))
 
   run(args)
