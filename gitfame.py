@@ -21,6 +21,10 @@ Options:
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
                            came from [default: False].
+  -M                       Detect intra-file line moves and copies
+                           [default: False].
+  -C                       Detect inter-file line moves and copies
+                           [default: False].
 Arguments:
   <gitdir>       Git directory [default: ./].
 """
@@ -162,6 +166,10 @@ def run(args):
     git_blame_cmd = git_cmd + ["blame", fname, "--line-porcelain"]
     if args["--ignore-whitespace"]:
       git_blame_cmd.append("-w")
+    if args["-M"]:
+      git_blame_cmd.append("-M")
+    if args["-C"]:
+      git_blame_cmd.append("-C")
     try:
       blame_out = subprocess.check_output(git_blame_cmd,
                                           stderr=subprocess.STDOUT)
@@ -217,7 +225,7 @@ def run(args):
 
 def main():
   from docopt import docopt
-  args = docopt(__doc__ + '\n' + __copyright__, version="0.10.1")
+  args = docopt(__doc__ + '\n' + __copyright__, version="0.11.0")
   # raise(Warning(str(args)))
 
   run(args)
