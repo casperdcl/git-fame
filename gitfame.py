@@ -33,7 +33,7 @@ from __future__ import division
 from __future__ import absolute_import
 import subprocess
 import re
-from _utils import TERM_WIDTH, int_cast_or_len, Max, fext
+from _utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str
 from tqdm import tqdm
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
@@ -59,7 +59,7 @@ def tabulate(auth_stats, stats_tot, args_sort="loc", args_bytype=False):
   res = ''
   # Columns: Author | loc | coms | fils | distribution
   COL_LENS = [
-      max(6, Max(len(a.decode('utf-8')) for a in auth_stats)),
+      max(6, Max(len(a) for a in auth_stats)),
       max(3, Max(len(str(stats["loc"]))
                  for stats in auth_stats.itervalues())),
       max(4, Max(len(str(stats.get("commits", 0)))
@@ -80,8 +80,8 @@ def tabulate(auth_stats, stats_tot, args_sort="loc", args_bytype=False):
       " distribution "
   ]
 
-  tbl_row_fmt = "| {0:<%ds}| {1:>%dd} | {2:>%dd} | {3:>%dd} |" \
-                " {4:4.1f}/{5:4.1f}/{6:4.1f} |" % (COL_LENS[0] + 1,
+  tbl_row_fmt = u"| {0:<%ds}| {1:>%dd} | {2:>%dd} | {3:>%dd} |" \
+                u" {4:4.1f}/{5:4.1f}/{6:4.1f} |" % (COL_LENS[0] + 1,
                                                    COL_LENS[1],
                                                    COL_LENS[2],
                                                    COL_LENS[3])
@@ -177,7 +177,7 @@ def run(args):
       continue
     auths = RE_AUTHS.findall(blame_out)
 
-    for auth in auths:
+    for auth in map(_str, auths):
       try:
         auth_stats[auth]["loc"] += 1
       except KeyError:
@@ -200,10 +200,12 @@ def run(args):
   # print (RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
   for (ncom, auth, _) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
     try:
-      auth_stats[auth]["commits"] += int(ncom)
+      auth_stats[_str(auth)]["commits"] += int(ncom)
     except KeyError:
       # pass
-      auth_stats[auth] = {"loc": 0, "files": set([]), "commits": int(ncom)}
+      auth_stats[_str(auth)] = {"loc": 0,
+                                "files": set([]),
+                                "commits": int(ncom)}
 
   stats_tot = dict((k, 0) for stats in auth_stats.itervalues() for k in stats)
   # print (stats_tot)
@@ -225,7 +227,7 @@ def run(args):
 
 def main():
   from docopt import docopt
-  args = docopt(__doc__ + '\n' + __copyright__, version="0.11.0")
+  args = docopt(__doc__ + '\n' + __copyright__, version="0.11.1")
   # raise(Warning(str(args)))
 
   run(args)

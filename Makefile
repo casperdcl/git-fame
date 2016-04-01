@@ -1,7 +1,7 @@
 PYFILES = $(addsuffix .py,gitfame _utils)
 
 clean:
-	rm -f $(PYFILES:%.py=%.pyc) $(PYFILES:%.py=%.pyo)
+	rm -f $(PYFILES:%.py=%.pyc) $(PYFILES:%.py=%.pyo) .coverage
 
 test:
 	flake8 --max-line-length=80 --ignore=E111,E114 --count --statistics --exit-zero $(PYFILES)

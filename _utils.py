@@ -2,9 +2,13 @@ import sys
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
-__all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext"]
+__all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str"]
 __copyright__ = ' '.join((__author__, __date__, __licence__))
 __license__ = __licence__  # weird foreign language
+
+
+def _str(s):
+  return s.decode('utf-8')
 
 
 def fext(fn):
