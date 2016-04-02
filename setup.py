@@ -3,6 +3,7 @@ try:
 except ImportError:
   from distutils.core import setup
 from gitfame import __licence__, __author__, __version__
+import io
 try:
   import sys
   if '--cython' in sys.argv:
@@ -16,20 +17,25 @@ except:
 
 
 setup(
-    name='gitfame',
+    name='git-fame',
+    description='Pretty-print `git` repository collaborators'
+                ' sorted by contributions',
+    long_description=io.open('README.rst', mode='r', encoding='utf-8').read(),
     version=__version__,
     license=__licence__,
     author=__author__.split('<')[0],
     author_email=__author__.split('<')[1][:-1],
     platforms=['any'],
     packages=['gitfame'],
+    provides=['gitfame'],
+    requires=['tqdm'],
     ext_modules=cythonize(["gitfame/_gitfame.py", "gitfame/_utils.py"],
                           nthreads=2),
     classifiers=[
         # Trove classifiers
         # (https://pypi.python.org/pypi?%3Aaction=list_classifiers)
         'Development Status :: 5 - Production/Stable',
-        'License :: OSI Approved :: MPLv2.0',
+        'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
         'Environment :: Console',
         'Framework :: IPython',
         'Operating System :: Microsoft :: Windows',
@@ -59,5 +65,5 @@ setup(
         'Intended Audience :: Developers',
     ],
     keywords='git blame stat stats statistics count author commit commits' \
-             'log shortlog ls-files',
+             ' log shortlog ls-files',
 )

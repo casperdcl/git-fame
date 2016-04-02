@@ -36,8 +36,8 @@ __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
-__copyright__ = ' '.join((__author__, "(c)", __date__, __licence__))
-__version__ = "1.0.0"
+__copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
+__version__ = "1.0.1"
 __license__ = __licence__  # weird foreign language
 
 
