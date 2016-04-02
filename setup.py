@@ -1,7 +1,12 @@
 from setuptools import setup
 from gitfame import __licence__, __author__, __version__
 try:
-  from Cython.Build import cythonize
+  import sys
+  if '--cython' in sys.argv:
+    sys.argv.remove('--cython')
+    from Cython.Build import cythonize
+  else:
+    raise ImportError('cython')
 except:
   def cythonize(*args, **kwargs):
     return []

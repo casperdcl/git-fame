@@ -58,15 +58,16 @@ def tr_hline(col_widths, hl='-', x='+'):
 
 def tabulate(auth_stats, stats_tot, args_sort="loc", args_bytype=False):
   res = ''
+  it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
   # Columns: Author | loc | coms | fils | distribution
   COL_LENS = [
       max(6, Max(len(a) for a in auth_stats)),
       max(3, Max(len(str(stats["loc"]))
-                 for stats in auth_stats.itervalues())),
+                 for stats in it_val_as())),
       max(4, Max(len(str(stats.get("commits", 0)))
-                 for stats in auth_stats.itervalues())),
+                 for stats in it_val_as())),
       max(4, Max(len(str(len(stats.get("files", []))))
-                 for stats in auth_stats.itervalues())),
+                 for stats in it_val_as())),
       12
   ]
 
@@ -92,7 +93,8 @@ def tabulate(auth_stats, stats_tot, args_sort="loc", args_bytype=False):
   res += ("| {0:s} | {1:s} | {2:s} | {3:s} | {4} |").format(*COL_NAMES) + '\n'
   res += tr_hline([len(i) + 2 for i in COL_NAMES], '=') + '\n'
 
-  for (auth, stats) in tqdm(sorted(auth_stats.iteritems(),
+  for (auth, stats) in tqdm(sorted(getattr(auth_stats, 'iteritems',
+                                           auth_stats.items)(),
                                    key=lambda k: int_cast_or_len(
                                        k[1].get(args_sort, 0)),
                                    reverse=True), leave=False):
@@ -150,8 +152,8 @@ def run(args):
   # ! iterating over files
 
   git_cmd = ["git", "-C", gitdir]
-  file_list = subprocess.check_output(
-      git_cmd + ["ls-files"]).strip().split('\n')
+  file_list = _str(subprocess.check_output(
+      git_cmd + ["ls-files"])).strip().split('\n')
   if args['--no-regex']:
     file_list = [i for i in file_list
                  if (not include_files or (i in include_files))
@@ -160,7 +162,7 @@ def run(args):
     file_list = [i for i in file_list
                  if include_files.search(i)
                  if not exclude_files.search(i)]
-  # print (file_list)
+  # print(file_list)
 
   auth_stats = {}
   for fname in tqdm(file_list, desc="Blame", disable=args["--silent-progress"]):
@@ -172,10 +174,11 @@ def run(args):
     if args["-C"]:
       git_blame_cmd.append("-C")
     try:
-      blame_out = subprocess.check_output(git_blame_cmd,
-                                          stderr=subprocess.STDOUT)
+      blame_out = _str(subprocess.check_output(git_blame_cmd,
+                                               stderr=subprocess.STDOUT))
     except:
       continue
+    # print (blame_out)
     auths = RE_AUTHS.findall(blame_out)
 
     for auth in map(_str, auths):
@@ -195,8 +198,10 @@ def run(args):
           auth_stats[auth][fext_key] = 1
 
   # print (auth_stats.keys())
-  auth_commits = subprocess.check_output(git_cmd + ["shortlog", "-s", "-e"])
-  for stats in auth_stats.itervalues():
+  auth_commits = _str(subprocess.check_output(
+      git_cmd + ["shortlog", "-s", "-e"]))
+  it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
+  for stats in it_val_as():
     stats.setdefault("commits", 0)
   # print (RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
   for (ncom, auth, _) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
@@ -208,22 +213,23 @@ def run(args):
                                 "files": set([]),
                                 "commits": int(ncom)}
 
-  stats_tot = dict((k, 0) for stats in auth_stats.itervalues() for k in stats)
+  stats_tot = dict((k, 0) for stats in it_val_as() for k in stats)
   # print (stats_tot)
   for k in stats_tot:
     stats_tot[k] = sum(int_cast_or_len(stats.get(k, 0))
-                       for stats in auth_stats.itervalues())
+                       for stats in it_val_as())
 
   extns = set()
   if args["--bytype"]:
-    for stats in auth_stats.itervalues():
+    for stats in it_val_as():
       extns.update([fext(i) for i in stats["files"]])
   # print (extns)
 
-  print ('Total ' + '\nTotal '.join("{0:s}: {1:d}".format(k, v)
-         for (k, v) in sorted(stats_tot.iteritems())))
+  print('Total ' + '\nTotal '.join("{0:s}: {1:d}".format(k, v)
+        for (k, v) in sorted(getattr(
+            stats_tot, 'iteritems', stats_tot.items)())))
 
-  print (tabulate(auth_stats, stats_tot, args["--sort"]))
+  print(tabulate(auth_stats, stats_tot, args["--sort"]))
 
 
 def main():

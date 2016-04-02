@@ -8,7 +8,10 @@ __license__ = __licence__  # weird foreign language
 
 
 def _str(s):
-  return s.decode('utf-8')
+  try:
+    return s.decode(encoding='utf-8')
+  except AttributeError:
+    return s
 
 
 def fext(fn):
