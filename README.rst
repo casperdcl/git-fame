@@ -20,6 +20,10 @@ Pretty-print ``git`` repository collaborators sorted by contributions.
     | Evïan Etàcidñys      |    4 |    1 |    1 |  0.1/ 0.3/ 2.4 |
     +----------------------+------+------+------+----------------+
 
+The ``distribution`` column is a percentage breakdown of the other columns
+(e.g. in the table above, Casper has written surviving code in
+``35/37 = 85.4%`` of all files)
+
 ------------------------------------------
 
 .. contents:: Table of contents
@@ -53,6 +57,26 @@ Register alias with git
 
     git config --global alias.fame "!python -m gitfame"
 
+Tab completion
+~~~~~~~~~~~~~~
+
+Optionally, systems with ``bash-completion`` can install tab completion
+support. The
+`git-fame_completion.bash <https://raw.githubusercontent.com/casperdcl/git-fame/master/git-fame_completion.bash>`__
+file needs to be copied to an appropriate folder.
+
+On Ubuntu, the procedure would be:
+
+.. code:: sh
+
+    $ # Ensure completion works for `git` itself
+    $ sudo apt-get install bash-completion
+
+    $ # Install `git fame` completions
+    $ sudo cp git-fame_completion.bash /etc/bash_completion.d/
+
+followed by a terminal restart.
+
 
 Usage
 -----
@@ -78,29 +102,29 @@ Documentation
 .. code:: sh
 
     Usage:
-        gitfame [--help | options] [<gitdir>]
+      gitfame [--help | options] [<gitdir>]
 
     Options:
-        -h, --help     Print this help and exit.
-        -v, --version  Print module version and exit.
-        --sort=<key>    Options: [default: loc], files, commits.
-        --excl=<f>      Excluded files [default: None].
-                        In no-regex mode, may be a comma-separated list.
-                        Escape (\,) for a literal comma (may require \\, in shell).
-        --incl=<f>      Included files [default: .*]. See `--excl` for format.
-        -n, --no-regex  Assume <f> are comma-separated exact matches
-                        rather than regular expressions [default: False].
-                        NB: if regex is enabled `,` is equivalent to `|`.
-        -s, --silent-progress    Suppress `tqdm` [default: False].
-        -t, --bytype             Show stats per file extension [default: False].
-        -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
-                                 version and the child's to find where the lines
-                                 came from [default: False].
-        -M              Detect intra-file line moves and copies [default: False].
-        -C              Detect inter-file line moves and copies [default: False].
+      -h, --help     Print this help and exit.
+      -v, --version  Print module version and exit.
+      --sort=<key>    Options: [default: loc], files, commits.
+      --excl=<f>      Excluded files [default: None].
+                      In no-regex mode, may be a comma-separated list.
+                      Escape (\,) for a literal comma (may require \\, in shell).
+      --incl=<f>      Included files [default: .*]. See `--excl` for format.
+      -n, --no-regex  Assume <f> are comma-separated exact matches
+                      rather than regular expressions [default: False].
+                      NB: if regex is enabled `,` is equivalent to `|`.
+      -s, --silent-progress    Suppress `tqdm` [default: False].
+      -t, --bytype             Show stats per file extension [default: False].
+      -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
+                               version and the child's to find where the lines
+                               came from [default: False].
+      -M              Detect intra-file line moves and copies [default: False].
+      -C              Detect inter-file line moves and copies [default: False].
 
     Arguments:
-        <gitdir>       Git directory [default: ./].
+      <gitdir>       Git directory [default: ./].
 
 
 Licence
