@@ -6,25 +6,21 @@ Usage:
 Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
-  --sort=<key>   Options: [default: loc], files, commits.
-  --exclude-files=<f>      [default: None].
-                           In no-regex mode, may be a comma-separated list.
-                           Escape (\,) for a literal comma
-                           (may require \\, in shell).
-  --include-files=<f>      [default: .*]. Must match *entire* file name & path
-                           (e.g.: ".*\\.[ch]p*$", not just "\\.[ch]p*$")
-  -n, --no-regex           Assume <f> are comma-separated exact matches
-                           rather than regular expressions [default: False].
-                           NB: if regex is enabled `,` is equivalent to `|`.
+  --sort=<key>    Options: [default: loc], files, commits.
+  --excl=<f>      Excluded files [default: None].
+                  In no-regex mode, may be a comma-separated list.
+                  Escape (\,) for a literal comma (may require \\, in shell).
+  --incl=<f>      Included files [default: .*]. See `--excl` for format.
+  -n, --no-regex  Assume <f> are comma-separated exact matches
+                  rather than regular expressions [default: False].
+                  NB: if regex is enabled `,` is equivalent to `|`.
   -s, --silent-progress    Suppress `tqdm` [default: False].
   -t, --bytype             Show stats per file extension [default: False].
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
                            came from [default: False].
-  -M                       Detect intra-file line moves and copies
-                           [default: False].
-  -C                       Detect inter-file line moves and copies
-                           [default: False].
+  -M              Detect intra-file line moves and copies [default: False].
+  -C              Detect inter-file line moves and copies [default: False].
 Arguments:
   <gitdir>       Git directory [default: ./].
 """
@@ -41,7 +37,7 @@ __date__ = "2016"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
 __copyright__ = ' '.join((__author__, "(c)", __date__, __licence__))
-__version__ = "0.11.1"
+__version__ = "1.0.0"
 __license__ = __licence__  # weird foreign language
 
 
@@ -127,16 +123,20 @@ def run(args):
   if args["--sort"] not in ["loc", "commits", "files"]:
     raise(Warning("--sort argument unrecognised\n" + __doc__))
 
-  if not args["--exclude-files"]:
-    args["--exclude-files"] = ""
+  if not args["--excl"]:
+    args["--excl"] = ""
 
   gitdir = args["<gitdir>"].rstrip(r'\/').rstrip('\\')
 
   exclude_files = None
   include_files = None
   if args["--no-regex"]:
-    exclude_files = set(RE_CSPILT.split(args["--exclude-files"]))
-    include_files = set(RE_CSPILT.split(args["--include-files"]))
+    exclude_files = set(RE_CSPILT.split(args["--excl"]))
+    include_files = set()
+    if args["--incl"] == ".*":
+      args["--incl"] = ""
+    else:
+      include_files.update(RE_CSPILT.split(args["--incl"]))
   else:
     # cannot use findall in case of grouping:
     # for i in include_files:
@@ -145,9 +145,9 @@ def run(args):
     #     if i[j] == '(' and i[j - 1] != '\\':
     #       raise ValueError('Parenthesis must be escaped'
     #                        ' in include-files:\n\t' + i)
-    exclude_files = re.compile(args["--exclude-files"])
-    include_files = re.compile(args["--include-files"])
-    # include_files = re.compile(args["--include-files"], flags=re.M)
+    exclude_files = re.compile(args["--excl"])
+    include_files = re.compile(args["--incl"])
+    # include_files = re.compile(args["--incl"], flags=re.M)
 
   # ! iterating over files
 

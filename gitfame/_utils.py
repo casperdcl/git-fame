@@ -10,7 +10,7 @@ __license__ = __licence__  # weird foreign language
 def _str(s):
   try:
     return s.decode(encoding='utf-8')
-  except AttributeError:
+  except:
     return s
 
 
