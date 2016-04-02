@@ -1,2 +1,4 @@
-_utils.py[co]
-gitfame.py[co]
+gitfame/*.py[co]
+build/
+dist/
+gitfame.egg-info/
