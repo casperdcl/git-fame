@@ -1,6 +1,10 @@
 from setuptools import setup
-from Cython.Build import cythonize
 from gitfame import __licence__, __author__, __version__
+try:
+  from Cython.Build import cythonize
+except:
+  def cythonize(*args, **kwargs):
+    return []
 
 
 setup(
@@ -11,7 +15,8 @@ setup(
     author_email=__author__.split('<')[1][:-1],
     platforms=['any'],
     packages=['gitfame'],
-    # ext_modules=cythonize(["gitfame/_gitfame.py", "gitfame/_utils.py"], nthreads=2),
+    ext_modules=cythonize(["gitfame/_gitfame.py", "gitfame/_utils.py"],
+                          nthreads=2),
     classifiers=[
         # Trove classifiers
         # (https://pypi.python.org/pypi?%3Aaction=list_classifiers)

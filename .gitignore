@@ -1,4 +1,7 @@
 gitfame/*.py[co]
+gitfame/*.c
+gitfame/*.so
 build/
 dist/
 gitfame.egg-info/
+.coverage

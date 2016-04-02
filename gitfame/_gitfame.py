@@ -83,9 +83,9 @@ def tabulate(auth_stats, stats_tot, args_sort="loc", args_bytype=False):
 
   tbl_row_fmt = u"| {0:<%ds}| {1:>%dd} | {2:>%dd} | {3:>%dd} |" \
                 u" {4:4.1f}/{5:4.1f}/{6:4.1f} |" % (COL_LENS[0] + 1,
-                                                   COL_LENS[1],
-                                                   COL_LENS[2],
-                                                   COL_LENS[3])
+                                                    COL_LENS[1],
+                                                    COL_LENS[2],
+                                                    COL_LENS[3])
 
   TR_HLINE = tr_hline([len(i) + 2 for i in COL_NAMES])
   res += TR_HLINE + '\n'

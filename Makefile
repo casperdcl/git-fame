@@ -2,7 +2,7 @@ PYFILES = $(addprefix gitfame/,$(addsuffix .py,_gitfame _utils __init__ __main__
 
 distclean: prebuildclean clean
 	@+rm -f $(PYFILES:%.py=%.so)
-# @+rm -f $(PYFILES:%.py=%.c) $(PYFILES:%.py=%.so)
+	@+rm -f $(PYFILES:%.py=%.c)
 prebuildclean:
 	@+rm -rf build/ dist/ gitfame.egg-info/
 clean:
@@ -15,10 +15,10 @@ test:
 
 run:
 	python -Om gitfame
-# python -Oc "from gitfame import main; main()"
 
 build: prebuildclean
 	rm -rf build/ dist/ gitfame.egg-info/
+	python setup.py build_ext --inplace
 	# python setup.py sdist --formats=gztar,zip bdist_wininst
 	python setup.py sdist bdist_wheel
 
