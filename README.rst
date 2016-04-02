@@ -9,15 +9,15 @@ Pretty-print ``git`` repository collaborators sorted by contributions.
 
     ~$ git fame
     Blame: 100%|███████████████████████████████████| 11/11 [00:00<00:00, 208.43it/s]
-    Total commits: 30
-    Total files: 17
-    Total loc: 522
+    Total commits: 302
+    Total files: 37
+    Total loc: 3134
     +----------------------+------+------+------+----------------+
     | Author               |  loc | coms | fils |  distribution  |
     +======================+======+======+======+================+
     | Casper da Costa-Luis | 3123 |  297 |   35 | 99.6/98.3/85.4 |
     | Not Committed Yet    |    7 |    4 |    2 |  0.2/ 1.3/ 4.9 |
-    | Nikolay Yakimov      |    4 |    1 |    1 |  0.1/ 0.3/ 2.4 |
+    | Evïan Etàcidñys      |    4 |    1 |    1 |  0.1/ 0.3/ 2.4 |
     +----------------------+------+------+------+----------------+
 
 ------------------------------------------
@@ -59,8 +59,17 @@ Usage
 
 .. code:: sh
 
-    ~$ git fame            # If alias registered with git (see above)
-    ~$ python -m gitfame   # Alternative execution as python module
+    $ git fame              # If alias registered with git (see above)
+    $ python -m gitfame     # Alternative execution as python module
+    $ git fame -h           # Print help
+
+For example, to print statistics regarding all source files in a C++/CUDA
+repository (``*.c/h/t(pp), *.cu(h)``), carefully handling whitespace and line
+copies:
+
+.. code:: sh
+
+    $ git fame --incl '\.[cht][puh]{0,2}$' -twMC
 
 
 Documentation
@@ -99,7 +108,7 @@ Licence
 
 OSI approved.
 
-Copyright (c) 2016 Casper da Costa-Luis <casper@caspersci.uk.to>.
+Copyright (c) 2016 Casper da Costa-Luis.
 
 This Source Code Form is subject to the terms of the
 Mozilla Public License, v. 2.0.

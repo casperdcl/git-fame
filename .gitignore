@@ -3,5 +3,5 @@ gitfame/*.c
 gitfame/*.so
 build/
 dist/
-gitfame.egg-info/
+git_fame.egg-info/
 .coverage

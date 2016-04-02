@@ -28,7 +28,6 @@ setup(
     platforms=['any'],
     packages=['gitfame'],
     provides=['gitfame'],
-    requires=['tqdm'],
     ext_modules=cythonize(["gitfame/_gitfame.py", "gitfame/_utils.py"],
                           nthreads=2),
     classifiers=[

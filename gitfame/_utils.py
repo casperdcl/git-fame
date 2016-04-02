@@ -1,16 +1,26 @@
 import sys
+try:
+  from tqdm import tqdm
+except:
+  print ('warning | module tqdm not found')
+
+  def tqdm(*args, **kwargs):
+    if args:
+      return args[0]
+    return kwargs.get('iterable', None)
+
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
-__all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str"]
-__copyright__ = ' '.join((__author__, __date__, __licence__))
+__all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm"]
+__copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
 
 
-def _str(s):
-  try:
+def _str(s):  # pragma: no cover
+  try:  # python2
     return s.decode(encoding='utf-8')
-  except:
+  except:  # python3
     return s
 
 

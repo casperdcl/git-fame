@@ -29,15 +29,14 @@ from __future__ import division
 # from __future__ import absolute_import
 import subprocess
 import re
-from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str
-from tqdm import tqdm
+from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, tqdm
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __license__ = __licence__  # weird foreign language
 
 
