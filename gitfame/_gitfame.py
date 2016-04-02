@@ -36,7 +36,7 @@ __date__ = "2016"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 __license__ = __licence__  # weird foreign language
 
 

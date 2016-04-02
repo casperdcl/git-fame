@@ -125,6 +125,9 @@ def _environ_cols_wrapper():  # pragma: no cover
 
 
 TERM_WIDTH = _environ_cols_wrapper()(sys.stdout)
+if not TERM_WIDTH:
+  # non interactive pipe
+  TERM_WIDTH = 256
 
 
 def int_cast_or_len(i):

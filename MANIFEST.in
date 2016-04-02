@@ -1,0 +1,3 @@
+# Misc
+include README.rst
+include git-fame_completion.bash

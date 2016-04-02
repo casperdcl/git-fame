@@ -21,10 +21,11 @@ run:
 
 build: prebuildclean
 	python setup.py build_ext --inplace
-	# python setup.py sdist --formats=gztar,zip bdist_wininst
-	python setup.py sdist bdist_wheel
+	python setup.py sdist --formats=gztar,zip bdist_wheel
+	# python setup.py sdist --formats=gztar,zip bdist_wheel bdist_wininst
 
 release: build clean
 
 upload: prebuildclean test
-	python setup.py sdist bdist_wheel upload
+	python setup.py sdist --formats=gztar,zip bdist_wheel upload
+	# python setup.py sdist --formats=gztar,zip bdist_wheel bdist_wininst upload

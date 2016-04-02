@@ -48,7 +48,7 @@ Pull and install in the current directory:
 
 .. code:: sh
 
-    pip install -e git+https://github.com/casperdcl/git-fame.git@master#egg=gitfame
+    pip install -e git+https://github.com/casperdcl/git-fame.git@master#egg=git_fame
 
 Register alias with git
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,9 +83,9 @@ Usage
 
 .. code:: sh
 
-    $ git fame              # If alias registered with git (see above)
-    $ python -m gitfame     # Alternative execution as python module
-    $ git fame -h           # Print help
+    git fame              # If alias registered with git (see above)
+    python -m gitfame     # Alternative execution as python module
+    git fame -h           # Print help
 
 For example, to print statistics regarding all source files in a C++/CUDA
 repository (``*.c/h/t(pp), *.cu(h)``), carefully handling whitespace and line
@@ -93,7 +93,7 @@ copies:
 
 .. code:: sh
 
-    $ git fame --incl '\.[cht][puh]{0,2}$' -twMC
+    git fame --incl '\.[cht][puh]{0,2}$' -twMC
 
 
 Documentation
