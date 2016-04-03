@@ -95,6 +95,15 @@ copies:
 
     git fame --incl '\.[cht][puh]{0,2}$' -twMC
 
+It is also possible to run from within a python shell or script.
+
+.. code:: python
+
+    >>> import gitfame
+    >>> import sys
+    >>> sys.argv = ['', '--sort=commits', '-wt', './path/to/my/repo']
+    >>> gitfame.main()
+
 
 Documentation
 -------------
