@@ -84,8 +84,9 @@ Usage
 .. code:: sh
 
     git fame              # If alias registered with git (see above)
+    gitfame               # Alternative execution as python console script
     python -m gitfame     # Alternative execution as python module
-    git fame -h           # Print help
+    gitfame -h            # Print help
 
 For example, to print statistics regarding all source files in a C++/CUDA
 repository (``*.c/h/t(pp), *.cu(h)``), carefully handling whitespace and line

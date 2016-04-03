@@ -30,6 +30,7 @@ setup(
     platforms=['any'],
     packages=['gitfame'],
     provides=['gitfame'],
+    entry_points={'console_scripts': ['gitfame=gitfame:main'], },
     ext_modules=cythonize(["gitfame/_gitfame.py", "gitfame/_utils.py"],
                           nthreads=2),
     classifiers=[
