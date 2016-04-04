@@ -1,4 +1,4 @@
-PYFILES = $(addprefix gitfame/,$(addsuffix .py,_gitfame _utils __init__ __main__))
+PYFILES = $(addsuffix .py,$(addprefix gitfame/,_gitfame _utils __init__ __main__ $(addprefix tests/test_,gitfame utils)))
 
 .PHONY: distclean prebuildclean clean test run build release upload
 
@@ -12,9 +12,7 @@ clean:
 	@+rm -f $(PYFILES:%.py=%.pyc) $(PYFILES:%.py=%.pyo)
 	@+rm -rf .coverage
 
-test:
-	flake8 --max-line-length=80 --ignore=E111,E114 --count --statistics $(PYFILES)
-	nosetests gitfame.py --with-coverage --cover-erase --with-doctest --cover-package=gitfame,_utils -d -v
+test: flake8 testcoverage testsetup
 
 run:
 	python -Om gitfame
@@ -29,3 +27,13 @@ release: build clean
 upload: prebuildclean test
 	python setup.py sdist --formats=gztar,zip bdist_wheel upload
 	# python setup.py sdist --formats=gztar,zip bdist_wheel bdist_wininst upload
+
+testsetup:
+	python setup.py check --metadata --strict
+
+testcoverage:
+	rm -f .coverage  # coverage erase
+	nosetests gitfame --with-coverage --cover-package=gitfame --cover-erase --cover-min-percentage=80 -d -v
+
+flake8:
+	@+flake8 --max-line-length=80 --count --statistics --ignore=E111,E114 $(PYFILES)

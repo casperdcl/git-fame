@@ -1,3 +1,6 @@
 # Misc
 include README.rst
 include git-fame_completion.bash
+
+# Test suite
+recursive-include gitfame/tests *.py

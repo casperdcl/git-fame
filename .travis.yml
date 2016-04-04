@@ -1,0 +1,27 @@
+sudo: false
+language: python
+python: 3.5
+# branches:  # remove travis double-check on pull requests in main repo
+#   only:
+#     - master
+#     - /^\d\.\d+$/
+env:
+  - TOXENV=py26
+  - TOXENV=py27
+  - TOXENV=py33
+  - TOXENV=py34
+  - TOXENV=py35
+  - TOXENV=pypy
+  - TOXENV=pypy3
+  - TOXENV=nodeps
+  - TOXENV=flake8
+before_install:
+  - pip install codecov
+install:
+  - pip install 'coverage<4'
+  - pip install tox coveralls
+script:
+  - tox
+after_success:
+  - coveralls
+  - codecov
