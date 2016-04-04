@@ -1,6 +1,7 @@
 gitfame/*.py[co]
 gitfame/*.c
 gitfame/*.so
+gitfame/tests/*.py[co]
 build/
 dist/
 git_fame.egg-info/

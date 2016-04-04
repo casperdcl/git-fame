@@ -7,7 +7,7 @@ Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
   --sort=<key>    Options: [default: loc], files, commits.
-  --excl=<f>      Excluded files [default: None].
+  --excl=<f>      Excluded files (default: None).
                   In no-regex mode, may be a comma-separated list.
                   Escape (\,) for a literal comma (may require \\, in shell).
   --incl=<f>      Included files [default: .*]. See `--excl` for format.
@@ -29,6 +29,12 @@ from __future__ import division
 # from __future__ import absolute_import
 import subprocess
 import re
+try:  # pragma: no cover
+  from tabulate import tabulate as tabber
+  raise ImportError("alpha feature: tabulate")
+except ImportError:  # pragma: no cover
+  tabber = None
+
 from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, tqdm
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
@@ -51,7 +57,31 @@ def tr_hline(col_widths, hl='-', x='+'):
   return x + x.join(hl * i for i in col_widths) + x
 
 
-def tabulate(auth_stats, stats_tot, args_sort="loc", args_bytype=False):
+def tabulate(auth_stats, stats_tot, args_sort='loc', args_bytype=False):
+  COL_NAMES = ['Author', 'loc', 'coms', 'fils', ' distribution']
+  it_as = getattr(auth_stats, 'iteritems', auth_stats.items)
+  # get ready
+  tab = [[auth,
+          s['loc'],
+          s.get('commits', 0),
+          len(s.get('files', [])),
+          '/'.join(map('{0:4.1f}'.format, (
+              100 * s['loc'] / max(1, stats_tot['loc']),
+              100 * s.get('commits', 0) / max(1, stats_tot['commits']),
+              100 * len(s.get('files', [])) / max(1, stats_tot['files'])
+          ))).replace('/100.0/', '/ 100/')]
+         for (auth, s) in sorted(it_as(),
+         key=lambda k: int_cast_or_len(k[1].get(args_sort, 0)),
+         reverse=True)]
+
+  if tabber is not None:
+    from ._utils import tighten
+    return tighten(tabber(tab, COL_NAMES, tablefmt='grid', floatfmt='.0f'),
+                   max_width=TERM_WIDTH)
+
+  # print (tab)
+  # TODO: convert below to separate function for testing
+
   res = ''
   it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
   # Columns: Author | loc | coms | fils | distribution
@@ -120,7 +150,8 @@ def run(args):
     # sys.argv[0][:sys.argv[0].replace('\\','/').rfind('/')]
 
   if args["--sort"] not in ["loc", "commits", "files"]:
-    raise(Warning("--sort argument unrecognised\n" + __doc__))
+    raise(Warning("--sort argument (" + args["--sort"] +
+                  ") unrecognised\n" + __doc__))
 
   if not args["--excl"]:
     args["--excl"] = ""
@@ -160,7 +191,7 @@ def run(args):
   else:
     file_list = [i for i in file_list
                  if include_files.search(i)
-                 if not exclude_files.search(i)]
+                 if not (args["--excl"] and exclude_files.search(i))]
   # print(file_list)
 
   auth_stats = {}
@@ -239,5 +270,5 @@ def main():
   run(args)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
   main()
