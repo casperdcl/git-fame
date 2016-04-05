@@ -15,6 +15,11 @@ try:  # pragma: no cover
 except NameError:  # pragma: no cover
   _str = str  # python3
 
+try:  # pragma: no cover
+  _range = xrange  # python2
+except NameError:  # pragma: no cover
+  _range = range  # python3
+
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
@@ -45,12 +50,16 @@ def tighten(t, max_width=256, blanks=' -=', seps='|+'):
     i += 1
 
   if len_r > max_width:
-    for i in range(1, len_r):
+    have_first_line = False
+    for i in _range(len_r):
       if blank_col(rows, i, seps):
-        if i > len_r - max_width:
-          return '\n'.join(r[:i - len_r + max_width] + r[i:] for r in
-                           rows[:3] + rows[3::2] + [rows[-1]])
-        break
+        if have_first_line:
+          if i > len_r - max_width:
+            return '\n'.join(r[:i - len_r + max_width] + r[i:] for r in
+                             rows[:3] + rows[3::2] + [rows[-1]])
+          break
+        else:
+          have_first_line = True
 
   return '\n'.join(rows[:3] + rows[3::2] + [rows[-1]])
 

@@ -51,20 +51,24 @@ def test_main():
   from docopt import DocoptExit
   from copy import deepcopy
 
-  res = subprocess.Popen(('python', '-m', 'gitfame', '--silent-progress'),
+  res = subprocess.Popen(('python', '-c', 'from gitfame import main; main()',
+                          '--silent-progress'),
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT).communicate()[0]
 
   # actual test:
 
-  assert ('Total commits' in res)
+  assert ('Total commits' in str(res))
 
   # semi-fake test which gets coverage:
 
-  _SYS = deepcopy(sys.argv)
+  try:
+    _SYS = deepcopy(sys.argv)
+  except:
+    pass
 
   sys.argv = ['', '--silent-progress']
-  main()
+  import gitfame.__main__  # NOQA
 
   sys.argv = ['', '--bad', 'arg']
   try:
@@ -93,4 +97,7 @@ def test_main():
     sys.argv = ['', '-s'] + params
     main()
 
-  sys.argv = _SYS
+  try:
+    sys.argv = _SYS
+  except:
+    pass

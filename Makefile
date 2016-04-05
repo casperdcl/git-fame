@@ -33,7 +33,7 @@ testsetup:
 
 testcoverage:
 	rm -f .coverage  # coverage erase
-	nosetests gitfame --with-coverage --cover-package=gitfame --cover-erase --cover-min-percentage=80 -d -v
+	nosetests gitfame --with-coverage --cover-package=gitfame --cover-erase --cover-min-percentage=80 -d -v gitfame/
 
 flake8:
 	@+flake8 --max-line-length=80 --count --statistics --ignore=E111,E114 $(PYFILES)
