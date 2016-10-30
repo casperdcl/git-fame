@@ -35,7 +35,8 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
   tabber = None
 
-from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, tqdm
+from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, tqdm, \
+    check_output
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
@@ -182,8 +183,7 @@ def run(args):
   # ! iterating over files
 
   git_cmd = ["git", "-C", gitdir]
-  file_list = _str(subprocess.check_output(
-      git_cmd + ["ls-files"])).strip().split('\n')
+  file_list = _str(check_output(git_cmd + ["ls-files"])).strip().split('\n')
   if args['--no-regex']:
     file_list = [i for i in file_list
                  if (not include_files or (i in include_files))
@@ -204,8 +204,7 @@ def run(args):
     if args["-C"]:
       git_blame_cmd.append("-C")
     try:
-      blame_out = _str(subprocess.check_output(git_blame_cmd,
-                                               stderr=subprocess.STDOUT))
+      blame_out = _str(check_output(git_blame_cmd, stderr=subprocess.STDOUT))
     except:
       continue
     # print (blame_out)
@@ -228,8 +227,7 @@ def run(args):
           auth_stats[auth][fext_key] = 1
 
   # print (auth_stats.keys())
-  auth_commits = _str(subprocess.check_output(
-      git_cmd + ["shortlog", "-s", "-e"]))
+  auth_commits = _str(check_output(git_cmd + ["shortlog", "-s", "-e"]))
   it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
   for stats in it_val_as():
     stats.setdefault("commits", 0)

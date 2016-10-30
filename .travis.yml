@@ -1,6 +1,9 @@
-sudo: false
+sudo: required
+dist: trusty
 language: python
 python: 3.5
+notifications:
+  email: false
 # branches:  # remove travis double-check on pull requests in main repo
 #   only:
 #     - master
@@ -16,6 +19,9 @@ env:
   - TOXENV=nodeps
   - TOXENV=flake8
 before_install:
+  # fix a crash with multiprocessing on Travis
+  - sudo rm -rf /dev/shm
+  - sudo ln -s /run/shm /dev/shm
   - pip install codecov
 install:
   - pip install 'coverage<4'

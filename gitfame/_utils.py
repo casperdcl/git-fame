@@ -1,30 +1,40 @@
 import sys
 
-try:  # pragma: no cover
-  from tqdm import tqdm
-except:  # pragma: no cover
-  print ('warning | module tqdm not found')
+if True:  # pragma: no cover
+  try:
+    from tqdm import tqdm
+  except:
+    print ('warning | module tqdm not found')
 
-  def tqdm(*args, **kwargs):
-    if args:
-      return args[0]
-    return kwargs.get('iterable', None)
+    def tqdm(*args, **kwargs):
+      if args:
+        return args[0]
+      return kwargs.get('iterable', None)
 
-try:  # pragma: no cover
-  _str = unicode  # python2
-except NameError:  # pragma: no cover
-  _str = str  # python3
+  try:
+    _str = unicode  # python2
+  except NameError:
+    _str = str  # python3
 
-try:  # pragma: no cover
-  _range = xrange  # python2
-except NameError:  # pragma: no cover
-  _range = range  # python3
+  try:
+    _range = xrange  # python2
+  except NameError:
+    _range = range  # python3
+
+  try:
+    from subprocess import check_output
+  except:
+    import subprocess
+
+    def check_output(*a, **k):
+      k.setdefault('stdout', subprocess.PIPE)
+      return subprocess.Popen(*a, **k).communicate()[0]
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm",
-           "tighten"]
+           "tighten", "check_output"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
 

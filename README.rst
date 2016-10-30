@@ -53,6 +53,8 @@ Pull and install in the current directory:
 Register alias with git
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+This is probably not necessary on UNIX systems.
+
 .. code:: sh
 
     git config --global alias.fame "!python -m gitfame"
@@ -84,9 +86,9 @@ Usage
 .. code:: sh
 
     git fame              # If alias registered with git (see above)
-    gitfame               # Alternative execution as python console script
+    git-fame              # Alternative execution as python console script
     python -m gitfame     # Alternative execution as python module
-    gitfame -h            # Print help
+    git-fame -h           # Print help
 
 For example, to print statistics regarding all source files in a C++/CUDA
 repository (``*.c/h/t(pp), *.cu(h)``), carefully handling whitespace and line

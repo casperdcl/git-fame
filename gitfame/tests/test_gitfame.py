@@ -50,9 +50,12 @@ def test_main():
   import subprocess
   from docopt import DocoptExit
   from copy import deepcopy
+  from os.path import dirname as dn
 
-  res = subprocess.Popen(('python', '-c', 'from gitfame import main; main()',
-                          '--silent-progress'),
+  res = subprocess.Popen(('python', '-c', "import gitfame; import sys;" +
+                          ' sys.argv = ["", "--silent-progress", "' +
+                          dn(dn(dn(__file__))) +
+                          '"]; gitfame.main()'),
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT).communicate()[0]
 
