@@ -15,7 +15,7 @@ env:
   - TOXENV=py34
   - TOXENV=py35
   - TOXENV=pypy
-  - TOXENV=pypy3
+  # - TOXENV=pypy3
   - TOXENV=nodeps
   - TOXENV=flake8
 before_install:
