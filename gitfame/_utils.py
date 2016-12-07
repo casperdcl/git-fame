@@ -21,14 +21,7 @@ if True:  # pragma: no cover
   except NameError:
     _range = range  # python3
 
-  try:
-    from subprocess import check_output
-  except:
-    import subprocess
-
-    def check_output(*a, **k):
-      k.setdefault('stdout', subprocess.PIPE)
-      return subprocess.Popen(*a, **k).communicate()[0]
+  import subprocess
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
@@ -37,6 +30,11 @@ __all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm",
            "tighten", "check_output"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
+
+
+def check_output(*a, **k):
+  k.setdefault('stdout', subprocess.PIPE)
+  return subprocess.Popen(*a, **k).communicate()[0].decode('utf-8')
 
 
 def blank_col(rows, i, blanks):

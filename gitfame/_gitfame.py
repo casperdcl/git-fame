@@ -183,7 +183,7 @@ def run(args):
   # ! iterating over files
 
   git_cmd = ["git", "-C", gitdir]
-  file_list = _str(check_output(git_cmd + ["ls-files"])).strip().split('\n')
+  file_list = check_output(git_cmd + ["ls-files"]).strip().split('\n')
   if args['--no-regex']:
     file_list = [i for i in file_list
                  if (not include_files or (i in include_files))
@@ -204,7 +204,7 @@ def run(args):
     if args["-C"]:
       git_blame_cmd.append("-C")
     try:
-      blame_out = _str(check_output(git_blame_cmd, stderr=subprocess.STDOUT))
+      blame_out = check_output(git_blame_cmd, stderr=subprocess.STDOUT)
     except:
       continue
     # print (blame_out)
@@ -227,7 +227,7 @@ def run(args):
           auth_stats[auth][fext_key] = 1
 
   # print (auth_stats.keys())
-  auth_commits = _str(check_output(git_cmd + ["shortlog", "-s", "-e"]))
+  auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e"])
   it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
   for stats in it_val_as():
     stats.setdefault("commits", 0)
