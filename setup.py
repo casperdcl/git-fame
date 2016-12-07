@@ -10,8 +10,8 @@ try:
     sys.argv.remove('--cython')
     from Cython.Build import cythonize
   else:
-    raise ValueError('--cython')
-except:
+    raise ImportError('--cython')
+except ImportError:
   def cythonize(*args, **kwargs):
     return []
 
