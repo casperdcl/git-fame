@@ -1,7 +1,12 @@
 gitfame
 =======
 
-|PyPi Status|
+|PyPI-Status| |PyPI-Versions|
+
+|Build-Status| |Coverage-Status| |Branch-Coverage-Status|
+
+|LICENCE|
+
 
 Pretty-print ``git`` repository collaborators sorted by contributions.
 
@@ -30,12 +35,13 @@ The ``distribution`` column is a percentage breakdown of the other columns
    :backlinks: top
    :local:
 
-
 Installation
 ------------
 
-Latest pypi stable release
+Latest PyPI stable release
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+|PyPI-Status|
 
 .. code:: sh
 
@@ -44,11 +50,13 @@ Latest pypi stable release
 Latest development release on github
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+|GitHub-Status|
+
 Pull and install in the current directory:
 
 .. code:: sh
 
-    pip install -e git+https://github.com/casperdcl/git-fame.git@master#egg=git_fame
+    pip install -e git+https://github.com/casperdcl/git-fame.git@master#egg=git-fame
 
 Register alias with git
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,7 +135,7 @@ Documentation
       -n, --no-regex  Assume <f> are comma-separated exact matches
                       rather than regular expressions [default: False].
                       NB: if regex is enabled `,` is equivalent to `|`.
-      -s, --silent-progress    Suppress `tqdm` [default: False].
+      -s, --silent-progress    Suppress `git-fame` [default: False].
       -t, --bytype             Show stats per file extension [default: False].
       -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                                version and the child's to find where the lines
@@ -142,7 +150,7 @@ Documentation
 Licence
 -------
 
-OSI approved.
+Open Source (OSI approved): |LICENCE|
 
 Copyright (c) 2016 Casper da Costa-Luis.
 
@@ -157,5 +165,17 @@ Authors
 
 - Casper da Costa-Luis <casper@caspersci.uk.to>
 
-.. |PyPi Status| image:: https://img.shields.io/pypi/v/git-fame.svg
+.. |Build-Status| image:: https://travis-ci.org/casperdcl/git-fame.svg?branch=master
+   :target: https://travis-ci.org/casperdcl/git-fame
+.. |Coverage-Status| image:: https://coveralls.io/repos/casperdcl/git-fame/badge.svg
+   :target: https://coveralls.io/r/casperdcl/git-fame
+.. |Branch-Coverage-Status| image:: https://codecov.io/github/casperdcl/git-fame/coverage.svg?branch=master
+   :target: https://codecov.io/github/casperdcl/git-fame?branch=master
+.. |GitHub-Status| image:: https://img.shields.io/github/tag/casperdcl/git-fame.svg?maxAge=2592000
+   :target: https://github.com/casperdcl/git-fame/releases
+.. |PyPI-Status| image:: https://img.shields.io/pypi/v/git-fame.svg
    :target: https://pypi.python.org/pypi/git-fame
+.. |PyPI-Versions| image:: https://img.shields.io/pypi/pyversions/git-fame.svg
+   :target: https://pypi.python.org/pypi/git-fame
+.. |LICENCE| image:: https://img.shields.io/pypi/l/git-fame.svg
+   :target: https://mozilla.org/MPL/2.0/
