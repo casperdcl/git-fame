@@ -3,7 +3,7 @@ import sys
 if True:  # pragma: no cover
   try:
     from tqdm import tqdm
-  except:
+  except ImportError:
     print ('warning | module tqdm not found')
 
     def tqdm(*args, **kwargs):
@@ -21,14 +21,7 @@ if True:  # pragma: no cover
   except NameError:
     _range = range  # python3
 
-  try:
-    from subprocess import check_output
-  except:
-    import subprocess
-
-    def check_output(*a, **k):
-      k.setdefault('stdout', subprocess.PIPE)
-      return subprocess.Popen(*a, **k).communicate()[0]
+  import subprocess
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
@@ -37,6 +30,11 @@ __all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm",
            "tighten", "check_output"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
+
+
+def check_output(*a, **k):
+  k.setdefault('stdout', subprocess.PIPE)
+  return subprocess.Popen(*a, **k).communicate()[0].decode('utf-8')
 
 
 def blank_col(rows, i, blanks):
@@ -98,8 +96,8 @@ def _environ_cols_windows(fp):  # pragma: no cover
     csbi = create_string_buffer(22)
     res = windll.kernel32.GetConsoleScreenBufferInfo(h, csbi)
     if res:
-      (bufx, bufy, curx, cury, wattr, left, top, right, bottom,
-       maxx, maxy) = struct.unpack("hhhhHhhhhhh", csbi.raw)
+      (_bufx, _bufy, _curx, _cury, _wattr, left, _top, right, _bottom,
+       _maxx, _maxy) = struct.unpack("hhhhHhhhhhh", csbi.raw)
       # nlines = bottom - top + 1
       return right - left  # +1
   except:

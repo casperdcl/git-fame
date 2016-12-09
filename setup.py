@@ -10,8 +10,8 @@ try:
     sys.argv.remove('--cython')
     from Cython.Build import cythonize
   else:
-    raise ValueError('--cython')
-except:
+    raise ImportError('--cython')
+except ImportError:
   def cythonize(*args, **kwargs):
     return []
 
@@ -22,7 +22,7 @@ setup(
                 ' sorted by contributions',
     long_description=io.open('README.rst', mode='r', encoding='utf-8').read(),
     version=__version__,
-    license=__licence__,
+    license=__licence__.lstrip('[').split(']')[0],
     author=__author__.split('<')[0],
     author_email=__author__.split('<')[1][:-1],
     url='https://github.com/casperdcl/git-fame/',
