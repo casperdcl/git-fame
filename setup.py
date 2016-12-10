@@ -4,8 +4,8 @@ except ImportError:
   from distutils.core import setup
 from gitfame import __licence__, __author__, __version__
 import io
+import sys
 try:
-  import sys
   if '--cython' in sys.argv:
     sys.argv.remove('--cython')
     from Cython.Build import cythonize
