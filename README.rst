@@ -3,7 +3,7 @@ gitfame
 
 |PyPI-Status| |PyPI-Versions|
 
-|Build-Status| |Coverage-Status| |Branch-Coverage-Status|
+|Build-Status| |Coverage-Status| |Branch-Coverage-Status| |Codacy-Grade|
 
 |LICENCE|
 
@@ -179,3 +179,5 @@ Authors
    :target: https://pypi.python.org/pypi/git-fame
 .. |LICENCE| image:: https://img.shields.io/pypi/l/git-fame.svg
    :target: https://mozilla.org/MPL/2.0/
+.. |Codacy-Grade| image:: https://api.codacy.com/project/badge/Grade/bde789ee0e57491eb2bb8609bd4190c3
+   :target: https://www.codacy.com/app/casper-dcl/git-fame
