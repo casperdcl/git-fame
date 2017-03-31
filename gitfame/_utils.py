@@ -4,7 +4,8 @@ if True:  # pragma: no cover
   try:
     from tqdm import tqdm
   except ImportError:
-    print ('warning | module tqdm not found')
+    print ('info | install `tqdm` (https://github.com/tqdm/tqdm) for\n' +
+           '     | a realitme progressbar')
 
     def tqdm(*args, **kwargs):
       if args:
