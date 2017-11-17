@@ -2,7 +2,11 @@ gitfame/*.py[co]
 gitfame/*.c
 gitfame/*.so
 gitfame/tests/*.py[co]
+# build
+git_fame.egg-info/
 build/
 dist/
-git_fame.egg-info/
+# test
+.tox/
 .coverage
+__pycache__

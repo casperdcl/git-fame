@@ -2,3 +2,5 @@
 branch = True
 omit =
     gitfame/tests/*
+[report]
+show_missing = True

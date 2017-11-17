@@ -37,13 +37,13 @@ except ImportError:  # pragma: no cover
 
 from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, tqdm, \
     check_output
+from ._version import __version__  # NOQA
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
-__date__ = "2016"
+__date__ = "2016-7"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
-__version__ = "1.2.0"
 __license__ = __licence__  # weird foreign language
 
 
