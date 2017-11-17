@@ -1,11 +1,11 @@
-gitfame
-=======
+git-fame
+========
 
 |PyPI-Status| |PyPI-Versions|
 
 |Build-Status| |Coverage-Status| |Branch-Coverage-Status| |Codacy-Grade|
 
-|LICENCE|
+|LICENCE| |Donate|
 
 
 Pretty-print ``git`` repository collaborators sorted by contributions.
@@ -152,7 +152,7 @@ Licence
 
 Open Source (OSI approved): |LICENCE|
 
-Copyright (c) 2016 Casper da Costa-Luis.
+Copyright (c) 2016-7 Casper da Costa-Luis.
 
 This Source Code Form is subject to the terms of the
 Mozilla Public License, v. 2.0.
@@ -163,7 +163,7 @@ at `https://mozilla.org/MPL/2.0/ <https://mozilla.org/MPL/2.0/>`__.
 Authors
 -------
 
-- Casper da Costa-Luis <casper@caspersci.uk.to>
+- Casper da Costa-Luis (`@casperdcl <https://github.com/casperdcl/>`__) |Donate|
 
 .. |Build-Status| image:: https://travis-ci.org/casperdcl/git-fame.svg?branch=master
    :target: https://travis-ci.org/casperdcl/git-fame
@@ -181,3 +181,5 @@ Authors
    :target: https://mozilla.org/MPL/2.0/
 .. |Codacy-Grade| image:: https://api.codacy.com/project/badge/Grade/bde789ee0e57491eb2bb8609bd4190c3
    :target: https://www.codacy.com/app/casper-dcl/git-fame
+.. |Donate| image:: https://img.shields.io/badge/gift-donate-dc10ff.svg
+   :target: https://caspersci.uk.to/donate.html
