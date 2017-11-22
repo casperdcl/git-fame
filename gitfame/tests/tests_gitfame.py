@@ -65,10 +65,7 @@ def test_main():
 
   # semi-fake test which gets coverage:
 
-  try:
-    _SYS = deepcopy(sys.argv)
-  except:
-    pass
+  _SYS = deepcopy(sys.argv)
 
   sys.argv = ['', '--silent-progress']
   import gitfame.__main__  # NOQA
@@ -100,7 +97,4 @@ def test_main():
     sys.argv = ['', '-s'] + params
     main()
 
-  try:
-    sys.argv = _SYS
-  except:
-    pass
+  sys.argv = _SYS

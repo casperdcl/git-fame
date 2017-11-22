@@ -43,19 +43,19 @@ with io.open(version_file, mode='r') as fd:
     exec(fd.read())
 
 
-""" Makefile auxiliary functions """
+# # Makefile auxiliary functions # #
 
 
 RE_MAKE_CMD = re.compile('^\t(@\+?)(make)?', flags=re.M)
 
 
 def parse_makefile_aliases(filepath):
-    '''
+    """
     Parse a makefile to find commands and substitute variables. Expects a
     makefile with only aliases and a line return between each command.
 
     Returns a dict, with a list of commands for each alias.
-    '''
+    """
 
     # -- Parsing the Makefile using ConfigParser
     # Adding a fake section to make the Makefile a valid Ini file
@@ -139,7 +139,7 @@ def execute_makefile_commands(commands, alias, verbose=False):
             subprocess.check_call(parsed_cmd)
 
 
-""" Main setup.py config """
+# # Main setup.py config # #
 
 
 # Executing makefile commands if specified
@@ -172,10 +172,10 @@ if sys.argv[1].lower().strip() == 'make':
     sys.exit(0)
 
 
-""" Python package config """
+# # Python package config # #
 
 
-README_rst = ''
+README_rst = None
 with io.open('README.rst', mode='r', encoding='utf-8') as fd:
     README_rst = fd.read()
 

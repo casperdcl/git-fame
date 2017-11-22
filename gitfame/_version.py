@@ -1,7 +1,11 @@
 # Definition of the version number
 try:  # pragma: no cover
     from ._utils import _sh
-except:  # pragma: no cover
+except ValueError:  # pragma: no cover
+    _sh = None
+except ImportError:  # pragma: no cover
+    _sh = None
+except SystemError:  # pragma: no cover
     _sh = None
 
 from subprocess import STDOUT
