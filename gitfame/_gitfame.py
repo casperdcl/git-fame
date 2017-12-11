@@ -6,6 +6,7 @@ Usage:
 Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
+  --branch=<b>    Branch or tag [default: HEAD].
   --sort=<key>    Options: [default: loc], files, commits.
   --excl=<f>      Excluded files (default: None).
                   In no-regex mode, may be a comma-separated list.
@@ -182,8 +183,10 @@ def run(args):
 
   # ! iterating over files
 
+  branch = args["--branch"]
   git_cmd = ["git", "-C", gitdir]
-  file_list = check_output(git_cmd + ["ls-files"]).strip().split('\n')
+  file_list = check_output(
+      git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
   if args['--no-regex']:
     file_list = [i for i in file_list
                  if (not include_files or (i in include_files))
@@ -196,7 +199,7 @@ def run(args):
 
   auth_stats = {}
   for fname in tqdm(file_list, desc="Blame", disable=args["--silent-progress"]):
-    git_blame_cmd = git_cmd + ["blame", fname, "--line-porcelain"]
+    git_blame_cmd = git_cmd + ["blame", "--line-porcelain", branch, fname]
     if args["--ignore-whitespace"]:
       git_blame_cmd.append("-w")
     if args["-M"]:
@@ -227,7 +230,7 @@ def run(args):
           auth_stats[auth][fext_key] = 1
 
   # print (auth_stats.keys())
-  auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e"])
+  auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch])
   it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
   for stats in it_val_as():
     stats.setdefault("commits", 0)
