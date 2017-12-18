@@ -4,11 +4,11 @@ import sys
 # import re
 # from nose import with_setup
 # from nose.plugins.skip import SkipTest
-# from io import IOBase  # to support unicode strings
-# try:
-#   from StringIO import StringIO
-# except:
-#   from io import StringIO
+from io import IOBase  # to support unicode strings
+try:
+  from StringIO import StringIO
+except ImportError:
+  from io import StringIO
 from gitfame import _gitfame
 from gitfame import main
 
@@ -48,8 +48,6 @@ def test_tabulate():
 def test_main():
   """ Test command line pipes """
   import subprocess
-  from docopt import DocoptExit
-  from copy import deepcopy
   from os.path import dirname as dn
 
   res = subprocess.Popen((sys.executable, '-c', "import gitfame; import sys;" +
@@ -65,7 +63,9 @@ def test_main():
 
   # semi-fake test which gets coverage:
 
-  _SYS = deepcopy(sys.argv)
+  _SYS_AOE = sys.argv, sys.stdout, sys.stderr
+  sys.stdout = StringIO()
+  sys.stderr = sys.stdout
 
   sys.argv = ['', '--silent-progress']
   import gitfame.__main__  # NOQA
@@ -73,17 +73,21 @@ def test_main():
   sys.argv = ['', '--bad', 'arg']
   try:
     main()
-  except DocoptExit as e:
-    if """Usage:
-  gitfame [--help | options] [<gitdir>]""" not in str(e):
+  except:
+    if """usage: gitfame [-h] [""" not in sys.stdout.getvalue():
       raise
+    pass
+  else:
+    raise ValueError("Expected --bad arg to fail")
 
+  sys.stdout.seek(0)
   sys.argv = ['', '-s', '--sort', 'badSortArg']
-  try:
-    main()
-  except Warning as e:
-    if "--sort argument (badSortArg) unrecognised" not in str(e):
-      raise
+  # import logging
+  # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+  main()
+  # if "--sort argument (badSortArg) unrecognised" \
+  #       not in sys.stdout.getvalue():
+  #   raise ValueError("Expected --sort argument (badSortArg) unrecognised")
 
   for params in [
       ['--sort', 'commits'],
@@ -97,4 +101,4 @@ def test_main():
     sys.argv = ['', '-s'] + params
     main()
 
-  sys.argv = _SYS
+  sys.argv, sys.stdout, sys.stderr = _SYS_AOE

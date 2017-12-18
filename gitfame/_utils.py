@@ -1,4 +1,6 @@
 import sys
+import subprocess
+import logging
 
 if True:  # pragma: no cover
   try:
@@ -22,8 +24,6 @@ if True:  # pragma: no cover
   except NameError:
     _range = range  # python3
 
-  import subprocess
-
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
@@ -34,6 +34,8 @@ __license__ = __licence__  # weird foreign language
 
 
 def check_output(*a, **k):
+  log = logging.getLogger(__name__)
+  log.debug(' '.join(a[0][3:]))
   k.setdefault('stdout', subprocess.PIPE)
   return subprocess.Popen(*a, **k).communicate()[0].decode('utf-8')
 
@@ -43,7 +45,7 @@ def blank_col(rows, i, blanks):
 
 
 def tighten(t, max_width=256, blanks=' -=', seps='|+'):
-  """ Tighten (default: grid) table padding """
+  """Tighten (default: grid) table padding"""
   rows = t.strip().split('\n')
   i = 1
   curr_blank = bool()
@@ -74,7 +76,7 @@ def tighten(t, max_width=256, blanks=' -=', seps='|+'):
 
 
 def fext(fn):
-  """ File extension """
+  """File extension"""
   res = fn.split('.')
   return res[-1] if len(res) > 1 else ''
 
@@ -105,7 +107,7 @@ def _environ_cols_windows(fp):  # pragma: no cover
 
 
 def _environ_cols_tput(*args):  # pragma: no cover
-  """ cygwin xterm (windows) """
+  """cygwin xterm (windows)"""
   try:
     import subprocess
     import shlex

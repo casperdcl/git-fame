@@ -124,27 +124,29 @@ Documentation
     Usage:
       gitfame [--help | options] [<gitdir>]
 
+    Arguments:
+      <gitdir>       Git directory [default: ./].
+
     Options:
       -h, --help     Print this help and exit.
       -v, --version  Print module version and exit.
+      --branch=<b>    Branch or tag [default: HEAD].
       --sort=<key>    Options: [default: loc], files, commits.
-      --excl=<f>      Excluded files [default: None].
+      --excl=<f>      Excluded files (default: None).
                       In no-regex mode, may be a comma-separated list.
                       Escape (\,) for a literal comma (may require \\, in shell).
       --incl=<f>      Included files [default: .*]. See `--excl` for format.
       -n, --no-regex  Assume <f> are comma-separated exact matches
                       rather than regular expressions [default: False].
                       NB: if regex is enabled `,` is equivalent to `|`.
-      -s, --silent-progress    Suppress `git-fame` [default: False].
+      -s, --silent-progress    Suppress `tqdm` [default: False].
       -t, --bytype             Show stats per file extension [default: False].
       -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                                version and the child's to find where the lines
                                came from [default: False].
       -M              Detect intra-file line moves and copies [default: False].
       -C              Detect inter-file line moves and copies [default: False].
-
-    Arguments:
-      <gitdir>       Git directory [default: ./].
+      --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 
 
 Licence
