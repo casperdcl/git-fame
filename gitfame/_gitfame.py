@@ -205,7 +205,7 @@ def run(args):
     if args["-M"]:
       git_blame_cmd.append("-M")
     if args["-C"]:
-      git_blame_cmd.append("-C")
+      git_blame_cmd.extend(["-C", "-C"])  # twice to include file creation
     try:
       blame_out = check_output(git_blame_cmd, stderr=subprocess.STDOUT)
     except:
