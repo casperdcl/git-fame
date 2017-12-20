@@ -52,7 +52,7 @@ def test_main():
   from copy import deepcopy
   from os.path import dirname as dn
 
-  res = subprocess.Popen(('python', '-c', "import gitfame; import sys;" +
+  res = subprocess.Popen((sys.executable, '-c', "import gitfame; import sys;" +
                           ' sys.argv = ["", "--silent-progress", "' +
                           dn(dn(dn(__file__))) +
                           '"]; gitfame.main()'),
@@ -65,10 +65,7 @@ def test_main():
 
   # semi-fake test which gets coverage:
 
-  try:
-    _SYS = deepcopy(sys.argv)
-  except:
-    pass
+  _SYS = deepcopy(sys.argv)
 
   sys.argv = ['', '--silent-progress']
   import gitfame.__main__  # NOQA
@@ -100,7 +97,4 @@ def test_main():
     sys.argv = ['', '-s'] + params
     main()
 
-  try:
-    sys.argv = _SYS
-  except:
-    pass
+  sys.argv = _SYS

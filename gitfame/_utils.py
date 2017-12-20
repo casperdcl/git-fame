@@ -4,7 +4,8 @@ if True:  # pragma: no cover
   try:
     from tqdm import tqdm
   except ImportError:
-    print ('warning | module tqdm not found')
+    print ('info | install `tqdm` (https://github.com/tqdm/tqdm) for\n' +
+           '     | a realitme progressbar')
 
     def tqdm(*args, **kwargs):
       if args:
@@ -84,13 +85,11 @@ def _environ_cols_windows(fp):  # pragma: no cover
     import struct
     from sys import stdin, stdout
 
-    io_handle = None
+    io_handle = -12  # assume stderr
     if fp == stdin:
       io_handle = -10
     elif fp == stdout:
       io_handle = -11
-    else:  # assume stderr
-      io_handle = -12
 
     h = windll.kernel32.GetStdHandle(io_handle)
     csbi = create_string_buffer(22)
@@ -182,7 +181,9 @@ def int_cast_or_len(i):
   """
   try:
     return int(i)
-  except:
+  except ValueError:
+    return len(i)
+  except TypeError:
     return len(i)
 
 

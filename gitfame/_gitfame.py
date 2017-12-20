@@ -6,6 +6,7 @@ Usage:
 Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
+  --branch=<b>    Branch or tag [default: HEAD].
   --sort=<key>    Options: [default: loc], files, commits.
   --excl=<f>      Excluded files (default: None).
                   In no-regex mode, may be a comma-separated list.
@@ -37,13 +38,13 @@ except ImportError:  # pragma: no cover
 
 from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, tqdm, \
     check_output
+from ._version import __version__  # NOQA
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
-__date__ = "2016"
+__date__ = "2016-7"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
-__version__ = "1.2.0"
 __license__ = __licence__  # weird foreign language
 
 
@@ -182,8 +183,10 @@ def run(args):
 
   # ! iterating over files
 
+  branch = args["--branch"]
   git_cmd = ["git", "-C", gitdir]
-  file_list = check_output(git_cmd + ["ls-files"]).strip().split('\n')
+  file_list = check_output(
+      git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
   if args['--no-regex']:
     file_list = [i for i in file_list
                  if (not include_files or (i in include_files))
@@ -196,13 +199,13 @@ def run(args):
 
   auth_stats = {}
   for fname in tqdm(file_list, desc="Blame", disable=args["--silent-progress"]):
-    git_blame_cmd = git_cmd + ["blame", fname, "--line-porcelain"]
+    git_blame_cmd = git_cmd + ["blame", "--line-porcelain", branch, fname]
     if args["--ignore-whitespace"]:
       git_blame_cmd.append("-w")
     if args["-M"]:
       git_blame_cmd.append("-M")
     if args["-C"]:
-      git_blame_cmd.append("-C")
+      git_blame_cmd.extend(["-C", "-C"])  # twice to include file creation
     try:
       blame_out = check_output(git_blame_cmd, stderr=subprocess.STDOUT)
     except:
@@ -227,7 +230,7 @@ def run(args):
           auth_stats[auth][fext_key] = 1
 
   # print (auth_stats.keys())
-  auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e"])
+  auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch])
   it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
   for stats in it_val_as():
     stats.setdefault("commits", 0)

@@ -1,5 +1,8 @@
 # Misc
+include .coveragerc
+include Makefile
 include README.rst
+include tox.ini
 include git-fame_completion.bash
 
 # Test suite
