@@ -12,6 +12,7 @@ Options:
                   In no-regex mode, may be a comma-separated list.
                   Escape (\,) for a literal comma (may require \\, in shell).
   --incl=<f>      Included files [default: .*]. See `--excl` for format.
+  --csv=<path>    Dump data to the provided path in CSV format.
   -n, --no-regex  Assume <f> are comma-separated exact matches
                   rather than regular expressions [default: False].
                   NB: if regex is enabled `,` is equivalent to `|`.
@@ -28,8 +29,10 @@ Arguments:
 from __future__ import print_function
 from __future__ import division
 # from __future__ import absolute_import
+import csv
 import subprocess
 import re
+import sys
 try:  # pragma: no cover
   from tabulate import tabulate as tabber
   raise ImportError("alpha feature: tabulate")
@@ -59,7 +62,7 @@ def tr_hline(col_widths, hl='-', x='+'):
   return x + x.join(hl * i for i in col_widths) + x
 
 
-def tabulate(auth_stats, stats_tot, args_sort='loc', args_bytype=False):
+def tabulate(auth_stats, stats_tot, args_sort='loc', args_bytype=False, csv_path=None):
   COL_NAMES = ['Author', 'loc', 'coms', 'fils', ' distribution']
   it_as = getattr(auth_stats, 'iteritems', auth_stats.items)
   # get ready
@@ -120,25 +123,51 @@ def tabulate(auth_stats, stats_tot, args_sort='loc', args_bytype=False):
   res += ("| {0:s} | {1:s} | {2:s} | {3:s} | {4} |").format(*COL_NAMES) + '\n'
   res += tr_hline([len(i) + 2 for i in COL_NAMES], '=') + '\n'
 
+  csv_list = list()
+
   for (auth, stats) in tqdm(sorted(getattr(auth_stats, 'iteritems',
                                            auth_stats.items)(),
                                    key=lambda k: int_cast_or_len(
                                        k[1].get(args_sort, 0)),
                                    reverse=True), leave=False):
     # print (stats)
+    author = auth[:len(COL_NAMES[0]) + 1]
     loc = stats["loc"]
     commits = stats.get("commits", 0)
     files = len(stats.get("files", []))
+    loc_distribution = 100 * loc / max(1, stats_tot["loc"])
+    commit_distribution = 100 * commits / max(1, stats_tot["commits"])
+    file_distribution = 100 * files / max(1, stats_tot["files"])
     # TODO:
     # if args_bytype:
     #   print ([stats.get("files", []) ])
     res += (tbl_row_fmt.format(
-        auth[:len(COL_NAMES[0]) + 1], loc, commits, files,
-        100 * loc / max(1, stats_tot["loc"]),
-        100 * commits / max(1, stats_tot["commits"]),
-        100 * files / max(1, stats_tot["files"])).replace('100.0', ' 100')) \
-        + '\n'
+        author, loc, commits, files,
+        loc_distribution,
+        commit_distribution,
+        file_distribution)).replace('100.0', ' 100') + '\n'
     # TODO: --bytype
+
+    if csv_path is not None:
+      csv_list.append({
+        "author": author,
+        "loc": loc,
+        "commits": commits,
+        "files": files,
+        "loc_dist": loc_distribution,
+        "commit_dist": commit_distribution,
+        "file_dist": file_distribution
+      })
+
+  if csv_path is not None:
+      try:
+          with open(csv_path, "w", newline="") as file:
+              csv_file = csv.DictWriter(file, ["author", "loc", "loc_dist", "commits", "commit_dist", "files", "file_dist"])
+              csv_file.writeheader()
+              csv_file.writerows(csv_list)
+      except (csv.Error, IOError, FileNotFoundError) as exc:
+          print('Error writing CSV file: "{}"'.format(str(exc)), file=sys.stderr)
+
   return res + TR_HLINE
 
 
@@ -260,7 +289,7 @@ def run(args):
         for (k, v) in sorted(getattr(
             stats_tot, 'iteritems', stats_tot.items)())))
 
-  print(tabulate(auth_stats, stats_tot, args["--sort"]))
+  print(tabulate(auth_stats, stats_tot, args["--sort"], csv_path=args['--csv']))
 
 
 def main():
