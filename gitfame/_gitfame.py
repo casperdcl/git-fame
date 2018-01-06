@@ -269,7 +269,12 @@ def run(args):
         for (k, v) in sorted(getattr(
             stats_tot, 'iteritems', stats_tot.items)())))
 
-  print(tabulate(auth_stats, stats_tot, args.sort))
+  for c in tabulate(auth_stats, stats_tot, args.sort):
+    try:
+      print(c, end='')
+    except UnicodeEncodeError:
+      print('?', end='')
+  print ('')
 
 
 def main():
@@ -279,7 +284,7 @@ def main():
   logging.basicConfig(level=getattr(logging, args.log, logging.INFO))
   log = logging.getLogger(__name__)
 
-  log.debug(str(args))
+  log.debug(args)
   run(args)
 
 
