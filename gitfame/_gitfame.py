@@ -3,6 +3,9 @@ r"""
 Usage:
   gitfame [--help | options] [<gitdir>]
 
+Arguments:
+  <gitdir>       Git directory [default: ./].
+
 Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
@@ -22,8 +25,7 @@ Options:
                            came from [default: False].
   -M              Detect intra-file line moves and copies [default: False].
   -C              Detect inter-file line moves and copies [default: False].
-Arguments:
-  <gitdir>       Git directory [default: ./].
+  --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 """
 from __future__ import print_function
 from __future__ import division
@@ -38,6 +40,7 @@ except ImportError:  # pragma: no cover
 
 from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, tqdm, \
     check_output
+import logging
 from ._version import __version__  # NOQA
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
@@ -60,6 +63,7 @@ def tr_hline(col_widths, hl='-', x='+'):
 
 
 def tabulate(auth_stats, stats_tot, args_sort='loc', args_bytype=False):
+  log = logging.getLogger(__name__)
   COL_NAMES = ['Author', 'loc', 'coms', 'fils', ' distribution']
   it_as = getattr(auth_stats, 'iteritems', auth_stats.items)
   # get ready
@@ -77,6 +81,7 @@ def tabulate(auth_stats, stats_tot, args_sort='loc', args_bytype=False):
          reverse=True)]
 
   if tabber is not None:
+    log.debug("using tabulate")
     from ._utils import tighten
     return tighten(tabber(tab, COL_NAMES, tablefmt='grid', floatfmt='.0f'),
                    max_width=TERM_WIDTH)
@@ -129,46 +134,46 @@ def tabulate(auth_stats, stats_tot, args_sort='loc', args_bytype=False):
     loc = stats["loc"]
     commits = stats.get("commits", 0)
     files = len(stats.get("files", []))
-    # TODO:
-    # if args_bytype:
-    #   print ([stats.get("files", []) ])
+    if args_bytype:
+      log.debug("TODO:NotImplemented:--bytype")
+      # TODO: print ([stats.get("files", []) ])
     res += (tbl_row_fmt.format(
         auth[:len(COL_NAMES[0]) + 1], loc, commits, files,
         100 * loc / max(1, stats_tot["loc"]),
         100 * commits / max(1, stats_tot["commits"]),
         100 * files / max(1, stats_tot["files"])).replace('100.0', ' 100')) \
         + '\n'
-    # TODO: --bytype
   return res + TR_HLINE
 
 
 def run(args):
-  """ args: dict (docopt format) """
+  """args  : Namespace (`argopt.DictAttrWrap` or from `argparse`)"""
+  log = logging.getLogger(__name__)
 
-  # ! parsing args
+  log.debug("parsing args")
 
-  if args["<gitdir>"] is None:
-    args["<gitdir>"] = './'
+  if args.gitdir is None:
+    args.gitdir = './'
     # sys.argv[0][:sys.argv[0].replace('\\','/').rfind('/')]
 
-  if args["--sort"] not in ["loc", "commits", "files"]:
-    raise(Warning("--sort argument (" + args["--sort"] +
-                  ") unrecognised\n" + __doc__))
+  if args.sort not in ["loc", "commits", "files"]:
+    log.warn("--sort argument (" + args.sort +
+             ") unrecognised\n" + __doc__)
 
-  if not args["--excl"]:
-    args["--excl"] = ""
+  if not args.excl:
+    args.excl = ""
 
-  gitdir = args["<gitdir>"].rstrip(r'\/').rstrip('\\')
+  gitdir = args.gitdir.rstrip(r'\/').rstrip('\\')
 
   exclude_files = None
   include_files = None
-  if args["--no-regex"]:
-    exclude_files = set(RE_CSPILT.split(args["--excl"]))
+  if args.no_regex:
+    exclude_files = set(RE_CSPILT.split(args.excl))
     include_files = set()
-    if args["--incl"] == ".*":
-      args["--incl"] = ""
+    if args.incl == ".*":
+      args.incl = ""
     else:
-      include_files.update(RE_CSPILT.split(args["--incl"]))
+      include_files.update(RE_CSPILT.split(args.incl))
   else:
     # cannot use findall in case of grouping:
     # for i in include_files:
@@ -177,40 +182,42 @@ def run(args):
     #     if i[j] == '(' and i[j - 1] != '\\':
     #       raise ValueError('Parenthesis must be escaped'
     #                        ' in include-files:\n\t' + i)
-    exclude_files = re.compile(args["--excl"])
-    include_files = re.compile(args["--incl"])
-    # include_files = re.compile(args["--incl"], flags=re.M)
+    exclude_files = re.compile(args.excl)
+    include_files = re.compile(args.incl)
+    # include_files = re.compile(args.incl, flags=re.M)
 
   # ! iterating over files
 
-  branch = args["--branch"]
+  branch = args.branch
   git_cmd = ["git", "-C", gitdir]
+  log.debug("base command:" + ' '.join(git_cmd))
   file_list = check_output(
       git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
-  if args['--no-regex']:
+  if args.no_regex:
     file_list = [i for i in file_list
                  if (not include_files or (i in include_files))
                  if not (i in exclude_files)]
   else:
     file_list = [i for i in file_list
                  if include_files.search(i)
-                 if not (args["--excl"] and exclude_files.search(i))]
-  # print(file_list)
+                 if not (args.excl and exclude_files.search(i))]
+  log.log(logging.NOTSET, "files:\n" + '\n'.join(file_list))
 
   auth_stats = {}
-  for fname in tqdm(file_list, desc="Blame", disable=args["--silent-progress"]):
+  for fname in tqdm(file_list, desc="Blame", disable=args.silent_progress):
     git_blame_cmd = git_cmd + ["blame", "--line-porcelain", branch, fname]
-    if args["--ignore-whitespace"]:
+    if args.ignore_whitespace:
       git_blame_cmd.append("-w")
-    if args["-M"]:
+    if args.M:
       git_blame_cmd.append("-M")
-    if args["-C"]:
+    if args.C:
       git_blame_cmd.extend(["-C", "-C"])  # twice to include file creation
     try:
       blame_out = check_output(git_blame_cmd, stderr=subprocess.STDOUT)
-    except:
+    except Exception as e:
+      log.warn(str(e))
       continue
-    # print (blame_out)
+    log.log(logging.NOTSET, blame_out)
     auths = RE_AUTHS.findall(blame_out)
 
     for auth in map(_str, auths):
@@ -221,7 +228,7 @@ def run(args):
       else:
         auth_stats[auth]["files"].add(fname)
 
-      if args["--bytype"]:
+      if args.bytype:
         fext_key = ("." + fext(fname)) if fext(fname) else "._None_ext"
         # auth_stats[auth].setdefault(fext_key, 0)
         try:
@@ -229,45 +236,55 @@ def run(args):
         except KeyError:
           auth_stats[auth][fext_key] = 1
 
-  # print (auth_stats.keys())
+  log.log(logging.NOTSET, "authors:" + '; '.join(auth_stats.keys()))
   auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch])
   it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
   for stats in it_val_as():
     stats.setdefault("commits", 0)
-  # print (RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
+  log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
   for (ncom, auth, _) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
     try:
       auth_stats[_str(auth)]["commits"] += int(ncom)
     except KeyError:
-      # pass
       auth_stats[_str(auth)] = {"loc": 0,
                                 "files": set([]),
                                 "commits": int(ncom)}
 
   stats_tot = dict((k, 0) for stats in it_val_as() for k in stats)
-  # print (stats_tot)
+  log.debug(stats_tot)
   for k in stats_tot:
     stats_tot[k] = sum(int_cast_or_len(stats.get(k, 0))
                        for stats in it_val_as())
+  log.debug(stats_tot)
 
+  '''
   extns = set()
-  if args["--bytype"]:
+  if args.bytype:
     for stats in it_val_as():
       extns.update([fext(i) for i in stats["files"]])
-  # print (extns)
+  log.debug(extns)
+  '''
 
   print('Total ' + '\nTotal '.join("{0:s}: {1:d}".format(k, v)
         for (k, v) in sorted(getattr(
             stats_tot, 'iteritems', stats_tot.items)())))
 
-  print(tabulate(auth_stats, stats_tot, args["--sort"]))
+  for c in tabulate(auth_stats, stats_tot, args.sort):
+    try:
+      print(c, end='')
+    except UnicodeEncodeError:
+      print('?', end='')
+  print ('')
 
 
 def main():
-  from docopt import docopt
-  args = docopt(__doc__ + '\n' + __copyright__, version=__version__)
-  # raise(Warning(str(args)))
+  from argopt import argopt
+  args = argopt(__doc__ + '\n' + __copyright__,
+                version=__version__).parse_args()
+  logging.basicConfig(level=getattr(logging, args.log, logging.INFO))
+  log = logging.getLogger(__name__)
 
+  log.debug(args)
   run(args)
 
 

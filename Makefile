@@ -44,9 +44,9 @@ all:
 	@+make build
 
 flake8:
-	@+flake8 --max-line-length=80 --count --statistics --exit-zero gitfame/
-	@+flake8 --max-line-length=80 --count --statistics --exit-zero .
-	@+flake8 --max-line-length=80 --count --statistics --exit-zero gitfame/tests/
+	@+flake8 --max-line-length=80 --count --statistics --exit-zero --ignore=E111,E114 gitfame/
+	@+flake8 --max-line-length=80 --count --statistics --exit-zero --ignore=E111,E114 .
+	@+flake8 --max-line-length=80 --count --statistics --exit-zero --ignore=E111,E114 gitfame/tests/
 
 test:
 	tox --skip-missing-interpreters
