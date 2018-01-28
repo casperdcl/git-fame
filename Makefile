@@ -44,15 +44,13 @@ all:
 	@+make build
 
 flake8:
-	@+flake8 --max-line-length=80 --count --statistics --exit-zero --ignore=E111,E114 gitfame/
-	@+flake8 --max-line-length=80 --count --statistics --exit-zero --ignore=E111,E114 .
-	@+flake8 --max-line-length=80 --count --statistics --exit-zero --ignore=E111,E114 gitfame/tests/
+	@+flake8 --max-line-length=80 --ignore=E111,E114 --exclude .tox --count --statistics --exit-zero .
 
 test:
 	tox --skip-missing-interpreters
 
 testnose:
-	nosetests argopt -d -v
+	nosetests gitfame -d -v
 
 testsetup:
 	python setup.py check --restructuredtext --strict
@@ -60,10 +58,10 @@ testsetup:
 
 testcoverage:
 	@make coverclean
-	nosetests argopt --with-coverage --cover-package=gitfame --cover-erase --cover-min-percentage=80 -d -v
+	nosetests gitfame --with-coverage --cover-package=gitfame --cover-erase --cover-min-percentage=80 -d -v
 
 testtimer:
-	nosetests argopt --with-timer -d -v
+	nosetests gitfame --with-timer -d -v
 
 distclean:
 	@+make coverclean
@@ -80,7 +78,11 @@ coverclean:
 clean:
 	@+python -c "import os; import glob; [os.remove(i) for i in glob.glob('*.py[co]')]"
 	@+python -c "import os; import glob; [os.remove(i) for i in glob.glob('gitfame/*.py[co]')]"
+	@+python -c "import os; import glob; [os.remove(i) for i in glob.glob('gitfame/*.c')]"
 	@+python -c "import os; import glob; [os.remove(i) for i in glob.glob('gitfame/tests/*.py[co]')]"
+toxclean:
+	@+python -c "import shutil; shutil.rmtree('.tox', True)"
+
 
 installdev:
 	python setup.py develop --uninstall
