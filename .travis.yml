@@ -16,10 +16,10 @@ matrix:
   - python: 3.6
     env: TOXENV=py36
   - python: 3.7-dev
-    env: TOXENV=py37-dev
-  - python: pypy2.7-5.8.0
+    env: TOXENV=py37
+  - python: pypy2.7-5.10.0
     env: TOXENV=pypy
-  - python: pypy3.5-5.8.0
+  - python: pypy3.5-5.10.0
     env: TOXENV=pypy3
   - python: 3.6
     env: TOXENV=flake8
@@ -41,6 +41,6 @@ before_install:
   - git fetch --tags
 install:
   - pip install tox
-  - python setup.py install
+  - pip install .
 script:
   - tox
