@@ -4,7 +4,7 @@ import sys
 # import re
 # from nose import with_setup
 # from nose.plugins.skip import SkipTest
-from io import IOBase  # to support unicode strings
+# from io import IOBase  # to support unicode strings
 try:
   from StringIO import StringIO
 except ImportError:
@@ -76,7 +76,6 @@ def test_main():
   except:
     if """usage: gitfame [-h] [""" not in sys.stdout.getvalue():
       raise
-    pass
   else:
     raise ValueError("Expected --bad arg to fail")
 

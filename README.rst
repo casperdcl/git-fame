@@ -171,10 +171,10 @@ Authors
 
 .. |Build-Status| image:: https://travis-ci.org/casperdcl/git-fame.svg?branch=master
    :target: https://travis-ci.org/casperdcl/git-fame
-.. |Coverage-Status| image:: https://coveralls.io/repos/casperdcl/git-fame/badge.svg
-   :target: https://coveralls.io/r/casperdcl/git-fame
-.. |Branch-Coverage-Status| image:: https://codecov.io/github/casperdcl/git-fame/coverage.svg?branch=master
-   :target: https://codecov.io/github/casperdcl/git-fame?branch=master
+.. |Coverage-Status| image:: https://coveralls.io/repos/casperdcl/git-fame/badge.svg?branch=master
+   :target: https://coveralls.io/github/casperdcl/git-fame
+.. |Branch-Coverage-Status| image:: https://codecov.io/gh/casperdcl/git-fame/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/casperdcl/git-fame
 .. |GitHub-Status| image:: https://img.shields.io/github/tag/casperdcl/git-fame.svg?maxAge=2592000
    :target: https://github.com/casperdcl/git-fame/releases
 .. |PyPI-Status| image:: https://img.shields.io/pypi/v/git-fame.svg

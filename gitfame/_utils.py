@@ -2,27 +2,36 @@ import sys
 import subprocess
 import logging
 
-if True:  # pragma: no cover
-  try:
-    from tqdm import tqdm
-  except ImportError:
-    print ('info | install `tqdm` (https://github.com/tqdm/tqdm) for\n' +
-           '     | a realitme progressbar')
+try:
+  # python2
+  _str = unicode
+  _range = xrange
+except NameError:
+  # python3
+  _str = str
+  _range = range
 
-    def tqdm(*args, **kwargs):
-      if args:
-        return args[0]
-      return kwargs.get('iterable', None)
+try:
+  from tqdm import tqdm
+except ImportError:
+  class tqdm(object):
+    def __init__(self, iterable=None, **kwargs):
+      log = logging.getLogger(__name__)
+      log.info('install `tqdm` (https://github.com/tqdm/tqdm)'
+               ' for a realitme progressbar')
+      self.iterable = iterable
+      self.n = 0
 
-  try:
-    _str = unicode  # python2
-  except NameError:
-    _str = str  # python3
+    def __iter__(self):
+      for i in self.iterable:
+        self.n += 1
+        sys.stderr.write("%d/%d\r" % (self.n, len(self.iterable)))
+        sys.stderr.flush()
+        yield i
 
-  try:
-    _range = xrange  # python2
-  except NameError:
-    _range = range  # python3
+    @classmethod
+    def write(cls, msg, end='\n'):
+      sys.stderr.write(msg + end)
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
@@ -31,6 +40,17 @@ __all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm",
            "tighten", "check_output"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
+
+
+class TqdmStream(object):
+  @classmethod
+  def write(cls, msg):
+    tqdm.write(msg, end='')
+
+  # is this required?
+  # @classmethod
+  # def flush(_):
+  #   pass
 
 
 def check_output(*a, **k):

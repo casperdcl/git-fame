@@ -32,15 +32,15 @@ from __future__ import division
 # from __future__ import absolute_import
 import subprocess
 import re
+import logging
 try:  # pragma: no cover
   from tabulate import tabulate as tabber
   raise ImportError("alpha feature: tabulate")
 except ImportError:  # pragma: no cover
   tabber = None
 
-from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, tqdm, \
-    check_output
-import logging
+from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, \
+    check_output, tqdm, TqdmStream
 from ._version import __version__  # NOQA
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
@@ -204,7 +204,8 @@ def run(args):
   log.log(logging.NOTSET, "files:\n" + '\n'.join(file_list))
 
   auth_stats = {}
-  for fname in tqdm(file_list, desc="Blame", disable=args.silent_progress):
+  for fname in tqdm(file_list, desc="Blame", disable=args.silent_progress,
+                    unit="file"):
     git_blame_cmd = git_cmd + ["blame", "--line-porcelain", branch, fname]
     if args.ignore_whitespace:
       git_blame_cmd.append("-w")
@@ -281,7 +282,9 @@ def main():
   from argopt import argopt
   args = argopt(__doc__ + '\n' + __copyright__,
                 version=__version__).parse_args()
-  logging.basicConfig(level=getattr(logging, args.log, logging.INFO))
+  logging.basicConfig(
+      level=getattr(logging, args.log, logging.INFO),
+      stream=TqdmStream)
   log = logging.getLogger(__name__)
 
   log.debug(args)
