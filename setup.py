@@ -7,7 +7,9 @@ try:
 except ImportError:
     from distutils.core import setup
 import sys
-import subprocess
+from subprocess import check_call
+from io import open as io_open
+
 # For Makefile parsing
 import shlex
 try:  # pragma: no cover
@@ -17,7 +19,6 @@ except ImportError:  # pragma: no cover
     # Python 3 compatibility
     import configparser as ConfigParser
     import io as StringIO
-import io
 import re
 
 try:
@@ -35,16 +36,14 @@ __author__ = None
 __licence__ = None
 __version__ = None
 main_file = os.path.join(os.path.dirname(__file__), 'gitfame', '_gitfame.py')
-for l in io.open(main_file, mode='r'):
+for l in io_open(main_file, mode='r'):
     if any(l.startswith(i) for i in ('__author__', '__licence__')):
         exec(l)
 version_file = os.path.join(os.path.dirname(__file__), 'gitfame', '_version.py')
-with io.open(version_file, mode='r') as fd:
+with io_open(version_file, mode='r') as fd:
     exec(fd.read())
 
-
-# # Makefile auxiliary functions # #
-
+# Makefile auxiliary functions #
 
 RE_MAKE_CMD = re.compile('^\t(@\+?)(make)?', flags=re.M)
 
@@ -60,7 +59,7 @@ def parse_makefile_aliases(filepath):
     # -- Parsing the Makefile using ConfigParser
     # Adding a fake section to make the Makefile a valid Ini file
     ini_str = '[root]\n'
-    with io.open(filepath, mode='r') as fd:
+    with io_open(filepath, mode='r') as fd:
         ini_str = ini_str + RE_MAKE_CMD.sub('\t', fd.read())
     ini_fp = StringIO.StringIO(ini_str)
     # Parse using ConfigParser
@@ -136,16 +135,17 @@ def execute_makefile_commands(commands, alias, verbose=False):
             if verbose:
                 print("Running command: " + cmd)
             # Launch the command and wait to finish (synchronized call)
-            subprocess.check_call(parsed_cmd)
+            check_call(parsed_cmd,
+                       cwd=os.path.dirname(os.path.abspath(__file__)))
 
 
-# # Main setup.py config # #
+# Main setup.py config #
 
 
 # Executing makefile commands if specified
 if sys.argv[1].lower().strip() == 'make':
     # Filename of the makefile
-    fpath = 'Makefile'
+    fpath = os.path.join(os.path.dirname(__file__), 'Makefile')
     # Parse the makefile, substitute the aliases and extract the commands
     commands = parse_makefile_aliases(fpath)
 
@@ -172,11 +172,11 @@ if sys.argv[1].lower().strip() == 'make':
     sys.exit(0)
 
 
-# # Python package config # #
+# Python package config #
 
-
-README_rst = None
-with io.open('README.rst', mode='r', encoding='utf-8') as fd:
+README_rst = ''
+fndoc = os.path.join(os.path.dirname(__file__), 'README.rst')
+with io_open(fndoc, mode='r', encoding='utf-8') as fd:
     README_rst = fd.read()
 
 setup(

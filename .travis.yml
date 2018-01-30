@@ -37,7 +37,6 @@ before_install:
   # fix a crash with multiprocessing on Travis
   # - sudo rm -rf /dev/shm
   # - sudo ln -s /run/shm /dev/shm
-  # coverage submission packages
   - git fetch --tags
 install:
   - pip install tox
