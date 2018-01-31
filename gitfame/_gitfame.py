@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-r"""
-Usage:
+r"""Usage:
   gitfame [--help | options] [<gitdir>]
 
 Arguments:
@@ -10,7 +9,7 @@ Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
   --branch=<b>    Branch or tag [default: HEAD].
-  --sort=<key>    Options: [default: loc], files, commits.
+  --sort=<key>    [default: loc]|commits|files.
   --excl=<f>      Excluded files (default: None).
                   In no-regex mode, may be a comma-separated list.
                   Escape (\,) for a literal comma (may require \\, in shell).

@@ -193,7 +193,7 @@ setup(
     platforms=['any'],
     packages=['gitfame'],
     provides=['gitfame'],
-    install_requires=['argopt'],
+    install_requires=['argopt>=0.3.5'],
     entry_points={'console_scripts': ['git-fame=gitfame:main'], },
     ext_modules=cythonize(["gitfame/_gitfame.py", "gitfame/_utils.py"],
                           nthreads=2),
