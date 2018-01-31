@@ -195,6 +195,7 @@ setup(
     install_requires=['argopt>=0.3.5'],
     entry_points={'console_scripts': ['git-fame=gitfame:main'], },
     data_files=[('man/man1', ['git-fame.1'])],
+    package_data={'': ['LICENCE']},
     ext_modules=cythonize(["gitfame/_gitfame.py", "gitfame/_utils.py"],
                           nthreads=2),
     classifiers=[

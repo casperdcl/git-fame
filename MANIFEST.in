@@ -1,5 +1,6 @@
 # Misc
 include .coveragerc
+include LICENCE
 include Makefile
 include tox.ini
 include git-fame_completion.bash
