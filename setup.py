@@ -178,7 +178,6 @@ README_rst = ''
 fndoc = os.path.join(os.path.dirname(__file__), 'README.rst')
 with io_open(fndoc, mode='r', encoding='utf-8') as fd:
     README_rst = fd.read()
-
 setup(
     name='git-fame',
     version=__version__,
@@ -195,6 +194,7 @@ setup(
     provides=['gitfame'],
     install_requires=['argopt>=0.3.5'],
     entry_points={'console_scripts': ['git-fame=gitfame:main'], },
+    data_files=[('man/man1', ['git-fame.1'])],
     ext_modules=cythonize(["gitfame/_gitfame.py", "gitfame/_utils.py"],
                           nthreads=2),
     classifiers=[
