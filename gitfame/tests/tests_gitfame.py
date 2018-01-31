@@ -14,12 +14,12 @@ from gitfame import main
 
 
 def test_table_line():
-  """ Test table line drawing """
+  """Test table line drawing"""
   assert (_gitfame.tr_hline([3, 4, 2], hl='/', x='#') == '#///#////#//#')
 
 
 def test_tabulate():
-  """ Test tabulate """
+  """Test tabulate"""
 
   auth_stats = {
       u'Not Committed Yet': {'files': set([
@@ -46,7 +46,7 @@ def test_tabulate():
 
 # WARNING: this should be the last test as it messes with sys.argv
 def test_main():
-  """ Test command line pipes """
+  """Test command line pipes"""
   import subprocess
   from os.path import dirname as dn
 
@@ -67,23 +67,22 @@ def test_main():
   sys.stdout = StringIO()
   sys.stderr = sys.stdout
 
-  sys.argv = ['', '--silent-progress']
-  import gitfame.__main__  # NOQA
+  # sys.argv = ['', '--silent-progress']
+  # import gitfame.__main__  # NOQA
+  main(['--silent-progress'])
 
-  sys.argv = ['', '--bad', 'arg']
   try:
-    main()
-  except:
+    main(['--bad', 'arg'])
+  except SystemExit:
     if """usage: gitfame [-h] [""" not in sys.stdout.getvalue():
       raise
   else:
     raise ValueError("Expected --bad arg to fail")
 
   sys.stdout.seek(0)
-  sys.argv = ['', '-s', '--sort', 'badSortArg']
   # import logging
   # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-  main()
+  main(['-s', '--sort', 'badSortArg'])
   # if "--sort argument (badSortArg) unrecognised" \
   #       not in sys.stdout.getvalue():
   #   raise ValueError("Expected --sort argument (badSortArg) unrecognised")
@@ -91,13 +90,13 @@ def test_main():
   for params in [
       ['--sort', 'commits'],
       ['--no-regex'],
-      ['--no-regex', '--incl', '.*py'],
+      ['--no-regex', '--incl', 'setup.py,README.rst'],
+      ['--excl', r'.*\.py'],
       ['-w'],
       ['-M'],
       ['-C'],
       ['-t']
   ]:
-    sys.argv = ['', '-s'] + params
-    main()
+    main(['-s'] + params)
 
   sys.argv, sys.stdout, sys.stderr = _SYS_AOE

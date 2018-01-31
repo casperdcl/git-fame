@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import subprocess
 import logging
@@ -37,7 +38,7 @@ __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm",
-           "tighten", "check_output"]
+           "tighten", "check_output", "print_unicode"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
 
@@ -223,3 +224,13 @@ def Max(it, empty_default=0):
     if 'empty sequence' in str(e):
       return empty_default
     raise  # pragma: no cover
+
+
+def print_unicode(msg, end='\n', err='?'):
+  """print `msg`, replacing unicode characters with `err` upon failure"""
+  for c in msg:
+    try:
+      print(c, end='')
+    except UnicodeEncodeError:
+      print(err, end='')
+  print ('', end=end)
