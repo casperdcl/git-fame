@@ -1,14 +1,13 @@
 git-fame
 ========
 
+Pretty-print ``git`` repository collaborators sorted by contributions.
+
 |PyPI-Status| |PyPI-Versions|
 
 |Build-Status| |Coverage-Status| |Branch-Coverage-Status| |Codacy-Grade|
 
 |LICENCE| |Donate| |OpenHub-Status|
-
-
-Pretty-print ``git`` repository collaborators sorted by contributions.
 
 .. code:: sh
 
@@ -34,6 +33,7 @@ The ``distribution`` column is a percentage breakdown of the other columns
 .. contents:: Table of contents
    :backlinks: top
    :local:
+
 
 Installation
 ------------
@@ -152,7 +152,7 @@ Licence
 
 Open Source (OSI approved): |LICENCE|
 
-Copyright (c) 2016-7 Casper da Costa-Luis.
+Copyright (c) 2016-8 Casper da Costa-Luis.
 
 This Source Code Form is subject to the terms of the
 Mozilla Public License, v. 2.0.
@@ -167,6 +167,8 @@ Authors
 
 - Casper da Costa-Luis (`@casperdcl <https://github.com/casperdcl/>`__) |Donate|
 
+|git-fame-hits|
+
 .. |Build-Status| image:: https://travis-ci.org/casperdcl/git-fame.svg?branch=master
    :target: https://travis-ci.org/casperdcl/git-fame
 .. |Coverage-Status| image:: https://coveralls.io/repos/casperdcl/git-fame/badge.svg?branch=master
@@ -179,6 +181,7 @@ Authors
    :target: https://pypi.python.org/pypi/git-fame
 .. |PyPI-Versions| image:: https://img.shields.io/pypi/pyversions/git-fame.svg
    :target: https://pypi.python.org/pypi/git-fame
+.. |git-fame-hits| image:: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&a=hidden
 .. |OpenHub-Status| image:: https://www.openhub.net/p/git-fame/widgets/project_thin_badge?format=gif
    :target: https://www.openhub.net/p/git-fame?ref=Thin+badge
 .. |LICENCE| image:: https://img.shields.io/pypi/l/git-fame.svg
