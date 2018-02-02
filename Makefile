@@ -34,6 +34,9 @@
 	none
 	run
 
+help:
+	@python setup.py make
+
 alltests:
 	@+make testcoverage
 	@+make flake8
@@ -76,10 +79,11 @@ coverclean:
 	@+python -c "import shutil; shutil.rmtree('gitfame/__pycache__', True)"
 	@+python -c "import shutil; shutil.rmtree('gitfame/tests/__pycache__', True)"
 clean:
-	@+python -c "import os; import glob; [os.remove(i) for i in glob.glob('*.py[co]')]"
-	@+python -c "import os; import glob; [os.remove(i) for i in glob.glob('gitfame/*.py[co]')]"
-	@+python -c "import os; import glob; [os.remove(i) for i in glob.glob('gitfame/*.c')]"
-	@+python -c "import os; import glob; [os.remove(i) for i in glob.glob('gitfame/tests/*.py[co]')]"
+	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('*.py[co]')]"
+	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('gitfame/*.py[co]')]"
+	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('gitfame/*.c')]"
+	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('gitfame/*.so')]"
+	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('gitfame/tests/*.py[co]')]"
 toxclean:
 	@+python -c "import shutil; shutil.rmtree('.tox', True)"
 
@@ -113,3 +117,9 @@ none:
 
 run:
 	python -Om gitfame
+
+git-fame.1: git-fame.1.md
+	python -m gitfame --help | tail -n+9 | head -n-2 | cat "$<" - |\
+  sed -r 's/^  (--\S+) (\S+)\s*(.*)$$/\n\\\1=*\2*\n: \3/' |\
+  sed -r 's/^  (-\S+, -\S+)\s*/\n\1\n: /' |\
+  pandoc -o "$@" -s -t man

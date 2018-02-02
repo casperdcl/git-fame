@@ -1,9 +1,13 @@
 # Misc
 include .coveragerc
+include LICENCE
 include Makefile
-include README.rst
 include tox.ini
 include git-fame_completion.bash
 
 # Test suite
 recursive-include gitfame/tests *.py
+
+# Examples/Documentation
+include README.rst
+include git-fame.1

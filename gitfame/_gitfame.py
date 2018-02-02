@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-r"""
-Usage:
+r"""Usage:
   gitfame [--help | options] [<gitdir>]
 
 Arguments:
@@ -10,7 +9,7 @@ Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
   --branch=<b>    Branch or tag [default: HEAD].
-  --sort=<key>    Options: [default: loc], files, commits.
+  --sort=<key>    [default: loc]|commits|files.
   --excl=<f>      Excluded files (default: None).
                   In no-regex mode, may be a comma-separated list.
                   Escape (\,) for a literal comma (may require \\, in shell).
@@ -40,7 +39,7 @@ except ImportError:  # pragma: no cover
   tabber = None
 
 from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, \
-    check_output, tqdm, TqdmStream
+    check_output, tqdm, TqdmStream, print_unicode
 from ._version import __version__  # NOQA
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
@@ -152,10 +151,6 @@ def run(args):
 
   log.debug("parsing args")
 
-  if args.gitdir is None:
-    args.gitdir = './'
-    # sys.argv[0][:sys.argv[0].replace('\\','/').rfind('/')]
-
   if args.sort not in ["loc", "commits", "files"]:
     log.warn("--sort argument (" + args.sort +
              ") unrecognised\n" + __doc__)
@@ -216,7 +211,7 @@ def run(args):
     try:
       blame_out = check_output(git_blame_cmd, stderr=subprocess.STDOUT)
     except Exception as e:
-      log.warn(str(e))
+      log.warn(fname + ':' + str(e))
       continue
     log.log(logging.NOTSET, blame_out)
     auths = RE_AUTHS.findall(blame_out)
@@ -258,30 +253,25 @@ def run(args):
                        for stats in it_val_as())
   log.debug(stats_tot)
 
-  '''
-  extns = set()
-  if args.bytype:
-    for stats in it_val_as():
-      extns.update([fext(i) for i in stats["files"]])
-  log.debug(extns)
-  '''
+  # TODO:
+  # extns = set()
+  # if args.bytype:
+  #   for stats in it_val_as():
+  #     extns.update([fext(i) for i in stats["files"]])
+  # log.debug(extns)
 
   print('Total ' + '\nTotal '.join("{0:s}: {1:d}".format(k, v)
         for (k, v) in sorted(getattr(
             stats_tot, 'iteritems', stats_tot.items)())))
 
-  for c in tabulate(auth_stats, stats_tot, args.sort):
-    try:
-      print(c, end='')
-    except UnicodeEncodeError:
-      print('?', end='')
-  print ('')
+  print_unicode(tabulate(auth_stats, stats_tot, args.sort, args.bytype))
 
 
-def main():
+def main(args=None):
+  """args  : list [default: sys.argv[1:]]"""
   from argopt import argopt
   args = argopt(__doc__ + '\n' + __copyright__,
-                version=__version__).parse_args()
+                version=__version__).parse_args(args=args)
   logging.basicConfig(
       level=getattr(logging, args.log, logging.INFO),
       stream=TqdmStream)
