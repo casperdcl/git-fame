@@ -83,7 +83,9 @@ On Ubuntu, the procedure would be:
     $ sudo apt-get install bash-completion
 
     $ # Install `git fame` completions
-    $ sudo cp git-fame_completion.bash /etc/bash_completion.d/
+    $ sudo wget \
+        https://raw.githubusercontent.com/casperdcl/git-fame/master/git-fame_completion.bash \
+        -O /etc/bash_completion.d/git-fame_completion.bash
 
 followed by a terminal restart.
 
@@ -145,6 +147,15 @@ Documentation
       -M              Detect intra-file line moves and copies [default: False].
       -C              Detect inter-file line moves and copies [default: False].
       --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
+
+
+Changelog
+---------
+
+The list of all changes is available either on
+`Github's Releases <https://github.com/casperdcl/git-fame/releases>`__
+or on crawlers such as
+`allmychanges.com <https://allmychanges.com/p/python/git-fame/>`__.
 
 
 Licence
