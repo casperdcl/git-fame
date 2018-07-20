@@ -83,7 +83,9 @@ On Ubuntu, the procedure would be:
     $ sudo apt-get install bash-completion
 
     $ # Install `git fame` completions
-    $ sudo cp git-fame_completion.bash /etc/bash_completion.d/
+    $ sudo wget \
+        https://raw.githubusercontent.com/casperdcl/git-fame/master/git-fame_completion.bash \
+        -O /etc/bash_completion.d/git-fame_completion.bash
 
 followed by a terminal restart.
 
@@ -128,12 +130,14 @@ Documentation
     Options:
       -h, --help     Print this help and exit.
       -v, --version  Print module version and exit.
-      --branch=<b>    Branch or tag [default: HEAD].
+      --branch=<b>    Branch or tag [default: HEAD] up to which to check.
       --sort=<key>    [default: loc]|commits|files.
       --excl=<f>      Excluded files (default: None).
                       In no-regex mode, may be a comma-separated list.
                       Escape (\,) for a literal comma (may require \\, in shell).
       --incl=<f>      Included files [default: .*]. See `--excl` for format.
+      --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
+                      or relative to now (eg: 3.weeks).
       -n, --no-regex  Assume <f> are comma-separated exact matches
                       rather than regular expressions [default: False].
                       NB: if regex is enabled `,` is equivalent to `|`.
@@ -147,12 +151,21 @@ Documentation
       --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 
 
+Changelog
+---------
+
+The list of all changes is available either on
+`Github's Releases <https://github.com/casperdcl/git-fame/releases>`__
+or on crawlers such as
+`allmychanges.com <https://allmychanges.com/p/python/git-fame/>`__.
+
+
 Licence
 -------
 
 Open Source (OSI approved): |LICENCE|
 
-Copyright (c) 2016-8 Casper da Costa-Luis.
+Copyright (c) 2016-2018 Casper da Costa-Luis.
 
 This Source Code Form is subject to the terms of the
 Mozilla Public License, v. 2.0.
