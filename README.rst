@@ -130,12 +130,14 @@ Documentation
     Options:
       -h, --help     Print this help and exit.
       -v, --version  Print module version and exit.
-      --branch=<b>    Branch or tag [default: HEAD].
+      --branch=<b>    Branch or tag [default: HEAD] up to which to check.
       --sort=<key>    [default: loc]|commits|files.
       --excl=<f>      Excluded files (default: None).
                       In no-regex mode, may be a comma-separated list.
                       Escape (\,) for a literal comma (may require \\, in shell).
       --incl=<f>      Included files [default: .*]. See `--excl` for format.
+      --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
+                      or relative to now (eg: 3.weeks).
       -n, --no-regex  Assume <f> are comma-separated exact matches
                       rather than regular expressions [default: False].
                       NB: if regex is enabled `,` is equivalent to `|`.

@@ -8,12 +8,14 @@ Arguments:
 Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
-  --branch=<b>    Branch or tag [default: HEAD].
+  --branch=<b>    Branch or tag [default: HEAD] up to which to check.
   --sort=<key>    [default: loc]|commits|files.
   --excl=<f>      Excluded files (default: None).
                   In no-regex mode, may be a comma-separated list.
                   Escape (\,) for a literal comma (may require \\, in shell).
   --incl=<f>      Included files [default: .*]. See `--excl` for format.
+  --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
+                  or relative to now (eg: 3.weeks).
   -n, --no-regex  Assume <f> are comma-separated exact matches
                   rather than regular expressions [default: False].
                   NB: if regex is enabled `,` is equivalent to `|`.
@@ -43,7 +45,7 @@ from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, \
 from ._version import __version__  # NOQA
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
-__date__ = "2016-7"
+__date__ = "2016-8"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
@@ -184,6 +186,7 @@ def run(args):
   # ! iterating over files
 
   branch = args.branch
+  since = ["--since", args.since] if args.since else []
   git_cmd = ["git", "-C", gitdir]
   log.debug("base command:" + ' '.join(git_cmd))
   file_list = check_output(
@@ -201,7 +204,8 @@ def run(args):
   auth_stats = {}
   for fname in tqdm(file_list, desc="Blame", disable=args.silent_progress,
                     unit="file"):
-    git_blame_cmd = git_cmd + ["blame", "--line-porcelain", branch, fname]
+    git_blame_cmd = git_cmd + ["blame", "--porcelain", branch, fname] + \
+        since
     if args.ignore_whitespace:
       git_blame_cmd.append("-w")
     if args.M:
@@ -233,7 +237,8 @@ def run(args):
           auth_stats[auth][fext_key] = 1
 
   log.log(logging.NOTSET, "authors:" + '; '.join(auth_stats.keys()))
-  auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch])
+  auth_commits = check_output(
+      git_cmd + ["shortlog", "-s", "-e", branch] + since)
   it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
   for stats in it_val_as():
     stats.setdefault("commits", 0)
