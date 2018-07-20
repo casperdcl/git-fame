@@ -56,7 +56,7 @@ RE_AUTHS = re.compile('^author (.+)$', flags=re.M)
 # finds all non-escaped commas
 # NB: does not support escaping of escaped character
 RE_CSPILT = re.compile(r'(?<!\\),')
-RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*)\s+<(.*)>\s*$', flags=re.M)
+RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
 
 
 def tr_hline(col_widths, hl='-', x='+'):
