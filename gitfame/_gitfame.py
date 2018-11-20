@@ -52,7 +52,7 @@ __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
 
 
-RE_AUTHS = re.compile('^author (.+)$', flags=re.M)
+RE_AUTHS = re.compile('\d+ \d+ (\d+)\nauthor (.+)$', flags=re.M)
 # finds all non-escaped commas
 # NB: does not support escaping of escaped character
 RE_CSPILT = re.compile(r'(?<!\\),')
@@ -220,21 +220,23 @@ def run(args):
     log.log(logging.NOTSET, blame_out)
     auths = RE_AUTHS.findall(blame_out)
 
-    for auth in map(_str, auths):
+    for auth in auths:
+      nb_lines = int(auth[0])
+      auth_name = auth[1]
       try:
-        auth_stats[auth]["loc"] += 1
+        auth_stats[auth_name]["loc"] += nb_lines
       except KeyError:
-        auth_stats[auth] = {"loc": 1, "files": set([fname])}
+        auth_stats[auth_name] = {"loc": nb_lines, "files": set([fname])}
       else:
-        auth_stats[auth]["files"].add(fname)
+        auth_stats[auth_name]["files"].add(fname)
 
       if args.bytype:
         fext_key = ("." + fext(fname)) if fext(fname) else "._None_ext"
         # auth_stats[auth].setdefault(fext_key, 0)
         try:
-          auth_stats[auth][fext_key] += 1
+          auth_stats[auth_name][fext_key] += nb_lines
         except KeyError:
-          auth_stats[auth][fext_key] = 1
+          auth_stats[auth_name][fext_key] = nb_lines
 
   log.log(logging.NOTSET, "authors:" + '; '.join(auth_stats.keys()))
   auth_commits = check_output(
