@@ -1,6 +1,9 @@
 from __future__ import unicode_literals
 
 import sys
+from os import path
+from shutil import rmtree
+from tempfile import mkdtemp
 # import re
 # from nose import with_setup
 # from nose.plugins.skip import SkipTest
@@ -98,5 +101,18 @@ def test_main():
       ['-t']
   ]:
     main(['-s'] + params)
+
+  # test --manpath
+  tmp = mkdtemp()
+  man = path.join(tmp, "git-fame.1")
+  assert not path.exists(man)
+  try:
+    main(['--manpath', tmp])
+  except SystemExit:
+    pass
+  else:
+    raise SystemExit("Expected system exit")
+  assert path.exists(man)
+  rmtree(tmp, True)
 
   sys.argv, sys.stdout, sys.stderr = _SYS_AOE
