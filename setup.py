@@ -35,11 +35,12 @@ except ImportError:
 __author__ = None
 __licence__ = None
 __version__ = None
-main_file = os.path.join(os.path.dirname(__file__), 'gitfame', '_gitfame.py')
+src_dir = os.path.abspath(os.path.dirname(__file__))
+main_file = os.path.join(src_dir, 'gitfame', '_gitfame.py')
 for l in io_open(main_file, mode='r'):
     if any(l.startswith(i) for i in ('__author__', '__licence__')):
         exec(l)
-version_file = os.path.join(os.path.dirname(__file__), 'gitfame', '_version.py')
+version_file = os.path.join(src_dir, 'gitfame', '_version.py')
 with io_open(version_file, mode='r') as fd:
     exec(fd.read())
 
@@ -135,8 +136,7 @@ def execute_makefile_commands(commands, alias, verbose=False):
             if verbose:
                 print("Running command: " + cmd)
             # Launch the command and wait to finish (synchronized call)
-            check_call(parsed_cmd,
-                       cwd=os.path.dirname(os.path.abspath(__file__)))
+            check_call(parsed_cmd, cwd=src_dir)
 
 
 # Main setup.py config #
@@ -145,7 +145,7 @@ def execute_makefile_commands(commands, alias, verbose=False):
 # Executing makefile commands if specified
 if sys.argv[1].lower().strip() == 'make':
     # Filename of the makefile
-    fpath = os.path.join(os.path.dirname(__file__), 'Makefile')
+    fpath = os.path.join(src_dir, 'Makefile')
     # Parse the makefile, substitute the aliases and extract the commands
     commands = parse_makefile_aliases(fpath)
 
@@ -175,7 +175,7 @@ if sys.argv[1].lower().strip() == 'make':
 # Python package config #
 
 README_rst = ''
-fndoc = os.path.join(os.path.dirname(__file__), 'README.rst')
+fndoc = os.path.join(src_dir, 'README.rst')
 with io_open(fndoc, mode='r', encoding='utf-8') as fd:
     README_rst = fd.read()
 setup(
@@ -194,13 +194,12 @@ setup(
     provides=['gitfame'],
     install_requires=['argopt>=0.3.5'],
     entry_points={'console_scripts': ['git-fame=gitfame:main'], },
-    data_files=[('man/man1', ['git-fame.1'])],
-    package_data={'': ['LICENCE']},
+    package_data={'gitfame': ['LICENCE', 'git-fame.1']},
     ext_modules=cythonize(["gitfame/_gitfame.py", "gitfame/_utils.py"],
                           nthreads=2),
     classifiers=[
         # Trove classifiers
-        # (https://pypi.python.org/pypi?%3Aaction=list_classifiers)
+        # (https://pypi.org/pypi?%3Aaction=list_classifiers)
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Environment :: MacOS X',

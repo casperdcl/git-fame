@@ -26,6 +26,7 @@ Options:
                            came from [default: False].
   -M              Detect intra-file line moves and copies [default: False].
   -C              Detect inter-file line moves and copies [default: False].
+  --manpath=<path>         Directory in which to install git-fame man pages.
   --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 """
 from __future__ import print_function
@@ -52,7 +53,7 @@ __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
 
 
-RE_AUTHS = re.compile('^author (.+)$', flags=re.M)
+RE_AUTHS = re.compile('^\w+ \d+ \d+ (\d+)\nauthor (.+)$', flags=re.M)
 # finds all non-escaped commas
 # NB: does not support escaping of escaped character
 RE_CSPILT = re.compile(r'(?<!\\),')
@@ -218,13 +219,15 @@ def run(args):
       log.warn(fname + ':' + str(e))
       continue
     log.log(logging.NOTSET, blame_out)
-    auths = RE_AUTHS.findall(blame_out)
+    loc_auths = RE_AUTHS.findall(blame_out)
 
-    for auth in map(_str, auths):
+    for loc, auth in loc_auths:  # for each chunk
+      loc = int(loc)
+      auth = _str(auth)
       try:
-        auth_stats[auth]["loc"] += 1
+        auth_stats[auth]["loc"] += loc
       except KeyError:
-        auth_stats[auth] = {"loc": 1, "files": set([fname])}
+        auth_stats[auth] = {"loc": loc, "files": set([fname])}
       else:
         auth_stats[auth]["files"].add(fname)
 
@@ -232,9 +235,9 @@ def run(args):
         fext_key = ("." + fext(fname)) if fext(fname) else "._None_ext"
         # auth_stats[auth].setdefault(fext_key, 0)
         try:
-          auth_stats[auth][fext_key] += 1
+          auth_stats[auth][fext_key] += loc
         except KeyError:
-          auth_stats[auth][fext_key] = 1
+          auth_stats[auth][fext_key] = loc
 
   log.log(logging.NOTSET, "authors:" + '; '.join(auth_stats.keys()))
   auth_commits = check_output(
@@ -283,6 +286,17 @@ def main(args=None):
   log = logging.getLogger(__name__)
 
   log.debug(args)
+  if args.manpath is not None:
+    from os import path
+    from shutil import copyfile
+    from pkg_resources import resource_filename, Requirement
+    import sys
+    fi = resource_filename(Requirement.parse('git-fame'), 'gitfame/git-fame.1')
+    fo = path.join(args.manpath, 'git-fame.1')
+    copyfile(fi, fo)
+    log.info("written:" + fo)
+    sys.exit(0)
+
   run(args)
 
 

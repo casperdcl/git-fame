@@ -118,8 +118,8 @@ none:
 run:
 	python -Om gitfame
 
-git-fame.1: git-fame.1.md
+gitfame/git-fame.1: .git-fame.1.md
 	python -m gitfame --help | tail -n+9 | head -n-2 | cat "$<" - |\
   sed -r 's/^  (--\S+) (\S+)\s*(.*)$$/\n\\\1=*\2*\n: \3/' |\
-  sed -r 's/^  (-\S+, -\S+)\s*/\n\1\n: /' |\
+  sed -r 's/^  (-\S+, )(-\S+)\s*/\n\\\1\\\2\n: /' |\
   pandoc -o "$@" -s -t man
