@@ -66,6 +66,12 @@ testcoverage:
 testtimer:
 	nosetests gitfame --with-timer -d -v
 
+gitfame/git-fame.1: .git-fame.1.md
+	python -m gitfame --help | tail -n+9 | head -n-2 | cat "$<" - |\
+  sed -r 's/^  (--\S+) (\S+)\s*(.*)$$/\n\\\1=*\2*\n: \3/' |\
+  sed -r 's/^  (-\S+, )(-\S+)\s*/\n\\\1\\\2\n: /' |\
+  pandoc -o "$@" -s -t man
+
 distclean:
 	@+make coverclean
 	@+make prebuildclean
@@ -97,11 +103,8 @@ install:
 
 build:
 	@make prebuildclean
-	python setup.py sdist --formats=gztar,zip bdist_wheel
-	python setup.py bdist_wininst
-
-pypimeta:
-	python setup.py register
+	python setup.py sdist bdist_wheel
+	# python setup.py bdist_wininst
 
 pypi:
 	twine upload dist/*
@@ -109,7 +112,6 @@ pypi:
 buildupload:
 	@make testsetup
 	@make build
-	@make pypimeta
 	@make pypi
 
 none:
@@ -117,9 +119,3 @@ none:
 
 run:
 	python -Om gitfame
-
-gitfame/git-fame.1: .git-fame.1.md
-	python -m gitfame --help | tail -n+9 | head -n-2 | cat "$<" - |\
-  sed -r 's/^  (--\S+) (\S+)\s*(.*)$$/\n\\\1=*\2*\n: \3/' |\
-  sed -r 's/^  (-\S+, )(-\S+)\s*/\n\\\1\\\2\n: /' |\
-  pandoc -o "$@" -s -t man
