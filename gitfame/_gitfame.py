@@ -26,6 +26,7 @@ Options:
                            came from [default: False].
   -M              Detect intra-file line moves and copies [default: False].
   -C              Detect inter-file line moves and copies [default: False].
+  --manpath=<path>         Directory in which to install git-fame man pages.
   --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 """
 from __future__ import print_function
@@ -285,6 +286,17 @@ def main(args=None):
   log = logging.getLogger(__name__)
 
   log.debug(args)
+  if args.manpath is not None:
+    from os import path
+    from shutil import copyfile
+    from pkg_resources import resource_filename, Requirement
+    import sys
+    fi = resource_filename(Requirement.parse('git-fame'), 'gitfame/git-fame.1')
+    fo = path.join(args.manpath, 'git-fame.1')
+    copyfile(fi, fo)
+    log.info("written:" + fo)
+    sys.exit(0)
+
   run(args)
 
 
