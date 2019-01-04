@@ -29,7 +29,6 @@
 	installdev
 	install
 	build
-	pypimeta
 	pypi
 	none
 	run
@@ -67,10 +66,12 @@ testtimer:
 	nosetests gitfame --with-timer -d -v
 
 gitfame/git-fame.1: .git-fame.1.md
-	python -m gitfame --help | tail -n+9 | head -n-2 | cat "$<" - |\
-  sed -r 's/^  (--\S+) (\S+)\s*(.*)$$/\n\\\1=*\2*\n: \3/' |\
-  sed -r 's/^  (-\S+, )(-\S+)\s*/\n\\\1\\\2\n: /' |\
-  pandoc -o "$@" -s -t man
+	python -m gitfame --help | tail -n+9 | head -n-2 |\
+    sed -r -e 's/\\/\\\\/g' \
+      -e 's/^  (--\S+) (\S+)\s*(.*)$$/\n\\\1=*\2*\n: \3/' \
+      -e 's/^  (-\S+, )(-\S+)\s*/\n\\\1\\\2\n: /' |\
+    cat "$<" - |\
+    pandoc -o "$@" -s -t man
 
 distclean:
 	@+make coverclean
