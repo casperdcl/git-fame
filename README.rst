@@ -148,6 +148,7 @@ Documentation
                                came from [default: False].
       -M              Detect intra-file line moves and copies [default: False].
       -C              Detect inter-file line moves and copies [default: False].
+      --manpath=<path>         Directory in which to install git-fame man pages.
       --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 
 
