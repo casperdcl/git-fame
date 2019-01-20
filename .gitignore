@@ -1,12 +1,26 @@
-gitfame/*.py[co]
-gitfame/*.c
-gitfame/*.so
-gitfame/tests/*.py[co]
-# build
-git_fame.egg-info/
+*.py[cod]
+
+# C extensions
+*.so
+
+# Packages
+*.egg-info
 build/
 dist/
-# test
+
+# Unit test / coverage reports
 .tox/
 .coverage
 __pycache__
+nosetests.xml
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# PyCharm
+.idea

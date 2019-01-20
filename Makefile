@@ -1,17 +1,7 @@
 # IMPORTANT: for compatibility with `python setup.py make [alias]`, ensure:
 # 1. Every alias is preceded by @[+]make (eg: @make alias)
 # 2. A maximum of one @make alias or command per line
-#
-# Sample makefile compatible with `python setup.py make`:
-#```
-#all:
-#	@make test
-#	@make install
-#test:
-#	nosetest
-#install:
-#	python setup.py install
-#```
+# see: https://github.com/tqdm/py-make/issues/1
 
 .PHONY:
 	alltests
@@ -26,15 +16,18 @@
 	coverclean
 	prebuildclean
 	clean
+	toxclean
 	installdev
 	install
 	build
+	buildupload
 	pypi
+	help
 	none
 	run
 
 help:
-	@python setup.py make
+	@python setup.py make -p
 
 alltests:
 	@+make testcoverage
@@ -46,7 +39,8 @@ all:
 	@+make build
 
 flake8:
-	@+flake8 --max-line-length=80 --ignore=E111,E114 --exclude .tox --count --statistics --exit-zero .
+	@+flake8 --max-line-length=80 --ignore=E111,E114 --exclude .tox,build \
+    -j 8 --count --statistics --exit-zero .
 
 test:
 	tox --skip-missing-interpreters

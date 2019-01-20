@@ -5,9 +5,9 @@ Pretty-print ``git`` repository collaborators sorted by contributions.
 
 |PyPI-Status| |PyPI-Versions|
 
-|Build-Status| |Coverage-Status| |Branch-Coverage-Status| |Codacy-Grade|
+|Build-Status| |Coverage-Status| |Branch-Coverage-Status| |Codacy-Grade| |Libraries-Rank|
 
-|LICENCE| |Donate| |OpenHub-Status|
+|DOI-URI| |LICENCE| |OpenHub-Status| |Gift-Casper|
 
 .. code:: sh
 
@@ -41,16 +41,16 @@ Installation
 Latest PyPI stable release
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-|PyPI-Status|
+|PyPI-Status| |PyPI-Downloads| |Libraries-Dependents|
 
 .. code:: sh
 
     pip install git-fame
 
-Latest development release on github
+Latest development release on GitHub
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-|GitHub-Status|
+|GitHub-Status| |GitHub-Stars| |GitHub-Commits| |GitHub-Forks| |GitHub-Updated|
 
 Pull and install in the current directory:
 
@@ -90,6 +90,14 @@ On Ubuntu, the procedure would be:
 followed by a terminal restart.
 
 
+Changelog
+---------
+
+The list of all changes is available either on GitHub's Releases:
+|GitHub-Status| or on crawlers such as
+`allmychanges.com <https://allmychanges.com/p/python/git-fame/>`_.
+
+
 Usage
 -----
 
@@ -118,6 +126,8 @@ It is also possible to run from within a python shell or script.
 
 Documentation
 -------------
+
+|PyPI-Versions| |README-Hits|
 
 .. code:: sh
 
@@ -152,26 +162,21 @@ Documentation
       --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 
 
-Changelog
----------
+Contributions
+-------------
 
-The list of all changes is available either on
-`Github's Releases <https://github.com/casperdcl/git-fame/releases>`__
-or on crawlers such as
-`allmychanges.com <https://allmychanges.com/p/python/git-fame/>`__.
+|GitHub-Commits| |GitHub-Issues| |GitHub-PRs| |OpenHub-Status|
+
+All source code is hosted on `GitHub <https://github.com/casperdcl/git-fame>`__.
+Contributions are welcome.
 
 
-Licence
+LICENCE
 -------
 
 Open Source (OSI approved): |LICENCE|
 
-Copyright (c) 2016-2018 Casper da Costa-Luis.
-
-This Source Code Form is subject to the terms of the
-Mozilla Public License, v. 2.0.
-If a copy of the MPL was not distributed with this file, You can obtain one
-at `https://mozilla.org/MPL/2.0/ <https://mozilla.org/MPL/2.0/>`__.
+Citation information: |DOI-URI|
 
 
 Authors
@@ -179,28 +184,53 @@ Authors
 
 |OpenHub-Status|
 
-- Casper da Costa-Luis (`@casperdcl <https://github.com/casperdcl/>`__) |Donate|
+- Casper da Costa-Luis (`casperdcl <https://github.com/casperdcl>`__ |Gift-Casper|)
 
-|git-fame-hits|
+We are grateful for all |GitHub-Contributions|.
 
-.. |Build-Status| image:: https://travis-ci.org/casperdcl/git-fame.svg?branch=master
+|README-Hits|
+
+.. |Build-Status| image:: https://img.shields.io/travis/casperdcl/git-fame/master.svg?logo=travis
    :target: https://travis-ci.org/casperdcl/git-fame
 .. |Coverage-Status| image:: https://coveralls.io/repos/casperdcl/git-fame/badge.svg?branch=master
    :target: https://coveralls.io/github/casperdcl/git-fame
 .. |Branch-Coverage-Status| image:: https://codecov.io/gh/casperdcl/git-fame/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/casperdcl/git-fame
-.. |GitHub-Status| image:: https://img.shields.io/github/tag/casperdcl/git-fame.svg?maxAge=2592000
-   :target: https://github.com/casperdcl/git-fame/releases
+.. |Codacy-Grade| image:: https://api.codacy.com/project/badge/Grade/bde789ee0e57491eb2bb8609bd4190c3
+   :target: https://www.codacy.com/app/casper-dcl/git-fame
+.. |GitHub-Status| image:: https://img.shields.io/github/tag/casper-dcl/git-fame.svg?maxAge=86400&logo=github&logoColor=white
+   :target: https://github.com/casper-dcl/git-fame/releases
+.. |GitHub-Forks| image:: https://img.shields.io/github/forks/casper-dcl/git-fame.svg?logo=github&logoColor=white
+   :target: https://github.com/casper-dcl/git-fame/network
+.. |GitHub-Stars| image:: https://img.shields.io/github/stars/casper-dcl/git-fame.svg?logo=github&logoColor=white
+   :target: https://github.com/casper-dcl/git-fame/stargazers
+.. |GitHub-Commits| image:: https://img.shields.io/github/commit-activity/y/casper-dcl/git-fame.svg?logo=git&logoColor=white
+   :target: https://github.com/casper-dcl/git-fame/graphs/commit-activity
+.. |GitHub-Issues| image:: https://img.shields.io/github/issues-closed/casper-dcl/git-fame.svg?logo=github&logoColor=white
+   :target: https://github.com/casper-dcl/git-fame/issues
+.. |GitHub-PRs| image:: https://img.shields.io/github/issues-pr-closed/casper-dcl/git-fame.svg?logo=github&logoColor=white
+   :target: https://github.com/casper-dcl/git-fame/pulls
+.. |GitHub-Contributions| image:: https://img.shields.io/github/contributors/casper-dcl/git-fame.svg?logo=github&logoColor=white
+   :target: https://github.com/casper-dcl/git-fame/graphs/contributors
+.. |GitHub-Updated| image:: https://img.shields.io/github/last-commit/casper-dcl/git-fame/master.svg?logo=github&logoColor=white&label=pushed
+   :target: https://github.com/casper-dcl/git-fame/pulse
+.. |Gift-Casper| image:: https://img.shields.io/badge/gift-donate-dc10ff.svg
+   :target: https://caspersci.uk.to/donate.html
 .. |PyPI-Status| image:: https://img.shields.io/pypi/v/git-fame.svg
-   :target: https://pypi.python.org/pypi/git-fame
-.. |PyPI-Versions| image:: https://img.shields.io/pypi/pyversions/git-fame.svg
-   :target: https://pypi.python.org/pypi/git-fame
-.. |git-fame-hits| image:: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&a=hidden
+   :target: https://pypi.org/project/git-fame
+.. |PyPI-Downloads| image:: https://img.shields.io/pypi/dm/git-fame.svg?label=pypi%20downloads&logo=python&logoColor=white
+   :target: https://pypi.org/project/git-fame
+.. |PyPI-Versions| image:: https://img.shields.io/pypi/pyversions/git-fame.svg?logo=python&logoColor=white
+   :target: https://pypi.org/project/git-fame
+.. |Libraries-Rank| image:: https://img.shields.io/librariesio/sourcerank/pypi/git-fame.svg?logo=koding&logoColor=white
+   :target: https://libraries.io/pypi/git-fame
+.. |Libraries-Dependents| image:: https://img.shields.io/librariesio/dependent-repos/pypi/git-fame.svg?logo=koding&logoColor=white
+    :target: https://github.com/casper-dcl/git-fame/network/dependents
 .. |OpenHub-Status| image:: https://www.openhub.net/p/git-fame/widgets/project_thin_badge?format=gif
    :target: https://www.openhub.net/p/git-fame?ref=Thin+badge
 .. |LICENCE| image:: https://img.shields.io/pypi/l/git-fame.svg
-   :target: https://mozilla.org/MPL/2.0/
-.. |Codacy-Grade| image:: https://api.codacy.com/project/badge/Grade/bde789ee0e57491eb2bb8609bd4190c3
-   :target: https://www.codacy.com/app/casper-dcl/git-fame
-.. |Donate| image:: https://img.shields.io/badge/gift-donate-dc10ff.svg
-   :target: https://caspersci.uk.to/donate.html
+   :target: https://raw.githubusercontent.com/casper-dcl/git-fame/master/LICENCE
+.. |DOI-URI| image:: https://zenodo.org/badge/21637/casper-dcl/git-fame.svg
+   :target: https://zenodo.org/badge/latestdoi/21637/casper-dcl/git-fame
+.. |README-Hits| image:: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&style=social&r=https://github.com/casper-dcl/git-fame
+   :target: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&a=plot&r=https://github.com/casper-dcl/git-fame&style=social

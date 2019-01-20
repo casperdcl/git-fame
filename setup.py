@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import os
 try:
     from setuptools import setup
@@ -58,7 +57,6 @@ setup(
     author=__author__.split('<')[0].strip(),
     author_email=__author__.split('<')[1][1:-1],
     url='https://github.com/casperdcl/git-fame',
-    bugtrack_url='https://github.com/casperdcl/git-fame/issues',
     platforms=['any'],
     packages=['gitfame'],
     provides=['gitfame'],
@@ -68,6 +66,7 @@ setup(
     package_data={'gitfame': ['LICENCE', 'git-fame.1']},
     ext_modules=cythonize(["gitfame/_gitfame.py", "gitfame/_utils.py"],
                           nthreads=2),
+    python_requires='>=2.6, !=3.0.*, !=3.1.*',
     classifiers=[
         # Trove classifiers
         # (https://pypi.org/pypi?%3Aaction=list_classifiers)
