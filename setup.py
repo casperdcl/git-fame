@@ -193,6 +193,7 @@ setup(
     packages=['gitfame'],
     provides=['gitfame'],
     install_requires=['argopt>=0.3.5'],
+    extras_require=dict(yaml=['pyyaml'], tabulate=['tabulate']),
     entry_points={'console_scripts': ['git-fame=gitfame:main'], },
     package_data={'gitfame': ['LICENCE', 'git-fame.1']},
     ext_modules=cythonize(["gitfame/_gitfame.py", "gitfame/_utils.py"],

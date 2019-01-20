@@ -7,10 +7,12 @@ try:
   # python2
   _str = unicode
   _range = xrange
+  from StringIO import StringIO
 except NameError:
   # python3
   _str = str
   _range = range
+  from io import StringIO
 
 try:
   from tqdm import tqdm
