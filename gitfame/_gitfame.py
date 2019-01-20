@@ -119,6 +119,8 @@ def tabulate(
       t.writerow(tab['total'].keys())
       t.writerow(tab['total'].values())
       return res.getvalue().rstrip()
+    else:  # pragma: nocover
+      raise RuntimeError("Should be unreachable")
   elif backend not in ['md', 'markdown']:
     raise ValueError("Unknown backend:%s" % backend)
 
