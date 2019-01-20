@@ -8,10 +8,7 @@ from tempfile import mkdtemp
 # from nose import with_setup
 # from nose.plugins.skip import SkipTest
 # from io import IOBase  # to support unicode strings
-try:
-  from StringIO import StringIO
-except ImportError:
-  from io import StringIO
+from gitfame._utils import StringIO
 from gitfame import _gitfame
 from gitfame import main
 

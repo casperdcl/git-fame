@@ -62,8 +62,8 @@ def tr_hline(col_widths, hl='-', x='+'):
   return x + x.join(hl * i for i in col_widths) + x
 
 
-def tabulate(auth_stats, stats_tot,
-    sort='loc', bytype=False, backend='md'):
+def tabulate(
+        auth_stats, stats_tot, sort='loc', bytype=False, backend='md'):
   """
   backends  : [default: md]|yaml|json|csv|tsv|tabulate
   """
@@ -85,19 +85,20 @@ def tabulate(auth_stats, stats_tot,
          reverse=True)]
 
   totals = 'Total ' + '\nTotal '.join(
-    "%s: %d" % i for i in sorted(stats_tot.items())) + '\n'
+      "%s: %d" % i for i in sorted(stats_tot.items())) + '\n'
 
   backend = backend.lower()
   if backend == 'tabulate':
     from tabulate import tabulate as tabber
     log.debug("backend:tabulate")
     return totals + tabber(tab, COL_NAMES, tablefmt='grid', floatfmt='.0f')
-    #from ._utils import tighten
-    #return totals + tighten(tabber(...), max_width=TERM_WIDTH)
+    # from ._utils import tighten
+    # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
   elif backend in ['yaml', 'yml', 'json', 'csv', 'tsv']:
     tab = [i[:-1] + [float(pc.strip()) for pc in i[-1].split('/')] for i in tab]
-    tab = dict(total=stats_tot, data=tab,
-      columns=COL_NAMES[:-1] + ['%' + i for i in COL_NAMES[-4:-1]])
+    tab = dict(
+        total=stats_tot, data=tab,
+        columns=COL_NAMES[:-1] + ['%' + i for i in COL_NAMES[-4:-1]])
     if backend in ['yaml', 'yml']:
       log.debug("backend:yaml")
       from yaml import safe_dump as tabber
@@ -111,7 +112,7 @@ def tabulate(auth_stats, stats_tot,
       from csv import writer as tabber
       from ._utils import StringIO
       res = StringIO()
-      t = tabber(res, delimiter=',' if backend=='csv' else '\t')
+      t = tabber(res, delimiter=',' if backend == 'csv' else '\t')
       t.writerow(tab['columns'])
       t.writerows(tab['data'])
       t.writerow('')
@@ -125,16 +126,13 @@ def tabulate(auth_stats, stats_tot,
   # TODO: convert below to separate function for testing
 
   res = ''
-  it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
+  stats = list(auth_stats.values())
   # Columns: Author | loc | coms | fils | distribution
   COL_LENS = [
       max(6, Max(len(a) for a in auth_stats)),
-      max(3, Max(len(str(stats["loc"]))
-                 for stats in it_val_as())),
-      max(4, Max(len(str(stats.get("commits", 0)))
-                 for stats in it_val_as())),
-      max(4, Max(len(str(len(stats.get("files", []))))
-                 for stats in it_val_as())),
+      max(3, Max(len(str(i["loc"])) for i in stats)),
+      max(4, Max(len(str(i.get("commits", 0))) for i in stats)),
+      max(4, Max(len(str(len(i.get("files", [])))) for i in stats)),
       12
   ]
 
@@ -160,11 +158,11 @@ def tabulate(auth_stats, stats_tot,
   res += ("| {0:s} | {1:s} | {2:s} | {3:s} | {4} |").format(*COL_NAMES) + '\n'
   res += tr_hline([len(i) + 2 for i in COL_NAMES], '=') + '\n'
 
-  for (auth, stats) in tqdm(sorted(getattr(auth_stats, 'iteritems',
-                                           auth_stats.items)(),
-                                   key=lambda k: int_cast_or_len(
-                                       k[1].get(sort, 0)),
-                                   reverse=True), leave=False):
+  for (auth, stats) in tqdm(
+      sorted(
+          auth_stats.items(),
+          key=lambda k: int_cast_or_len(k[1].get(sort, 0)),
+          reverse=True), leave=False):
     # print (stats)
     loc = stats["loc"]
     commits = stats.get("commits", 0)
@@ -275,8 +273,7 @@ def run(args):
   log.log(logging.NOTSET, "authors:" + '; '.join(auth_stats.keys()))
   auth_commits = check_output(
       git_cmd + ["shortlog", "-s", "-e", branch] + since)
-  it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
-  for stats in it_val_as():
+  for stats in auth_stats.values():
     stats.setdefault("commits", 0)
   log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
   for (ncom, auth, _) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
@@ -287,22 +284,22 @@ def run(args):
                                 "files": set([]),
                                 "commits": int(ncom)}
 
-  stats_tot = dict((k, 0) for stats in it_val_as() for k in stats)
+  stats_tot = dict((k, 0) for stats in auth_stats.values() for k in stats)
   log.debug(stats_tot)
   for k in stats_tot:
     stats_tot[k] = sum(int_cast_or_len(stats.get(k, 0))
-                       for stats in it_val_as())
+                       for stats in auth_stats.values())
   log.debug(stats_tot)
 
   # TODO:
   # extns = set()
   # if args.bytype:
-  #   for stats in it_val_as():
+  #   for stats in auth_stats.values():
   #     extns.update([fext(i) for i in stats["files"]])
   # log.debug(extns)
 
-  print_unicode(tabulate(auth_stats, stats_tot,
-    args.sort, args.bytype, args.format))
+  print_unicode(tabulate(
+      auth_stats, stats_tot, args.sort, args.bytype, args.format))
 
 
 def main(args=None):
