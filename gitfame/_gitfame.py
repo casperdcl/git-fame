@@ -116,8 +116,8 @@ def tabulate(
       t.writerow(tab['columns'])
       t.writerows(tab['data'])
       t.writerow('')
-      t.writerow(tab['total'].keys())
-      t.writerow(tab['total'].values())
+      t.writerow(list(tab['total'].keys()))
+      t.writerow(list(tab['total'].values()))
       return res.getvalue().rstrip()
     else:  # pragma: nocover
       raise RuntimeError("Should be unreachable")
