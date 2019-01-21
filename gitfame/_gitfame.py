@@ -8,12 +8,12 @@ Arguments:
 Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
-  --branch=<b>    Branch or tag [default: HEAD] up to which to check.
-  --sort=<key>    [default: loc]|commits|files.
-  --excl=<f>      Excluded files (default: None).
-                  In no-regex mode, may be a comma-separated list.
-                  Escape (\,) for a literal comma (may require \\, in shell).
-  --incl=<f>      Included files [default: .*]. See `--excl` for format.
+  --branch=<b>   Branch or tag [default: HEAD] up to which to check.
+  --sort=<key>   [default: loc]|commits|files.
+  --excl=<f>     Excluded files (default: None).
+                 In no-regex mode, may be a comma-separated list.
+                 Escape (\,) for a literal comma (may require \\, in shell).
+  --incl=<f>     Included files [default: .*]. See `--excl` for format.
   --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
                   or relative to now (eg: 3.weeks).
   -n, --no-regex  Assume <f> are comma-separated exact matches
@@ -24,8 +24,11 @@ Options:
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
                            came from [default: False].
-  -M              Detect intra-file line moves and copies [default: False].
-  -C              Detect inter-file line moves and copies [default: False].
+  -M  Detect intra-file line moves and copies [default: False].
+  -C  Detect inter-file line moves and copies [default: False].
+  --format=<format>        Table format
+      [default: md]|markdown|yaml|yml|json|csv|tsv|tabulate.
+      May require `git-fame[<format>]`, e.g. `pip install git-fame[yaml]`.
   --manpath=<path>         Directory in which to install git-fame man pages.
   --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 """
@@ -35,11 +38,6 @@ from __future__ import division
 import subprocess
 import re
 import logging
-try:  # pragma: no cover
-  from tabulate import tabulate as tabber
-  raise ImportError("alpha feature: tabulate")
-except ImportError:  # pragma: no cover
-  tabber = None
 
 from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, \
     check_output, tqdm, TqdmStream, print_unicode
@@ -64,7 +62,11 @@ def tr_hline(col_widths, hl='-', x='+'):
   return x + x.join(hl * i for i in col_widths) + x
 
 
-def tabulate(auth_stats, stats_tot, args_sort='loc', args_bytype=False):
+def tabulate(
+        auth_stats, stats_tot, sort='loc', bytype=False, backend='md'):
+  """
+  backends  : [default: md]|yaml|json|csv|tsv|tabulate
+  """
   log = logging.getLogger(__name__)
   COL_NAMES = ['Author', 'loc', 'coms', 'fils', ' distribution']
   it_as = getattr(auth_stats, 'iteritems', auth_stats.items)
@@ -79,29 +81,60 @@ def tabulate(auth_stats, stats_tot, args_sort='loc', args_bytype=False):
               100 * len(s.get('files', [])) / max(1, stats_tot['files'])
           ))).replace('/100.0/', '/ 100/')]
          for (auth, s) in sorted(it_as(),
-         key=lambda k: int_cast_or_len(k[1].get(args_sort, 0)),
+         key=lambda k: int_cast_or_len(k[1].get(sort, 0)),
          reverse=True)]
 
-  if tabber is not None:
-    log.debug("using tabulate")
-    from ._utils import tighten
-    return tighten(tabber(tab, COL_NAMES, tablefmt='grid', floatfmt='.0f'),
-                   max_width=TERM_WIDTH)
+  totals = 'Total ' + '\nTotal '.join(
+      "%s: %d" % i for i in sorted(stats_tot.items())) + '\n'
 
-  # print (tab)
+  backend = backend.lower()
+  if backend == 'tabulate':
+    from tabulate import tabulate as tabber
+    log.debug("backend:tabulate")
+    return totals + tabber(tab, COL_NAMES, tablefmt='grid', floatfmt='.0f')
+    # from ._utils import tighten
+    # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
+  elif backend in ['yaml', 'yml', 'json', 'csv', 'tsv']:
+    tab = [i[:-1] + [float(pc.strip()) for pc in i[-1].split('/')] for i in tab]
+    tab = dict(
+        total=stats_tot, data=tab,
+        columns=COL_NAMES[:-1] + ['%' + i for i in COL_NAMES[-4:-1]])
+    if backend in ['yaml', 'yml']:
+      log.debug("backend:yaml")
+      from yaml import safe_dump as tabber
+      return tabber(tab).rstrip()
+    elif backend == 'json':
+      log.debug("backend:json")
+      from json import dumps as tabber
+      return tabber(tab, ensure_ascii=False)
+    elif backend in ['csv', 'tsv']:
+      log.debug("backend:csv")
+      from csv import writer as tabber
+      from ._utils import StringIO
+      res = StringIO()
+      t = tabber(res, delimiter=',' if backend == 'csv' else '\t')
+      t.writerow(tab['columns'])
+      t.writerows(tab['data'])
+      t.writerow('')
+      t.writerow(list(tab['total'].keys()))
+      t.writerow(list(tab['total'].values()))
+      return res.getvalue().rstrip()
+    else:  # pragma: nocover
+      raise RuntimeError("Should be unreachable")
+  elif backend not in ['md', 'markdown']:
+    raise ValueError("Unknown backend:%s" % backend)
+
+  log.debug("backend:md")
   # TODO: convert below to separate function for testing
 
   res = ''
-  it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
+  stats = list(auth_stats.values())
   # Columns: Author | loc | coms | fils | distribution
   COL_LENS = [
       max(6, Max(len(a) for a in auth_stats)),
-      max(3, Max(len(str(stats["loc"]))
-                 for stats in it_val_as())),
-      max(4, Max(len(str(stats.get("commits", 0)))
-                 for stats in it_val_as())),
-      max(4, Max(len(str(len(stats.get("files", []))))
-                 for stats in it_val_as())),
+      max(3, Max(len(str(i["loc"])) for i in stats)),
+      max(4, Max(len(str(i.get("commits", 0))) for i in stats)),
+      max(4, Max(len(str(len(i.get("files", [])))) for i in stats)),
       12
   ]
 
@@ -127,16 +160,16 @@ def tabulate(auth_stats, stats_tot, args_sort='loc', args_bytype=False):
   res += ("| {0:s} | {1:s} | {2:s} | {3:s} | {4} |").format(*COL_NAMES) + '\n'
   res += tr_hline([len(i) + 2 for i in COL_NAMES], '=') + '\n'
 
-  for (auth, stats) in tqdm(sorted(getattr(auth_stats, 'iteritems',
-                                           auth_stats.items)(),
-                                   key=lambda k: int_cast_or_len(
-                                       k[1].get(args_sort, 0)),
-                                   reverse=True), leave=False):
+  for (auth, stats) in tqdm(
+      sorted(
+          auth_stats.items(),
+          key=lambda k: int_cast_or_len(k[1].get(sort, 0)),
+          reverse=True), leave=False):
     # print (stats)
     loc = stats["loc"]
     commits = stats.get("commits", 0)
     files = len(stats.get("files", []))
-    if args_bytype:
+    if bytype:
       log.debug("TODO:NotImplemented:--bytype")
       # TODO: print ([stats.get("files", []) ])
     res += (tbl_row_fmt.format(
@@ -145,7 +178,7 @@ def tabulate(auth_stats, stats_tot, args_sort='loc', args_bytype=False):
         100 * commits / max(1, stats_tot["commits"]),
         100 * files / max(1, stats_tot["files"])).replace('100.0', ' 100')) \
         + '\n'
-  return res + TR_HLINE
+  return totals + res + TR_HLINE
 
 
 def run(args):
@@ -242,8 +275,7 @@ def run(args):
   log.log(logging.NOTSET, "authors:" + '; '.join(auth_stats.keys()))
   auth_commits = check_output(
       git_cmd + ["shortlog", "-s", "-e", branch] + since)
-  it_val_as = getattr(auth_stats, 'itervalues', auth_stats.values)
-  for stats in it_val_as():
+  for stats in auth_stats.values():
     stats.setdefault("commits", 0)
   log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
   for (ncom, auth, _) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
@@ -254,25 +286,22 @@ def run(args):
                                 "files": set([]),
                                 "commits": int(ncom)}
 
-  stats_tot = dict((k, 0) for stats in it_val_as() for k in stats)
+  stats_tot = dict((k, 0) for stats in auth_stats.values() for k in stats)
   log.debug(stats_tot)
   for k in stats_tot:
     stats_tot[k] = sum(int_cast_or_len(stats.get(k, 0))
-                       for stats in it_val_as())
+                       for stats in auth_stats.values())
   log.debug(stats_tot)
 
   # TODO:
   # extns = set()
   # if args.bytype:
-  #   for stats in it_val_as():
+  #   for stats in auth_stats.values():
   #     extns.update([fext(i) for i in stats["files"]])
   # log.debug(extns)
 
-  print('Total ' + '\nTotal '.join("{0:s}: {1:d}".format(k, v)
-        for (k, v) in sorted(getattr(
-            stats_tot, 'iteritems', stats_tot.items)())))
-
-  print_unicode(tabulate(auth_stats, stats_tot, args.sort, args.bytype))
+  print_unicode(tabulate(
+      auth_stats, stats_tot, args.sort, args.bytype, args.format))
 
 
 def main(args=None):

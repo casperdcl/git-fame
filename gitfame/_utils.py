@@ -7,10 +7,12 @@ try:
   # python2
   _str = unicode
   _range = xrange
+  from StringIO import StringIO
 except NameError:
   # python3
   _str = str
   _range = range
+  from io import StringIO
 
 try:
   from tqdm import tqdm
@@ -19,7 +21,7 @@ except ImportError:
     def __init__(self, iterable=None, **kwargs):
       log = logging.getLogger(__name__)
       log.info('install `tqdm` (https://github.com/tqdm/tqdm)'
-               ' for a realitme progressbar')
+               ' for a realtime progressbar')
       self.iterable = iterable
       self.n = 0
 
@@ -38,7 +40,7 @@ __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016-2018"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm",
-           "tighten", "check_output", "print_unicode"]
+           "tighten", "check_output", "print_unicode", "StringIO"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
 
