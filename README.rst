@@ -197,23 +197,23 @@ We are grateful for all |GitHub-Contributions|.
 .. |Branch-Coverage-Status| image:: https://codecov.io/gh/casperdcl/git-fame/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/casperdcl/git-fame
 .. |Codacy-Grade| image:: https://api.codacy.com/project/badge/Grade/bde789ee0e57491eb2bb8609bd4190c3
-   :target: https://www.codacy.com/app/casper-dcl/git-fame
-.. |GitHub-Status| image:: https://img.shields.io/github/tag/casper-dcl/git-fame.svg?maxAge=86400&logo=github&logoColor=white
-   :target: https://github.com/casper-dcl/git-fame/releases
-.. |GitHub-Forks| image:: https://img.shields.io/github/forks/casper-dcl/git-fame.svg?logo=github&logoColor=white
-   :target: https://github.com/casper-dcl/git-fame/network
-.. |GitHub-Stars| image:: https://img.shields.io/github/stars/casper-dcl/git-fame.svg?logo=github&logoColor=white
-   :target: https://github.com/casper-dcl/git-fame/stargazers
-.. |GitHub-Commits| image:: https://img.shields.io/github/commit-activity/y/casper-dcl/git-fame.svg?logo=git&logoColor=white
-   :target: https://github.com/casper-dcl/git-fame/graphs/commit-activity
-.. |GitHub-Issues| image:: https://img.shields.io/github/issues-closed/casper-dcl/git-fame.svg?logo=github&logoColor=white
-   :target: https://github.com/casper-dcl/git-fame/issues
-.. |GitHub-PRs| image:: https://img.shields.io/github/issues-pr-closed/casper-dcl/git-fame.svg?logo=github&logoColor=white
-   :target: https://github.com/casper-dcl/git-fame/pulls
-.. |GitHub-Contributions| image:: https://img.shields.io/github/contributors/casper-dcl/git-fame.svg?logo=github&logoColor=white
-   :target: https://github.com/casper-dcl/git-fame/graphs/contributors
-.. |GitHub-Updated| image:: https://img.shields.io/github/last-commit/casper-dcl/git-fame/master.svg?logo=github&logoColor=white&label=pushed
-   :target: https://github.com/casper-dcl/git-fame/pulse
+   :target: https://www.codacy.com/app/casper-dcl/git-fame/dashboard
+.. |GitHub-Status| image:: https://img.shields.io/github/tag/casperdcl/git-fame.svg?maxAge=86400&logo=github&logoColor=white
+   :target: https://github.com/casperdcl/git-fame/releases
+.. |GitHub-Forks| image:: https://img.shields.io/github/forks/casperdcl/git-fame.svg?logo=github&logoColor=white
+   :target: https://github.com/casperdcl/git-fame/network
+.. |GitHub-Stars| image:: https://img.shields.io/github/stars/casperdcl/git-fame.svg?logo=github&logoColor=white
+   :target: https://github.com/casperdcl/git-fame/stargazers
+.. |GitHub-Commits| image:: https://img.shields.io/github/commit-activity/y/casperdcl/git-fame.svg?logo=git&logoColor=white
+   :target: https://github.com/casperdcl/git-fame/graphs/commit-activity
+.. |GitHub-Issues| image:: https://img.shields.io/github/issues-closed/casperdcl/git-fame.svg?logo=github&logoColor=white
+   :target: https://github.com/casperdcl/git-fame/issues
+.. |GitHub-PRs| image:: https://img.shields.io/github/issues-pr-closed/casperdcl/git-fame.svg?logo=github&logoColor=white
+   :target: https://github.com/casperdcl/git-fame/pulls
+.. |GitHub-Contributions| image:: https://img.shields.io/github/contributors/casperdcl/git-fame.svg?logo=github&logoColor=white
+   :target: https://github.com/casperdcl/git-fame/graphs/contributors
+.. |GitHub-Updated| image:: https://img.shields.io/github/last-commit/casperdcl/git-fame/master.svg?logo=github&logoColor=white&label=pushed
+   :target: https://github.com/casperdcl/git-fame/pulse
 .. |Gift-Casper| image:: https://img.shields.io/badge/gift-donate-dc10ff.svg
    :target: https://caspersci.uk.to/donate.html
 .. |PyPI-Status| image:: https://img.shields.io/pypi/v/git-fame.svg
@@ -225,12 +225,12 @@ We are grateful for all |GitHub-Contributions|.
 .. |Libraries-Rank| image:: https://img.shields.io/librariesio/sourcerank/pypi/git-fame.svg?logo=koding&logoColor=white
    :target: https://libraries.io/pypi/git-fame
 .. |Libraries-Dependents| image:: https://img.shields.io/librariesio/dependent-repos/pypi/git-fame.svg?logo=koding&logoColor=white
-    :target: https://github.com/casper-dcl/git-fame/network/dependents
+    :target: https://github.com/casperdcl/git-fame/network/dependents
 .. |OpenHub-Status| image:: https://www.openhub.net/p/git-fame/widgets/project_thin_badge?format=gif
    :target: https://www.openhub.net/p/git-fame?ref=Thin+badge
 .. |LICENCE| image:: https://img.shields.io/pypi/l/git-fame.svg
-   :target: https://raw.githubusercontent.com/casper-dcl/git-fame/master/LICENCE
+   :target: https://raw.githubusercontent.com/casperdcl/git-fame/master/LICENCE
 .. |DOI-URI| image:: https://img.shields.io/badge/DOI-10.5281/zenodo.2544975-blue.svg
    :target: https://doi.org/10.5281/zenodo.2544975
-.. |README-Hits| image:: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&style=social&r=https://github.com/casper-dcl/git-fame
-   :target: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&a=plot&r=https://github.com/casper-dcl/git-fame&style=social
+.. |README-Hits| image:: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&style=social&r=https://github.com/casperdcl/git-fame
+   :target: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&a=plot&r=https://github.com/casperdcl/git-fame&style=social
