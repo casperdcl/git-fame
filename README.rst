@@ -230,7 +230,7 @@ We are grateful for all |GitHub-Contributions|.
    :target: https://www.openhub.net/p/git-fame?ref=Thin+badge
 .. |LICENCE| image:: https://img.shields.io/pypi/l/git-fame.svg
    :target: https://raw.githubusercontent.com/casper-dcl/git-fame/master/LICENCE
-.. |DOI-URI| image:: https://zenodo.org/badge/21637/casper-dcl/git-fame.svg
-   :target: https://zenodo.org/badge/latestdoi/21637/casper-dcl/git-fame
+.. |DOI-URI| image:: https://img.shields.io/badge/DOI-10.5281/zenodo.2544975-blue.svg
+   :target: https://doi.org/10.5281/zenodo.2544975
 .. |README-Hits| image:: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&style=social&r=https://github.com/casper-dcl/git-fame
    :target: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&a=plot&r=https://github.com/casper-dcl/git-fame&style=social
