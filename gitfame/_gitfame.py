@@ -89,13 +89,12 @@ def tabulate(
     if cost == 'cocomo':
       COL_NAMES.insert(1, 'mths')
       tab = [i[:1] + [3.2*(i[1]/1e3)**1.05] + i[1:] for i in tab]
-      stats_tot.setdefault('months', int(
-          '%.0f' % sum(i[1] for i in tab)))
+      stats_tot.setdefault('months', '%.1f' % sum(i[1] for i in tab))
     else:
       raise ValueError("Unknown time cost:%s" % cost)
 
   totals = 'Total ' + '\nTotal '.join(
-      "%s: %d" % i for i in sorted(stats_tot.items())) + '\n'
+      "%s: %r" % i for i in sorted(stats_tot.items())) + '\n'
 
   backend = backend.lower()
   if backend in ("tabulate", "md", "markdown"):

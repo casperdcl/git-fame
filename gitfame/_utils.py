@@ -239,8 +239,8 @@ def print_unicode(msg, end='\n', err='?'):
 
 
 def Str(i):
-  """return `'%g' % i` if possible, else `str(i)`"""
+  """return `'%g' % i` if possible, else `_str(i)`"""
   try:
     return '%g' % i
   except:
-    return str(i)
+    return _str(i)
