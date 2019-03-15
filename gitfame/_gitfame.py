@@ -31,7 +31,7 @@ Options:
   --format=<format>        Table format
       [default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
       May require `git-fame[<format>]`, e.g. `pip install git-fame[yaml]`.
-      Any `tabulate.tablulate_formats` is also accepted.
+      Any `tabulate.tabulate_formats` is also accepted.
   --manpath=<path>         Directory in which to install git-fame man pages.
   --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 """

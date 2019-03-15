@@ -12,21 +12,19 @@ Pretty-print ``git`` repository collaborators sorted by contributions.
 .. code:: sh
 
     ~$ git fame
-    Blame: 100%|███████████████████████████████████| 11/11 [00:00<00:00, 208.43it/s]
-    Total commits: 302
-    Total files: 37
-    Total loc: 3134
-    +----------------------+------+------+------+----------------+
-    | Author               |  loc | coms | fils |  distribution  |
-    +======================+======+======+======+================+
-    | Casper da Costa-Luis | 3123 |  297 |   35 | 99.6/98.3/85.4 |
-    | Not Committed Yet    |    7 |    4 |    2 |  0.2/ 1.3/ 4.9 |
-    | Evïan Etàcidñys      |    4 |    1 |    1 |  0.1/ 0.3/ 2.4 |
-    +----------------------+------+------+------+----------------+
+    Blame: 100%|██████████| 20/20 [00:00<00:00, 175.94file/s]
+    Total commits: 99
+    Total files: 21
+    Total loc: 305
+    | Author               |   loc |   coms |   fils |  distribution   |
+    |:---------------------|------:|-------:|-------:|:----------------|
+    | Casper da Costa-Luis |   304 |     97 |     20 | 99.7/98.0/95.2  |
+    | Igor Gnatenko        |     1 |      1 |      1 | 0.3/ 1.0/ 4.8   |
+    | Johann Mortara       |     0 |      1 |      0 | 0.0/ 1.0/ 0.0   |
 
 The ``distribution`` column is a percentage breakdown of the other columns
 (e.g. in the table above, Casper has written surviving code in
-``35/37 = 85.4%`` of all files).
+``20/21 = 95.2%`` of all files).
 
 ------------------------------------------
 
@@ -145,13 +143,15 @@ Documentation
       --excl=<f>     Excluded files (default: None).
                      In no-regex mode, may be a comma-separated list.
                      Escape (\,) for a literal comma (may require \\, in shell).
-      --incl=<f>     Included files [default: .*]. See `--excl` for format.
+      --incl=<f>     Included files [default: .*]. See ``--excl`` for format.
       --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
                       or relative to now (eg: 3.weeks).
+      --cost-time=<method>     Include time cost in person-months.
+                     Methods: COCOMO.
       -n, --no-regex  Assume <f> are comma-separated exact matches
                       rather than regular expressions [default: False].
-                      NB: if regex is enabled `,` is equivalent to `|`.
-      -s, --silent-progress    Suppress `tqdm` [default: False].
+                      NB: if regex is enabled ``,``` is equivalent to ``|``.
+      -s, --silent-progress    Suppress ``tqdm`` [default: False].
       -t, --bytype             Show stats per file extension [default: False].
       -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                                version and the child's to find where the lines
@@ -159,8 +159,9 @@ Documentation
       -M  Detect intra-file line moves and copies [default: False].
       -C  Detect inter-file line moves and copies [default: False].
       --format=<format>        Table format
-          [default: md]|markdown|yaml|yml|json|csv|tsv|tabulate.
-          May require `git-fame[<format>]`, e.g. `pip install git-fame[yaml]`.
+          [default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
+          May require ``git-fame[<format>]``, e.g. ``pip install git-fame[yaml]``.
+          Any ``tabulate.tabulate_formats`` is also accepted.
       --manpath=<path>         Directory in which to install git-fame man pages.
       --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 
