@@ -16,6 +16,8 @@ Options:
   --incl=<f>     Included files [default: .*]. See `--excl` for format.
   --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
                   or relative to now (eg: 3.weeks).
+  --cost-time=<method>     Include time cost in person-months.
+                 Methods: COCOMO.
   -n, --no-regex  Assume <f> are comma-separated exact matches
                   rather than regular expressions [default: False].
                   NB: if regex is enabled `,` is equivalent to `|`.
@@ -60,7 +62,8 @@ RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
 
 
 def tabulate(
-        auth_stats, stats_tot, sort='loc', bytype=False, backend='md'):
+        auth_stats, stats_tot, sort='loc', bytype=False, backend='md',
+        cost=None):
   """
   backends  : [default: md]|yaml|json|csv|tsv|tabulate
   """
@@ -81,6 +84,15 @@ def tabulate(
             it_as(),
             key=lambda k: int_cast_or_len(k[1].get(sort, 0)),
             reverse=True)]
+  if cost is not None:
+    cost = cost.lower()
+    if cost == 'cocomo':
+      COL_NAMES.insert(1, 'mths')
+      tab = [i[:1] + [3.2*(i[1]/1e3)**1.05] + i[1:] for i in tab]
+      stats_tot.setdefault('months', int(
+          '%.0f' % sum(i[1] for i in tab)))
+    else:
+      raise ValueError("Unknown time cost:%s" % cost)
 
   totals = 'Total ' + '\nTotal '.join(
       "%s: %d" % i for i in sorted(stats_tot.items())) + '\n'
