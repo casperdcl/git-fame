@@ -45,17 +45,46 @@ def test_tabulate():
 
 def test_tabulate_yaml():
   """Test YAML tabulate"""
-  try:
-    assert (_gitfame.tabulate(auth_stats, stats_tot, backend='yaml') ==
-            dedent("""\
+  res = [
+    dedent("""\
+      columns:
+      - Author
+      - loc
+      - coms
+      - fils
+      - '%loc'
+      - '%coms'
+      - '%fils'
+      data:
+      - - Casper da Costa-Luis
+        - 538
+        - 35
+        - 10
+        - 87.8
+        - 100.0
+        - 71.4
+      - - Not Committed Yet
+        - 75
+        - 0
+        - 4
+        - 12.2
+        - 0.0
+        - 28.6
+      total:
+        commits: 35
+        files: 14
+        loc: 613"""),
+    # pyyaml<5
+    dedent("""\
       columns: [Author, loc, coms, fils, '%loc', '%coms', '%fils']
       data:
       - [Casper da Costa-Luis, 538, 35, 10, 87.8, 100.0, 71.4]
       - [Not Committed Yet, 75, 0, 4, 12.2, 0.0, 28.6]
-      total: {commits: 35, files: 14, loc: 613}"""))
+      total: {commits: 35, files: 14, loc: 613}""")]
+  try:
+    assert (_gitfame.tabulate(auth_stats, stats_tot, backend='yaml') in res)
   except ImportError:
     raise SkipTest
-
 
 def test_tabulate_json():
   """Test JSON tabulate"""
