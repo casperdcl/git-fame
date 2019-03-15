@@ -40,7 +40,7 @@ __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016-2018"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm",
-           "tighten", "check_output", "print_unicode", "StringIO"]
+           "tighten", "check_output", "print_unicode", "StringIO", "Str"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
 
@@ -236,3 +236,11 @@ def print_unicode(msg, end='\n', err='?'):
     except UnicodeEncodeError:
       print(err, end='')
   print ('', end=end)
+
+
+def Str(i):
+  """return `'%g' % i` if possible, else `str(i)`"""
+  try:
+    return '%g' % i
+  except:
+    return str(i)

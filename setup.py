@@ -40,7 +40,7 @@ if sys.argv[1].lower().strip() == 'make':
     # Stop to avoid setup.py raising non-standard command error
     sys.exit(0)
 
-extras_require = dict(yaml=['pyyaml'], tabulate=['tabulate'])
+extras_require = dict(yaml=['pyyaml'], tabulate=[])
 extras_require['dev'] = sum(extras_require.values(), ['py-make>=0.1.0'])
 
 README_rst = ''
@@ -60,7 +60,7 @@ setup(
     platforms=['any'],
     packages=['gitfame'],
     provides=['gitfame'],
-    install_requires=['argopt>=0.3.5'],
+    install_requires=['argopt>=0.3.5', 'tabulate'],
     extras_require=extras_require,
     entry_points={'console_scripts': ['git-fame=gitfame:main'], },
     package_data={'gitfame': ['LICENCE', 'git-fame.1']},
