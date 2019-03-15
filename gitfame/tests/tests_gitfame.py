@@ -28,11 +28,6 @@ auth_stats = {
 stats_tot = {'files': 14, 'loc': 613, 'commits': 35}
 
 
-def test_table_line():
-  """Test table line drawing"""
-  assert (_gitfame.tr_hline([3, 4, 2], hl='/', x='#') == '#///#////#//#')
-
-
 def test_tabulate():
   """Test builtin tabulate"""
   assert (_gitfame.tabulate(auth_stats, stats_tot) ==
@@ -40,12 +35,11 @@ def test_tabulate():
     Total commits: 35
     Total files: 14
     Total loc: 613
-    +----------------------+-----+------+------+----------------+
-    | Author               | loc | coms | fils |  distribution  |
-    +======================+=====+======+======+================+
-    | Casper da Costa-Luis | 538 |   35 |   10 | 87.8/ 100/71.4 |
-    | Not Committed Yet    |  75 |    0 |    4 | 12.2/ 0.0/28.6 |
-    +----------------------+-----+------+------+----------------+"""))
+    | Author               |   loc |   coms |   fils |  distribution   |
+    |:---------------------|------:|-------:|-------:|:----------------|
+    | Casper da Costa-Luis |   538 |     35 |     10 | 87.8/ 100/71.4  |
+    | Not Committed Yet    |    75 |      0 |      4 | 12.2/ 0.0/28.6  |"""))
+
   sys.stderr.write("\rTest builtin tabulate ... ")  # `tqdm` may clear info
 
 
@@ -86,18 +80,15 @@ def test_tabulate_csv():
 def test_tabulate_tabulate():
   """Test external tabulate"""
   try:
-    assert (_gitfame.tabulate(auth_stats, stats_tot, backend='tabulate') ==
+    assert (_gitfame.tabulate(auth_stats, stats_tot, backend='simple') ==
             dedent("""\
       Total commits: 35
       Total files: 14
       Total loc: 613
-      +----------------------+-------+--------+--------+-----------------+
-      | Author               |   loc |   coms |   fils |  distribution   |
-      +======================+=======+========+========+=================+
-      | Casper da Costa-Luis |   538 |     35 |     10 | 87.8/ 100/71.4  |
-      +----------------------+-------+--------+--------+-----------------+
-      | Not Committed Yet    |    75 |      0 |      4 | 12.2/ 0.0/28.6  |
-      +----------------------+-------+--------+--------+-----------------+"""))
+      Author                  loc    coms    fils   distribution
+      --------------------  -----  ------  ------  ---------------
+      Casper da Costa-Luis    538      35      10  87.8/ 100/71.4
+      Not Committed Yet        75       0       4  12.2/ 0.0/28.6"""))
   except ImportError:
     raise SkipTest
 

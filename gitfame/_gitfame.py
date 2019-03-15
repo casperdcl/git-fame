@@ -117,16 +117,17 @@ def tabulate(
     else:  # pragma: nocover
       raise RuntimeError("Should be unreachable")
   else:
-    from tabulate import tabulate as tabber
+    import tabulate as tabber
+    if backend not in tabber.tabulate_formats:
+      raise ValueError("Unknown backend:%s" % backend)
     log.debug("backend:tabulate:" + backend)
     COL_LENS = [max(len(Str(i[j])) for i in [COL_NAMES] + tab) for j in range(len(COL_NAMES))]
     COL_LENS[0] = min(
       TERM_WIDTH - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4, COL_LENS[0])
     tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
-    return totals + tabber(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
+    return totals + tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
     # from ._utils import tighten
     # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
-    # except: raise ValueError("Unknown backend:%s" % backend)
 
 
 def run(args):
