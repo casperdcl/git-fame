@@ -26,7 +26,7 @@ Pretty-print ``git`` repository collaborators sorted by contributions.
 
 The ``distribution`` column is a percentage breakdown of the other columns
 (e.g. in the table above, Casper has written surviving code in
-``35/37 = 85.4%`` of all files)
+``35/37 = 85.4%`` of all files).
 
 ------------------------------------------
 
@@ -140,12 +140,12 @@ Documentation
     Options:
       -h, --help     Print this help and exit.
       -v, --version  Print module version and exit.
-      --branch=<b>    Branch or tag [default: HEAD] up to which to check.
-      --sort=<key>    [default: loc]|commits|files.
-      --excl=<f>      Excluded files (default: None).
-                      In no-regex mode, may be a comma-separated list.
-                      Escape (\,) for a literal comma (may require \\, in shell).
-      --incl=<f>      Included files [default: .*]. See `--excl` for format.
+      --branch=<b>   Branch or tag [default: HEAD] up to which to check.
+      --sort=<key>   [default: loc]|commits|files.
+      --excl=<f>     Excluded files (default: None).
+                     In no-regex mode, may be a comma-separated list.
+                     Escape (\,) for a literal comma (may require \\, in shell).
+      --incl=<f>     Included files [default: .*]. See `--excl` for format.
       --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
                       or relative to now (eg: 3.weeks).
       -n, --no-regex  Assume <f> are comma-separated exact matches
@@ -156,11 +156,18 @@ Documentation
       -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                                version and the child's to find where the lines
                                came from [default: False].
-      -M              Detect intra-file line moves and copies [default: False].
-      -C              Detect inter-file line moves and copies [default: False].
+      -M  Detect intra-file line moves and copies [default: False].
+      -C  Detect inter-file line moves and copies [default: False].
+      --format=<format>        Table format
+          [default: md]|markdown|yaml|yml|json|csv|tsv|tabulate.
+          May require `git-fame[<format>]`, e.g. `pip install git-fame[yaml]`.
       --manpath=<path>         Directory in which to install git-fame man pages.
       --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 
+
+If multiple user names and/or emails correspond to the same user, aggregate
+`git-fame` statistics and maintain a `git` repository properly by adding a
+[`.mailmap` file](https://git-scm.com/docs/git-blame#_mapping_authors).
 
 Contributions
 -------------
