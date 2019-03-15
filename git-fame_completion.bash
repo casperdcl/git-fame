@@ -14,7 +14,7 @@ _git_fame()
           ;;
         *)
           if [ ${COMP_WORDS[1]} == fame ]; then
-            COMPREPLY=($(compgen -dW '-h --help -v --version --sort --incl --excl -n --no-regex -s --silent-progress -t --bytype -w --ignore-whitespace -M -C' -- ${cur}))
+            COMPREPLY=($(compgen -dW '-h --help -v --version --cost-time --branch --since --sort --incl --excl -n --no-regex -s --silent-progress -t --bytype -w --ignore-whitespace -M -C --format --manpath --log' -- ${cur}))
           fi
           ;;
       esac
