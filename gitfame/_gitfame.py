@@ -44,7 +44,7 @@ import subprocess
 import re
 import logging
 
-from ._utils import TERM_WIDTH, int_cast_or_len, Max, fext, _str, \
+from ._utils import TERM_WIDTH, int_cast_or_len, fext, _str, \
     check_output, tqdm, TqdmStream, print_unicode, Str
 from ._version import __version__  # NOQA
 
@@ -57,8 +57,8 @@ __license__ = __licence__  # weird foreign language
 
 
 RE_AUTHS = re.compile(
-  r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?committer-time (\d+)',
-  flags=re.M|re.DOTALL)
+    r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?committer-time (\d+)',
+    flags=re.M | re.DOTALL)
 # finds all non-escaped commas
 # NB: does not support escaping of escaped character
 RE_CSPILT = re.compile(r'(?<!\\),')
@@ -69,11 +69,12 @@ def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
   """
   Convert list of commit times (in seconds) to an estimate of hours spent.
 
-  https://github.com/kimmobrunfeldt/git-hours/blob/8aaeee237cb9d9028e7a2592a25ad8468b1f45e4/index.js#L114-L143
+  https://github.com/kimmobrunfeldt/git-hours/blob/\
+8aaeee237cb9d9028e7a2592a25ad8468b1f45e4/index.js#L114-L143
   """
   dates = sorted(dates)
   diffInSec = [i - j for (i, j) in zip(dates[1:], dates[:-1])]
-  res = sum(filter(lambda i:i<maxCommitDiffInSec, diffInSec))
+  res = sum(filter(lambda i: i < maxCommitDiffInSec, diffInSec))
   return (res / 60.0 + firstCommitAdditionInMinutes) / 60.0
 
 
@@ -98,9 +99,9 @@ def tabulate(
               100 * len(s.get('files', [])) / max(1, stats_tot['files'])
           ))).replace('/100.0/', '/ 100/')]
          for (auth, s) in sorted(
-            it_as(),
-            key=lambda k: int_cast_or_len(k[1].get(sort, 0)),
-            reverse=True)]
+             it_as(),
+             key=lambda k: int_cast_or_len(k[1].get(sort, 0)),
+             reverse=True)]
   if cost is None:
     cost = ''
   if cost:
@@ -108,14 +109,14 @@ def tabulate(
     stats_tot = dict(stats_tot)
     if any(i in cost for i in ['cocomo', 'month']):
       COL_NAMES.insert(1, 'mths')
-      tab = [i[:1] + [3.2*(i[1]/1e3)**1.05] + i[1:] for i in tab]
+      tab = [i[:1] + [3.2 * (i[1] / 1e3)**1.05] + i[1:] for i in tab]
       stats_tot.setdefault('months', '%.1f' % sum(i[1] for i in tab))
     if any(i in cost for i in ['commit', 'hour']):
       COL_NAMES.insert(1, 'hrs')
       tab = [i[:1] + [hours(auth_stats[i[0]]['ctimes'])] + i[1:] for i in tab]
 
     stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
-  #log.debug(auth_stats)
+  # log.debug(auth_stats)
 
   totals = 'Total ' + '\nTotal '.join(
       "%s: %s" % i for i in sorted(stats_tot.items())) + '\n'
@@ -156,11 +157,14 @@ def tabulate(
     if backend not in tabber.tabulate_formats:
       raise ValueError("Unknown backend:%s" % backend)
     log.debug("backend:tabulate:" + backend)
-    COL_LENS = [max(len(Str(i[j])) for i in [COL_NAMES] + tab) for j in range(len(COL_NAMES))]
+    COL_LENS = [max(len(Str(i[j])) for i in [COL_NAMES] + tab)
+                for j in range(len(COL_NAMES))]
     COL_LENS[0] = min(
-      TERM_WIDTH - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4, COL_LENS[0])
+        TERM_WIDTH - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4,
+        COL_LENS[0])
     tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
-    return totals + tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
+    return totals + tabber.tabulate(
+        tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
     # from ._utils import tighten
     # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
 
@@ -172,8 +176,8 @@ def run(args):
   log.debug("parsing args")
 
   if args.sort not in ["loc", "commits", "files"]:
-    log.warn("--sort argument (" + args.sort +
-             ") unrecognised\n" + __doc__)
+    log.warn("--sort argument (%s) unrecognised\n%s" % (
+        args.sort, __doc__))
 
   if not args.excl:
     args.excl = ""

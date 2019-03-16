@@ -242,5 +242,5 @@ def Str(i):
   """return `'%g' % i` if possible, else `_str(i)`"""
   try:
     return '%g' % i
-  except:
+  except TypeError:
     return _str(i)

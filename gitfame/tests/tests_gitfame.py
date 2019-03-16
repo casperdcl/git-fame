@@ -37,8 +37,7 @@ stats_tot = {'files': 14, 'loc': 613, 'commits': 35}
 
 def test_tabulate():
   """Test builtin tabulate"""
-  assert (_gitfame.tabulate(auth_stats, stats_tot) ==
-          dedent("""\
+  assert (_gitfame.tabulate(auth_stats, stats_tot) == dedent("""\
     Total commits: 35
     Total files: 14
     Total loc: 613
@@ -49,24 +48,30 @@ def test_tabulate():
 
   sys.stderr.write("\rTest builtin tabulate ... ")  # `tqdm` may clear info
 
+
 def test_tabulate_cost():
   """Test cost estimates"""
-  assert (_gitfame.tabulate(auth_stats, stats_tot, cost="hours,COCOMO") ==
-          dedent("""\
+  assert (_gitfame.tabulate(
+      auth_stats, stats_tot, cost="hours,COCOMO") == dedent("""\
     Total commits: 35
     Total files: 14
     Total hours: 5.5
     Total loc: 613
     Total months: 1.9
-    | Author               |   hrs |   mths |   loc |   coms |   fils |  distribution   |
-    |:---------------------|------:|-------:|------:|-------:|-------:|:----------------|
-    | Casper da Costa-Luis |     4 |      2 |   538 |     35 |     10 | 87.8/ 100/71.4  |
-    | Not Committed Yet    |     2 |      0 |    75 |      0 |      4 | 12.2/ 0.0/28.6  |"""))
+    | Author               |   hrs |   mths |   loc |   coms |   fils \
+|  distribution   |
+    |:---------------------|------:|-------:|------:|-------:|-------:\
+|:----------------|
+    | Casper da Costa-Luis |     4 |      2 |   538 |     35 |     10 \
+| 87.8/ 100/71.4  |
+    | Not Committed Yet    |     2 |      0 |    75 |      0 |      4 \
+| 12.2/ 0.0/28.6  |"""))
+
 
 def test_tabulate_yaml():
   """Test YAML tabulate"""
   res = [
-    dedent("""\
+      dedent("""\
       columns:
       - Author
       - loc
@@ -94,8 +99,8 @@ def test_tabulate_yaml():
         commits: 35
         files: 14
         loc: 613"""),
-    # pyyaml<5
-    dedent("""\
+      # pyyaml<5
+      dedent("""\
       columns: [Author, loc, coms, fils, '%loc', '%coms', '%fils']
       data:
       - [Casper da Costa-Luis, 538, 35, 10, 87.8, 100.0, 71.4]
@@ -106,12 +111,12 @@ def test_tabulate_yaml():
   except ImportError:
     raise SkipTest
 
+
 def test_tabulate_json():
   """Test JSON tabulate"""
   from json import loads
   res = loads(_gitfame.tabulate(auth_stats, stats_tot, backend='json'))
-  assert (res ==
-          loads(dedent("""\
+  assert (res == loads(dedent("""\
     {"total": {"files": 14, "loc": 613, "commits": 35},
     "data": [["Casper da Costa-Luis", 538, 35, 10, 87.8, 100.0, 71.4],
     ["Not Committed Yet", 75, 0, 4, 12.2, 0.0, 28.6]],
@@ -129,8 +134,8 @@ def test_tabulate_csv():
 def test_tabulate_tabulate():
   """Test external tabulate"""
   try:
-    assert (_gitfame.tabulate(auth_stats, stats_tot, backend='simple') ==
-            dedent("""\
+    assert (_gitfame.tabulate(
+        auth_stats, stats_tot, backend='simple') == dedent("""\
       Total commits: 35
       Total files: 14
       Total loc: 613
@@ -159,12 +164,12 @@ def test_main():
   import subprocess
   from os.path import dirname as dn
 
-  res = subprocess.Popen((sys.executable, '-c', "import gitfame; import sys;" +
-                          ' sys.argv = ["", "--silent-progress", "' +
-                          dn(dn(dn(__file__))) +
-                          '"]; gitfame.main()'),
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT).communicate()[0]
+  res = subprocess.Popen(
+      (sys.executable, '-c', 'import gitfame; import sys;\
+       sys.argv = ["", "--silent-progress", "%s"];\
+       gitfame.main()' % dn(dn(dn(__file__)))),
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT).communicate()[0]
 
   # actual test:
 
