@@ -22,6 +22,7 @@
 	build
 	buildupload
 	pypi
+	docker
 	help
 	none
 	run
@@ -68,6 +69,11 @@ gitfame/git-fame.1: .git-fame.1.md gitfame/_gitfame.py
     cat "$<" - |\
     pandoc -o "$@" -s -t man
 
+.dockerignore: .gitignore
+	cat $^ > "$@"
+	echo -e ".git" > "$@"
+	git clean -xdn | sed -nr 's/^Would remove (.*)$$/\1/p' >> "$@"
+
 distclean:
 	@+make coverclean
 	@+make prebuildclean
@@ -110,6 +116,12 @@ buildupload:
 	@make build
 	@make pypi
 
+docker:
+	@make .dockerignore
+	@make coverclean
+	@make clean
+	docker build . -t casperdcl/git-fame
+	docker tag casperdcl/git-fame:latest casperdcl/git-fame:$(shell docker run --rm casperdcl/git-fame -v)
 none:
 	# used for unit testing
 

@@ -3,9 +3,9 @@ git-fame
 
 Pretty-print ``git`` repository collaborators sorted by contributions.
 
-|PyPI-Status| |PyPI-Versions|
+|PyPI-Versions| |PyPI-Status| |Docker|
 
-|Build-Status| |Coverage-Status| |Branch-Coverage-Status| |Codacy-Grade| |Libraries-Rank|
+|Build-Status| |Coverage-Status| |Branch-Coverage-Status| |Codacy-Grade| |Libraries-Rank| |PyPI-Downloads|
 
 |DOI-URI| |LICENCE| |OpenHub-Status| |Gift-Casper|
 
@@ -55,6 +55,17 @@ Pull and install in the current directory:
 .. code:: sh
 
     pip install -e git+https://github.com/casperdcl/git-fame.git@master#egg=git-fame
+
+Latest Docker release
+~~~~~~~~~~~~~~~~~~~~~
+
+|Docker|
+
+.. code:: sh
+
+    docker pull casperdcl/git-fame
+    docker run --rm casperdcl/git-fame --help
+    docker run --rm -v </local/path/to/repository>:/repo casperdcl/git-fame
 
 Register alias with git
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -232,6 +243,8 @@ We are grateful for all |GitHub-Contributions|.
    :target: https://pypi.org/project/git-fame
 .. |PyPI-Versions| image:: https://img.shields.io/pypi/pyversions/git-fame.svg?logo=python&logoColor=white
    :target: https://pypi.org/project/git-fame
+.. |Docker| image:: https://img.shields.io/badge/docker-pull-blue.svg?logo=docker
+   :target: https://hub.docker.com/r/casperdcl/git-fame
 .. |Libraries-Rank| image:: https://img.shields.io/librariesio/sourcerank/pypi/git-fame.svg?logo=koding&logoColor=white
    :target: https://libraries.io/pypi/git-fame
 .. |Libraries-Dependents| image:: https://img.shields.io/librariesio/dependent-repos/pypi/git-fame.svg?logo=koding&logoColor=white
