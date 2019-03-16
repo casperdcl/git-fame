@@ -22,6 +22,7 @@
 	build
 	buildupload
 	pypi
+	snap
 	docker
 	help
 	none
@@ -68,6 +69,12 @@ gitfame/git-fame.1: .git-fame.1.md gitfame/_gitfame.py
       -e 's/^  (-\S+, )(-\S+)\s*/\n\\\1\\\2\n: /' |\
     cat "$<" - |\
     pandoc -o "$@" -s -t man
+
+snapcraft.yaml: .snapcraft.yml
+	cat "$<" | sed -e 's/{version}/'"`python -m gitfame --version`"'/g' \
+    -e 's/{commit}/'"`git describe --always`"'/g' \
+    -e 's/{source}/./g' \
+    -e 's/{description}/https:\/\/github.com\/casperdcl\/git-fame/g' > "$@"
 
 .dockerignore: .gitignore
 	cat $^ > "$@"
@@ -116,6 +123,9 @@ buildupload:
 	@make build
 	@make pypi
 
+snap:
+	@make snapcraft.yaml
+	snapcraft
 docker:
 	@make .dockerignore
 	@make coverclean

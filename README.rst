@@ -3,7 +3,7 @@ git-fame
 
 Pretty-print ``git`` repository collaborators sorted by contributions.
 
-|PyPI-Versions| |PyPI-Status| |Docker|
+|PyPI-Versions| |PyPI-Status| |Docker| |Snapcraft|
 
 |Build-Status| |Coverage-Status| |Branch-Coverage-Status| |Codacy-Grade| |Libraries-Rank| |PyPI-Downloads|
 
@@ -55,6 +55,15 @@ Pull and install in the current directory:
 .. code:: sh
 
     pip install -e git+https://github.com/casperdcl/git-fame.git@master#egg=git-fame
+
+Latest Snapcraft release
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+|Snapcraft|
+
+.. code:: sh
+
+    snap install git-fame
 
 Latest Docker release
 ~~~~~~~~~~~~~~~~~~~~~
@@ -243,6 +252,8 @@ We are grateful for all |GitHub-Contributions|.
    :target: https://pypi.org/project/git-fame
 .. |PyPI-Versions| image:: https://img.shields.io/pypi/pyversions/git-fame.svg?logo=python&logoColor=white
    :target: https://pypi.org/project/git-fame
+.. |Snapcraft| image:: https://img.shields.io/badge/snap-install-82BEA0.svg?logo=snapcraft
+   :target: https://snapcraft.io/git-fame
 .. |Docker| image:: https://img.shields.io/badge/docker-pull-blue.svg?logo=docker
    :target: https://hub.docker.com/r/casperdcl/git-fame
 .. |Libraries-Rank| image:: https://img.shields.io/librariesio/sourcerank/pypi/git-fame.svg?logo=koding&logoColor=white
