@@ -14,8 +14,16 @@ matrix:
   - python: 3.7
     env: TOXENV=py37
     dist: xenial
-    sudo: true  # required for py37
+    sudo: true  # required for py37, docker
+    services:
+    - docker
     after_success:
+    - echo "$DOCKER_PWD" | docker login -u $DOCKER_USR --password-stdin
+    - make -B docker
+    - |
+      if [[ -n "$TRAVIS_TAG" ]]; then
+      docker tag casperdcl/git-fame:latest casperdcl/git-fame:$TRAVIS_TAG ; fi
+    - docker tag casperdcl/git-fame:latest casperdcl/git-fame:devel
     - pip install .[dev]
     - make build
     - openssl aes-256-cbc -K $encrypted_88867ca921c3_key
@@ -38,6 +46,16 @@ matrix:
       name: git-fame v$TRAVIS_TAG stable
       on:
         tags: true
+    - provider: script
+      script: docker push casperdcl/git-fame:$TRAVIS_TAG
+      on:
+        tags: true
+    - provider: script
+      script: docker push casperdcl/git-fame:latest
+    - provider: script
+      script: docker push casperdcl/git-fame:devel
+      on:
+        branch: devel
   - python: pypy2.7-5.10.0
     env: TOXENV=pypy
   - python: pypy3.5-5.10.0
