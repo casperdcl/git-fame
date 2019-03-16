@@ -11,9 +11,13 @@ parts:
   git-fame:
     plugin: python
     python-version: python3
+    python-packages: [tqdm, pyyaml]
+    stage-packages: [git]
     source: {source}
     source-commit: '{commit}'
     parse-info: [setup.py]
 apps:
   git-fame:
     command: bin/git-fame
+    #completer: git-fame_completion.bash
+    plugs: [home]
