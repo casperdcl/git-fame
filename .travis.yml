@@ -29,6 +29,15 @@ matrix:
       skip_cleanup: true
       on:
         tags: true
+    - provider: releases
+      api_key: $GITHUB_TOKEN
+      file_glob: true
+      file: dist/git-fame-*.whl*
+      skip_cleanup: true
+      draft: true
+      name: git-fame v$TRAVIS_TAG stable
+      on:
+        tags: true
   - python: pypy2.7-5.10.0
     env: TOXENV=pypy
   - python: pypy3.5-5.10.0
