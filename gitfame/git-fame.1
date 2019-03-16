@@ -121,12 +121,6 @@ Escape (\\,) for a literal comma (may require \\\\, in shell).
 .RS
 .RE
 .TP
-.B \-\-cost\-time=\f[I]method\f[]
-Include time cost in person\-months.
-Methods: COCOMO|commits.
-.RS
-.RE
-.TP
 .B \-M, \-M
 Detect intra\-file line moves and copies [default: False].
 .RS
@@ -141,6 +135,14 @@ NB: if regex is enabled \f[C],\f[] is equivalent to \f[C]|\f[].
 .TP
 .B \-\-manpath=\f[I]path\f[]
 Directory in which to install git\-fame man pages.
+.RS
+.RE
+.TP
+.B \-\-cost=\f[I]method\f[]
+Include time cost in person\-months (COCOMO) or person\- hours (based on
+commit times).
+Methods: month(s)|cocomo|hour(s)|commit(s).
+May be multiple comma\-separated values.
 .RS
 .RE
 .SH AUTHORS

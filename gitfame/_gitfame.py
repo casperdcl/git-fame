@@ -16,8 +16,10 @@ Options:
   --incl=<f>     Included files [default: .*]. See `--excl` for format.
   --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
                   or relative to now (eg: 3.weeks).
-  --cost-time=<method>     Include time cost in person-months.
-                 Methods: COCOMO|commits.
+  --cost=<method>  Include time cost in person-months (COCOMO) or
+                   person-hours (based on commit times).
+                   Methods: month(s)|cocomo|hour(s)|commit(s).
+                   May be multiple comma-separated values.
   -n, --no-regex  Assume <f> are comma-separated exact matches
                   rather than regular expressions [default: False].
                   NB: if regex is enabled `,` is equivalent to `|`.
@@ -99,18 +101,17 @@ def tabulate(
             it_as(),
             key=lambda k: int_cast_or_len(k[1].get(sort, 0)),
             reverse=True)]
-  if cost is not None:
-    cost = cost.lower()
-    if cost == 'cocomo':
-      COL_NAMES.insert(1, 'mths')
-      tab = [i[:1] + [3.2*(i[1]/1e3)**1.05] + i[1:] for i in tab]
-      stats_tot.setdefault('months', '%.1f' % sum(i[1] for i in tab))
-    elif cost == 'commits':
-      COL_NAMES.insert(1, 'hrs')
-      tab = [i[:1] + [hours(auth_stats[i[0]]['ctimes'])] + i[1:] for i in tab]
-      stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
-    else:
-      raise ValueError("Unknown time cost:%s" % cost)
+  if cost is None:
+    cost = ''
+  cost = cost.lower()
+  if any(i in cost for i in ['cocomo', 'month']):
+    COL_NAMES.insert(1, 'mths')
+    tab = [i[:1] + [3.2*(i[1]/1e3)**1.05] + i[1:] for i in tab]
+    stats_tot.setdefault('months', '%.1f' % sum(i[1] for i in tab))
+  if any(i in cost for i in ['commit', 'hour']):
+    COL_NAMES.insert(1, 'hrs')
+    tab = [i[:1] + [hours(auth_stats[i[0]]['ctimes'])] + i[1:] for i in tab]
+    stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
 
   totals = 'Total ' + '\nTotal '.join(
       "%s: %s" % i for i in sorted(stats_tot.items())) + '\n'
@@ -284,7 +285,7 @@ def run(args):
 
   print_unicode(tabulate(
       auth_stats, stats_tot,
-      args.sort, args.bytype, args.format, args.cost_time))
+      args.sort, args.bytype, args.format, args.cost))
 
 
 def main(args=None):
