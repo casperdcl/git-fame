@@ -59,7 +59,7 @@ testcoverage:
 testtimer:
 	nosetests gitfame --with-timer -d -v
 
-gitfame/git-fame.1: .git-fame.1.md
+gitfame/git-fame.1: .git-fame.1.md gitfame/_gitfame.py
 	python -m gitfame --help | tail -n+9 | head -n-2 |\
     sed -r -e 's/\\/\\\\/g' \
       -e 's/^  (--\S+) (\S+)\s*(.*)$$/\n\\\1=*\2*\n: \3/' \

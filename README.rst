@@ -147,10 +147,10 @@ Documentation
       --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
                       or relative to now (eg: 3.weeks).
       --cost-time=<method>     Include time cost in person-months.
-                     Methods: COCOMO.
+                     Methods: COCOMO|commits.
       -n, --no-regex  Assume <f> are comma-separated exact matches
                       rather than regular expressions [default: False].
-                      NB: if regex is enabled ``,``` is equivalent to ``|``.
+                      NB: if regex is enabled ``,`` is equivalent to ``|``.
       -s, --silent-progress    Suppress ``tqdm`` [default: False].
       -t, --bytype             Show stats per file extension [default: False].
       -w, --ignore-whitespace  Ignore whitespace when comparing the parent's

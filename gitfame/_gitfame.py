@@ -17,7 +17,7 @@ Options:
   --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
                   or relative to now (eg: 3.weeks).
   --cost-time=<method>     Include time cost in person-months.
-                 Methods: COCOMO.
+                 Methods: COCOMO|commits.
   -n, --no-regex  Assume <f> are comma-separated exact matches
                   rather than regular expressions [default: False].
                   NB: if regex is enabled `,` is equivalent to `|`.
@@ -54,18 +54,33 @@ __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
 
 
-RE_AUTHS = re.compile(r'^\w+ \d+ \d+ (\d+)\nauthor (.+)$', flags=re.M)
+RE_AUTHS = re.compile(
+  r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?committer-time (\d+)',
+  flags=re.M|re.DOTALL)
 # finds all non-escaped commas
 # NB: does not support escaping of escaped character
 RE_CSPILT = re.compile(r'(?<!\\),')
 RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
 
 
+def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
+  """
+  Convert list of commit times (in seconds) to an estimate of hours spent.
+
+  https://github.com/kimmobrunfeldt/git-hours/blob/8aaeee237cb9d9028e7a2592a25ad8468b1f45e4/index.js#L114-L143
+  """
+  dates = sorted(dates)
+  diffInSec = [i - j for (i, j) in zip(dates[1:], dates[:-1])]
+  res = sum(filter(lambda i:i<maxCommitDiffInSec, diffInSec))
+  return (res / 60.0 + firstCommitAdditionInMinutes) / 60.0
+
+
 def tabulate(
         auth_stats, stats_tot, sort='loc', bytype=False, backend='md',
         cost=None):
   """
-  backends  : [default: md]|yaml|json|csv|tsv|tabulate
+  backends  : [default: md]|yaml|json|csv|tsv|tabulate|
+    `in tabulate.tabulate_formats`
   """
   log = logging.getLogger(__name__)
   COL_NAMES = ['Author', 'loc', 'coms', 'fils', ' distribution']
@@ -90,11 +105,15 @@ def tabulate(
       COL_NAMES.insert(1, 'mths')
       tab = [i[:1] + [3.2*(i[1]/1e3)**1.05] + i[1:] for i in tab]
       stats_tot.setdefault('months', '%.1f' % sum(i[1] for i in tab))
+    elif cost == 'commits':
+      COL_NAMES.insert(1, 'hrs')
+      tab = [i[:1] + [hours(auth_stats[i[0]]['ctimes'])] + i[1:] for i in tab]
+      stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
     else:
       raise ValueError("Unknown time cost:%s" % cost)
 
   totals = 'Total ' + '\nTotal '.join(
-      "%s: %r" % i for i in sorted(stats_tot.items())) + '\n'
+      "%s: %s" % i for i in sorted(stats_tot.items())) + '\n'
 
   backend = backend.lower()
   if backend in ("tabulate", "md", "markdown"):
@@ -212,17 +231,19 @@ def run(args):
       log.warn(fname + ':' + str(e))
       continue
     log.log(logging.NOTSET, blame_out)
-    loc_auths = RE_AUTHS.findall(blame_out)
+    loc_auth_times = RE_AUTHS.findall(blame_out)
 
-    for loc, auth in loc_auths:  # for each chunk
+    for loc, auth, tstamp in loc_auth_times:  # for each chunk
       loc = int(loc)
       auth = _str(auth)
+      tstamp = int(tstamp)
       try:
         auth_stats[auth]["loc"] += loc
       except KeyError:
-        auth_stats[auth] = {"loc": loc, "files": set([fname])}
+        auth_stats[auth] = {"loc": loc, "files": set([fname]), "ctimes": []}
       else:
         auth_stats[auth]["files"].add(fname)
+        auth_stats[auth]["ctimes"].append(tstamp)
 
       if args.bytype:
         fext_key = ("." + fext(fname)) if fext(fname) else "._None_ext"
@@ -244,7 +265,8 @@ def run(args):
     except KeyError:
       auth_stats[_str(auth)] = {"loc": 0,
                                 "files": set([]),
-                                "commits": int(ncom)}
+                                "commits": int(ncom),
+                                "ctimes": []}
 
   stats_tot = dict((k, 0) for stats in auth_stats.values() for k in stats)
   log.debug(stats_tot)
