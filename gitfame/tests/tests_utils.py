@@ -16,8 +16,8 @@ def test_tighten():
 '''
 
   # compress whitespace
-  assert (_utils.tighten(orig_tab, max_width=80) ==
-          '''+----------------------+-----+------+------+----------------+
+  assert (_utils.tighten(orig_tab, max_width=80) == '''\
++----------------------+-----+------+------+----------------+
 | Author               | loc | coms | fils |  distribution  |
 +======================+=====+======+======+================+
 | Casper da Costa-Luis | 719 |   35 |   11 | 93.5/ 100/84.6 |
@@ -25,8 +25,8 @@ def test_tighten():
 +----------------------+-----+------+------+----------------+''')
 
   # compress first column
-  assert (_utils.tighten(orig_tab, max_width=47) ==
-          '''+--------+-----+------+------+----------------+
+  assert (_utils.tighten(orig_tab, max_width=47) == '''\
++--------+-----+------+------+----------------+
 | Author | loc | coms | fils |  distribution  |
 +========+=====+======+======+================+
 | Casper | 719 |   35 |   11 | 93.5/ 100/84.6 |

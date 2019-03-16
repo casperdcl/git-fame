@@ -57,13 +57,6 @@ FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 .RS
 .RE
 .TP
-.B \-\-format=\f[I]format\f[]
-Table format [default: md]|markdown|yaml|yml|json|csv|tsv|tabulate.
-May require \f[C]git\-fame[<format>]\f[], e.g.
-\f[C]pip\ install\ git\-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ fame[yaml]\f[].
-.RS
-.RE
-.TP
 .B \-w, \-\-ignore\-whitespace
 .IP
 .nf
@@ -82,18 +75,21 @@ See \f[C]\-\-excl\f[] for format.
 .RS
 .RE
 .TP
-.B \-s, \-\-silent\-progress
-.IP
-.nf
-\f[C]
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Suppress\ `tqdm`\ [default:\ False].
-\f[]
-.fi
+.B \-\-format=\f[I]format\f[]
+Table format [default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
+May require \f[C]git\-fame[<format>]\f[], e.g.
+\f[C]pip\ install\ git\-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ fame[yaml]\f[].
+Any \f[C]tabulate.tabulate_formats\f[] is also accepted.
 .RS
 .RE
 .TP
 .B \-\-branch=\f[I]b\f[]
 Branch or tag [default: HEAD] up to which to check.
+.RS
+.RE
+.TP
+.B \-C, \-C
+Detect inter\-file line moves and copies [default: False].
 .RS
 .RE
 .TP
@@ -108,8 +104,13 @@ show program\[aq]s version number and exit
 .RS
 .RE
 .TP
-.B \-C, \-C
-Detect inter\-file line moves and copies [default: False].
+.B \-s, \-\-silent\-progress
+.IP
+.nf
+\f[C]
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Suppress\ `tqdm`\ [default:\ False].
+\f[]
+.fi
 .RS
 .RE
 .TP
@@ -134,6 +135,14 @@ NB: if regex is enabled \f[C],\f[] is equivalent to \f[C]|\f[].
 .TP
 .B \-\-manpath=\f[I]path\f[]
 Directory in which to install git\-fame man pages.
+.RS
+.RE
+.TP
+.B \-\-cost=\f[I]method\f[]
+Include time cost in person\-months (COCOMO) or person\- hours (based on
+commit times).
+Methods: month(s)|cocomo|hour(s)|commit(s).
+May be multiple comma\-separated values.
 .RS
 .RE
 .SH AUTHORS
