@@ -18,12 +18,19 @@ auth_stats = {
     u'Not Committed Yet': {'files': set([
         'gitfame/_gitfame.py', 'gitfame/_utils.py', 'Makefile', 'MANIFEST.in'
     ]),
-        'loc': 75, 'commits': 0},
+        'loc': 75, 'ctimes': [], 'commits': 0},
     u'Casper da Costa-Luis': {'files': set([
         'gitfame/_utils.py', 'gitfame/__main__.py', 'setup.cfg',
         'gitfame/_gitfame.py', 'gitfame/__init__.py',
         'git-fame_completion.bash', 'Makefile', 'MANIFEST.in', '.gitignore',
-        'setup.py']), 'loc': 538, 'commits': 35}
+        'setup.py']), 'loc': 538, 'ctimes': [
+        1510942009, 1517426360, 1532103452, 1543323944, 1548030670, 1459558286,
+        1510942009, 1459559144, 1481150373, 1510942009, 1548030670, 1517178199,
+        1481150379, 1517426360, 1548030670, 1459625059, 1510942009, 1517426360,
+        1481150373, 1517337751, 1517426360, 1510942009, 1548030670, 1459099074,
+        1459598664, 1517337751, 1517176447, 1552697404, 1546630326, 1543326881,
+        1459558286, 1481150373, 1510930168, 1459598664, 1517596988],
+        'commits': 35}
 }
 stats_tot = {'files': 14, 'loc': 613, 'commits': 35}
 
@@ -42,6 +49,19 @@ def test_tabulate():
 
   sys.stderr.write("\rTest builtin tabulate ... ")  # `tqdm` may clear info
 
+def test_tabulate_cost():
+  """Test cost estimates"""
+  assert (_gitfame.tabulate(auth_stats, stats_tot, cost="hours,COCOMO") ==
+          dedent("""\
+    Total commits: 35
+    Total files: 14
+    Total hours: 5.5
+    Total loc: 613
+    Total months: 1.9
+    | Author               |   hrs |   mths |   loc |   coms |   fils |  distribution   |
+    |:---------------------|------:|-------:|------:|-------:|-------:|:----------------|
+    | Casper da Costa-Luis |     4 |      2 |   538 |     35 |     10 | 87.8/ 100/71.4  |
+    | Not Committed Yet    |     2 |      0 |    75 |      0 |      4 | 12.2/ 0.0/28.6  |"""))
 
 def test_tabulate_yaml():
   """Test YAML tabulate"""

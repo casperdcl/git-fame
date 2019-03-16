@@ -103,15 +103,19 @@ def tabulate(
             reverse=True)]
   if cost is None:
     cost = ''
-  cost = cost.lower()
-  if any(i in cost for i in ['cocomo', 'month']):
-    COL_NAMES.insert(1, 'mths')
-    tab = [i[:1] + [3.2*(i[1]/1e3)**1.05] + i[1:] for i in tab]
-    stats_tot.setdefault('months', '%.1f' % sum(i[1] for i in tab))
-  if any(i in cost for i in ['commit', 'hour']):
-    COL_NAMES.insert(1, 'hrs')
-    tab = [i[:1] + [hours(auth_stats[i[0]]['ctimes'])] + i[1:] for i in tab]
+  if cost:
+    cost = cost.lower()
+    stats_tot = dict(stats_tot)
+    if any(i in cost for i in ['cocomo', 'month']):
+      COL_NAMES.insert(1, 'mths')
+      tab = [i[:1] + [3.2*(i[1]/1e3)**1.05] + i[1:] for i in tab]
+      stats_tot.setdefault('months', '%.1f' % sum(i[1] for i in tab))
+    if any(i in cost for i in ['commit', 'hour']):
+      COL_NAMES.insert(1, 'hrs')
+      tab = [i[:1] + [hours(auth_stats[i[0]]['ctimes'])] + i[1:] for i in tab]
+
     stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
+  #log.debug(auth_stats)
 
   totals = 'Total ' + '\nTotal '.join(
       "%s: %s" % i for i in sorted(stats_tot.items())) + '\n'
