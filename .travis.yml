@@ -15,6 +15,20 @@ matrix:
     env: TOXENV=py37
     dist: xenial
     sudo: true  # required for py37
+    after_success:
+    - pip install .[dev]
+    - make build
+    - openssl aes-256-cbc -K $encrypted_88867ca921c3_key
+      -iv $encrypted_88867ca921c3_iv -in .casperdcl.gpg.enc
+      -out .casperdcl.gpg -d
+    - gpg --import .casperdcl.gpg
+    - rm .casperdcl.gpg
+    deploy:
+    - provider: script
+      script: twine upload -s -i casper.dcl@physics.org dist/git-fame-*
+      skip_cleanup: true
+      on:
+        tags: true
   - python: pypy2.7-5.10.0
     env: TOXENV=pypy
   - python: pypy3.5-5.10.0
