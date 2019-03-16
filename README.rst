@@ -143,7 +143,7 @@ Documentation
       --excl=<f>     Excluded files (default: None).
                      In no-regex mode, may be a comma-separated list.
                      Escape (\,) for a literal comma (may require \\, in shell).
-      --incl=<f>     Included files [default: .*]. See ``--excl`` for format.
+      --incl=<f>     Included files [default: .*]. See `--excl` for format.
       --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
                       or relative to now (eg: 3.weeks).
       --cost=<method>  Include time cost in person-months (COCOMO) or
@@ -152,8 +152,8 @@ Documentation
                        May be multiple comma-separated values.
       -n, --no-regex  Assume <f> are comma-separated exact matches
                       rather than regular expressions [default: False].
-                      NB: if regex is enabled ``,`` is equivalent to ``|``.
-      -s, --silent-progress    Suppress ``tqdm`` [default: False].
+                      NB: if regex is enabled `,` is equivalent to `|`.
+      -s, --silent-progress    Suppress `tqdm` [default: False].
       -t, --bytype             Show stats per file extension [default: False].
       -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                                version and the child's to find where the lines
@@ -162,8 +162,8 @@ Documentation
       -C  Detect inter-file line moves and copies [default: False].
       --format=<format>        Table format
           [default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
-          May require ``git-fame[<format>]``, e.g. ``pip install git-fame[yaml]``.
-          Any ``tabulate.tabulate_formats`` is also accepted.
+          May require `git-fame[<format>]`, e.g. `pip install git-fame[yaml]`.
+          Any `tabulate.tabulate_formats` is also accepted.
       --manpath=<path>         Directory in which to install git-fame man pages.
       --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 
