@@ -49,6 +49,7 @@ testnose:
 	nosetests gitfame -d -v
 
 testsetup:
+	@make gitfame/git-fame.1
 	python setup.py check --restructuredtext --strict
 	python setup.py make none
 
@@ -98,6 +99,7 @@ install:
 
 build:
 	@make prebuildclean
+	@make testsetup
 	python setup.py sdist bdist_wheel
 	# python setup.py bdist_wininst
 
@@ -105,7 +107,6 @@ pypi:
 	twine upload dist/*
 
 buildupload:
-	@make testsetup
 	@make build
 	@make pypi
 
