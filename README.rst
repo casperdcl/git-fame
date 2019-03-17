@@ -159,7 +159,7 @@ Documentation
       -h, --help     Print this help and exit.
       -v, --version  Print module version and exit.
       --branch=<b>   Branch or tag [default: HEAD] up to which to check.
-      --sort=<key>   [default: loc]|commits|files.
+      --sort=<key>   [default: loc]|commits|files|hours|months.
       --excl=<f>     Excluded files (default: None).
                      In no-regex mode, may be a comma-separated list.
                      Escape (\,) for a literal comma (may require \\, in shell).

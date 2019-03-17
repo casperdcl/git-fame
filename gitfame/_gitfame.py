@@ -9,7 +9,7 @@ Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
   --branch=<b>   Branch or tag [default: HEAD] up to which to check.
-  --sort=<key>   [default: loc]|commits|files.
+  --sort=<key>   [default: loc]|commits|files|hours|months.
   --excl=<f>     Excluded files (default: None).
                  In no-regex mode, may be a comma-separated list.
                  Escape (\,) for a literal comma (may require \\, in shell).
@@ -98,10 +98,7 @@ def tabulate(
               100 * s.get('commits', 0) / max(1, stats_tot['commits']),
               100 * len(s.get('files', [])) / max(1, stats_tot['files'])
           ))).replace('/100.0/', '/ 100/')]
-         for (auth, s) in sorted(
-             it_as(),
-             key=lambda k: int_cast_or_len(k[1].get(sort, 0)),
-             reverse=True)]
+         for (auth, s) in it_as()]
   if cost is None:
     cost = ''
   if cost:
@@ -117,6 +114,12 @@ def tabulate(
 
     stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
   # log.debug(auth_stats)
+
+  for i, j in [
+      ("commits", "coms"), ("files", "fils"), ("hours", "hrs"),
+      ("months", "mths")]:
+    sort = sort.replace(i, j)
+  tab.sort(key=lambda i: i[COL_NAMES.index(sort)], reverse=True)
 
   totals = 'Total ' + '\nTotal '.join(
       "%s: %s" % i for i in sorted(stats_tot.items())) + '\n'
@@ -175,7 +178,7 @@ def run(args):
 
   log.debug("parsing args")
 
-  if args.sort not in ["loc", "commits", "files"]:
+  if args.sort not in "loc commits files hours months".split():
     log.warn("--sort argument (%s) unrecognised\n%s" % (
         args.sort, __doc__))
 

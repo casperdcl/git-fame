@@ -194,12 +194,11 @@ def test_main():
     raise ValueError("Expected --bad arg to fail")
 
   sys.stdout.seek(0)
-  # import logging
-  # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-  main(['-s', '--sort', 'badSortArg'])
-  # if "--sort argument (badSortArg) unrecognised" \
-  #       not in sys.stdout.getvalue():
-  #   raise ValueError("Expected --sort argument (badSortArg) unrecognised")
+  try:
+    main(['-s', '--sort', 'badSortArg'])
+  except ValueError as e:
+    if "badSortArg" not in str(e):
+      raise ValueError("Expected `--sort=badSortArg` to fail")
 
   for params in [
       ['--sort', 'commits'],
