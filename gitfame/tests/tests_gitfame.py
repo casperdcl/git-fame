@@ -185,11 +185,14 @@ def test_main():
   # import gitfame.__main__  # NOQA
   main(['--silent-progress'])
 
+  sys.stdout.seek(0)
   try:
     main(['--bad', 'arg'])
   except SystemExit:
-    if """usage: gitfame [-h] [""" not in sys.stdout.getvalue():
-      raise
+    res = ' '.join(sys.stdout.getvalue().strip().split()[:2])
+    if res != "usage: gitfame":
+      raise ValueError(sys.stdout.getvalue())
+      raise ValueError(res)
   else:
     raise ValueError("Expected --bad arg to fail")
 
