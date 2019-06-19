@@ -41,7 +41,8 @@ if sys.argv[1].lower().strip() == 'make':
     sys.exit(0)
 
 extras_require = dict(yaml=['pyyaml'], tabulate=[])
-extras_require['dev'] = sum(extras_require.values(), ['py-make>=0.1.0'])
+extras_require['full'] = list(set(sum(extras_require.values(), ['tqdm'])))
+extras_require['dev'] = list(set(extras_require['full'] + ['py-make>=0.1.0']))
 
 README_rst = ''
 fndoc = os.path.join(src_dir, 'README.rst')
@@ -55,7 +56,7 @@ setup(
     long_description=README_rst,
     license=__licence__.lstrip('[').split(']')[0],
     author=__author__.split('<')[0].strip(),
-    author_email=__author__.split('<')[1][1:-1],
+    author_email=__author__.split('<')[1][:-1],
     url='https://github.com/casperdcl/git-fame',
     platforms=['any'],
     packages=['gitfame'],
@@ -83,13 +84,17 @@ setup(
         'Intended Audience :: Other Audience',
         'Intended Audience :: System Administrators',
         'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
+        'Operating System :: MacOS',
         'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft',
+        'Operating System :: Microsoft :: MS-DOS',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         'Operating System :: POSIX :: BSD',
         'Operating System :: POSIX :: BSD :: FreeBSD',
         'Operating System :: POSIX :: Linux',
         'Operating System :: POSIX :: SunOS/Solaris',
+        'Operating System :: Unix',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
@@ -104,6 +109,7 @@ setup(
         'Programming Language :: Python :: Implementation',
         'Programming Language :: Python :: Implementation :: IronPython',
         'Programming Language :: Python :: Implementation :: PyPy',
+        'Programming Language :: Unix Shell',
         'Topic :: Desktop Environment',
         'Topic :: Education :: Computer Aided Instruction (CAI)',
         'Topic :: Education :: Testing',
@@ -121,8 +127,8 @@ setup(
         'Topic :: Terminals',
         'Topic :: Utilities'
     ],
-    keywords='git blame stat stats statistics count author commit commits' \
-             ' log shortlog ls-files',
+    keywords='git blame git-blame git-log code-analysis cost loc' +
+             ' author commit shortlog ls-files',
     test_suite='nose.collector',
     tests_require=['nose', 'flake8', 'coverage'],
 )

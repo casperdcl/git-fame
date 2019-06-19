@@ -7,6 +7,9 @@
 *.egg-info
 build/
 dist/
+snapcraft.yaml
+git-fame_*_amd64.snap
+.dockerignore
 
 # Unit test / coverage reports
 .tox/

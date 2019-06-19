@@ -12,9 +12,18 @@ _git_fame()
         "--sort")
           COMPREPLY=($(compgen -W 'loc commits files' -- ${cur}))
           ;;
+        "--cost")
+          COMPREPLY=($(compgen -W 'months cocomo hours commits' -- ${cur}))
+          ;;
+        "--format")
+          COMPREPLY=($(compgen -W 'pipe markdown yaml json csv tsv tabulate' -- ${cur}))
+          ;;
+        "--log")
+          COMPREPLY=($(compgen -W 'FATAL CRITICAL ERROR WARNING INFO DEBUG NOTSET' -- ${cur}))
+          ;;
         *)
           if [ ${COMP_WORDS[1]} == fame ]; then
-            COMPREPLY=($(compgen -dW '-h --help -v --version --cost --branch --since --sort --incl --excl -n --no-regex -s --silent-progress -t --bytype -w --ignore-whitespace -M -C --format --manpath --log' -- ${cur}))
+            COMPREPLY=($(compgen -dW '-h --help -v --version --cost --branch --since --sort --incl --excl -n --no-regex -s --silent-progress --warn-binary -t --bytype -w --ignore-whitespace -M -C --format --manpath --log' -- ${cur}))
           fi
           ;;
       esac

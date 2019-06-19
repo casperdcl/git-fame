@@ -185,21 +185,23 @@ def test_main():
   # import gitfame.__main__  # NOQA
   main(['--silent-progress'])
 
+  sys.stdout.seek(0)
   try:
     main(['--bad', 'arg'])
   except SystemExit:
-    if """usage: gitfame [-h] [""" not in sys.stdout.getvalue():
-      raise
+    res = ' '.join(sys.stdout.getvalue().strip().split()[:2])
+    if res != "usage: gitfame":
+      raise ValueError(sys.stdout.getvalue())
+      raise ValueError(res)
   else:
     raise ValueError("Expected --bad arg to fail")
 
   sys.stdout.seek(0)
-  # import logging
-  # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-  main(['-s', '--sort', 'badSortArg'])
-  # if "--sort argument (badSortArg) unrecognised" \
-  #       not in sys.stdout.getvalue():
-  #   raise ValueError("Expected --sort argument (badSortArg) unrecognised")
+  try:
+    main(['-s', '--sort', 'badSortArg'])
+  except KeyError as e:
+    if "badSortArg" not in str(e):
+      raise ValueError("Expected `--sort=badSortArg` to fail")
 
   for params in [
       ['--sort', 'commits'],

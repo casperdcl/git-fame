@@ -9,7 +9,7 @@ Options:
   -h, --help     Print this help and exit.
   -v, --version  Print module version and exit.
   --branch=<b>   Branch or tag [default: HEAD] up to which to check.
-  --sort=<key>   [default: loc]|commits|files.
+  --sort=<key>   [default: loc]|commits|files|hours|months.
   --excl=<f>     Excluded files (default: None).
                  In no-regex mode, may be a comma-separated list.
                  Escape (\,) for a literal comma (may require \\, in shell).
@@ -24,6 +24,8 @@ Options:
                   rather than regular expressions [default: False].
                   NB: if regex is enabled `,` is equivalent to `|`.
   -s, --silent-progress    Suppress `tqdm` [default: False].
+  --warn-binary   Don't silently skip files which appear to be binary data
+                  [default: False].
   -t, --bytype             Show stats per file extension [default: False].
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
@@ -98,10 +100,7 @@ def tabulate(
               100 * s.get('commits', 0) / max(1, stats_tot['commits']),
               100 * len(s.get('files', [])) / max(1, stats_tot['files'])
           ))).replace('/100.0/', '/ 100/')]
-         for (auth, s) in sorted(
-             it_as(),
-             key=lambda k: int_cast_or_len(k[1].get(sort, 0)),
-             reverse=True)]
+         for (auth, s) in it_as()]
   if cost is None:
     cost = ''
   if cost:
@@ -117,6 +116,12 @@ def tabulate(
 
     stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
   # log.debug(auth_stats)
+
+  for i, j in [
+      ("commits", "coms"), ("files", "fils"), ("hours", "hrs"),
+      ("months", "mths")]:
+    sort = sort.replace(i, j)
+  tab.sort(key=lambda i: i[COL_NAMES.index(sort)], reverse=True)
 
   totals = 'Total ' + '\nTotal '.join(
       "%s: %s" % i for i in sorted(stats_tot.items())) + '\n'
@@ -175,9 +180,10 @@ def run(args):
 
   log.debug("parsing args")
 
-  if args.sort not in ["loc", "commits", "files"]:
+  if args.sort not in "loc commits files hours months".split():
     log.warn("--sort argument (%s) unrecognised\n%s" % (
         args.sort, __doc__))
+    raise KeyError(args.sort)
 
   if not args.excl:
     args.excl = ""
@@ -237,7 +243,7 @@ def run(args):
     try:
       blame_out = check_output(git_blame_cmd, stderr=subprocess.STDOUT)
     except Exception as e:
-      log.warn(fname + ':' + str(e))
+      getattr(log, "warn" if args.warn_binary else "debug")(fname + ':' + str(e))
       continue
     log.log(logging.NOTSET, blame_out)
     loc_auth_times = RE_AUTHS.findall(blame_out)
@@ -303,7 +309,8 @@ def main(args=None):
                 version=__version__).parse_args(args=args)
   logging.basicConfig(
       level=getattr(logging, args.log, logging.INFO),
-      stream=TqdmStream)
+      stream=TqdmStream,
+      format="%(levelname)s:gitfame.%(funcName)s:%(lineno)d:%(message)s")
   log = logging.getLogger(__name__)
 
   log.debug(args)

@@ -3,9 +3,9 @@ git-fame
 
 Pretty-print ``git`` repository collaborators sorted by contributions.
 
-|PyPI-Status| |PyPI-Versions|
+|PyPI-Versions| |PyPI-Status| |Docker| |Snapcraft|
 
-|Build-Status| |Coverage-Status| |Branch-Coverage-Status| |Codacy-Grade| |Libraries-Rank|
+|Build-Status| |Coverage-Status| |Branch-Coverage-Status| |Codacy-Grade| |Libraries-Rank| |PyPI-Downloads|
 
 |DOI-URI| |LICENCE| |OpenHub-Status| |Gift-Casper|
 
@@ -55,6 +55,26 @@ Pull and install in the current directory:
 .. code:: sh
 
     pip install -e git+https://github.com/casperdcl/git-fame.git@master#egg=git-fame
+
+Latest Snapcraft release
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+|Snapcraft|
+
+.. code:: sh
+
+    snap install git-fame
+
+Latest Docker release
+~~~~~~~~~~~~~~~~~~~~~
+
+|Docker|
+
+.. code:: sh
+
+    docker pull casperdcl/git-fame
+    docker run --rm casperdcl/git-fame --help
+    docker run --rm -v </local/path/to/repository>:/repo casperdcl/git-fame
 
 Register alias with git
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,7 +147,7 @@ Documentation
 
 |PyPI-Versions| |README-Hits|
 
-.. code:: sh
+.. code::
 
     Usage:
       gitfame [--help | options] [<gitdir>]
@@ -139,7 +159,7 @@ Documentation
       -h, --help     Print this help and exit.
       -v, --version  Print module version and exit.
       --branch=<b>   Branch or tag [default: HEAD] up to which to check.
-      --sort=<key>   [default: loc]|commits|files.
+      --sort=<key>   [default: loc]|commits|files|hours|months.
       --excl=<f>     Excluded files (default: None).
                      In no-regex mode, may be a comma-separated list.
                      Escape (\,) for a literal comma (may require \\, in shell).
@@ -154,6 +174,8 @@ Documentation
                       rather than regular expressions [default: False].
                       NB: if regex is enabled `,` is equivalent to `|`.
       -s, --silent-progress    Suppress `tqdm` [default: False].
+      --warn-binary   Don't silently skip files which appear to be binary data
+                      [default: False].
       -t, --bytype             Show stats per file extension [default: False].
       -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                                version and the child's to find where the lines
@@ -225,13 +247,17 @@ We are grateful for all |GitHub-Contributions|.
 .. |GitHub-Updated| image:: https://img.shields.io/github/last-commit/casperdcl/git-fame/master.svg?logo=github&logoColor=white&label=pushed
    :target: https://github.com/casperdcl/git-fame/pulse
 .. |Gift-Casper| image:: https://img.shields.io/badge/gift-donate-dc10ff.svg
-   :target: https://caspersci.uk.to/donate.html
+   :target: https://caspersci.uk.to/donate
 .. |PyPI-Status| image:: https://img.shields.io/pypi/v/git-fame.svg
    :target: https://pypi.org/project/git-fame
 .. |PyPI-Downloads| image:: https://img.shields.io/pypi/dm/git-fame.svg?label=pypi%20downloads&logo=python&logoColor=white
    :target: https://pypi.org/project/git-fame
 .. |PyPI-Versions| image:: https://img.shields.io/pypi/pyversions/git-fame.svg?logo=python&logoColor=white
    :target: https://pypi.org/project/git-fame
+.. |Snapcraft| image:: https://img.shields.io/badge/snap-install-82BEA0.svg?logo=snapcraft
+   :target: https://snapcraft.io/git-fame
+.. |Docker| image:: https://img.shields.io/badge/docker-pull-blue.svg?logo=docker
+   :target: https://hub.docker.com/r/casperdcl/git-fame
 .. |Libraries-Rank| image:: https://img.shields.io/librariesio/sourcerank/pypi/git-fame.svg?logo=koding&logoColor=white
    :target: https://libraries.io/pypi/git-fame
 .. |Libraries-Dependents| image:: https://img.shields.io/librariesio/dependent-repos/pypi/git-fame.svg?logo=koding&logoColor=white

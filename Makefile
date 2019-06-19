@@ -22,6 +22,8 @@
 	build
 	buildupload
 	pypi
+	snap
+	docker
 	help
 	none
 	run
@@ -49,6 +51,7 @@ testnose:
 	nosetests gitfame -d -v
 
 testsetup:
+	@make gitfame/git-fame.1
 	python setup.py check --restructuredtext --strict
 	python setup.py make none
 
@@ -59,13 +62,24 @@ testcoverage:
 testtimer:
 	nosetests gitfame --with-timer -d -v
 
-gitfame/git-fame.1: .git-fame.1.md gitfame/_gitfame.py
+gitfame/git-fame.1: .meta/.git-fame.1.md gitfame/_gitfame.py
 	python -m gitfame --help | tail -n+9 | head -n-2 |\
     sed -r -e 's/\\/\\\\/g' \
       -e 's/^  (--\S+) (\S+)\s*(.*)$$/\n\\\1=*\2*\n: \3/' \
       -e 's/^  (-\S+, )(-\S+)\s*/\n\\\1\\\2\n: /' |\
     cat "$<" - |\
     pandoc -o "$@" -s -t man
+
+snapcraft.yaml: .meta/.snapcraft.yml
+	cat "$<" | sed -e 's/{version}/'"`python -m gitfame --version`"'/g' \
+    -e 's/{commit}/'"`git describe --always`"'/g' \
+    -e 's/{source}/./g' \
+    -e 's/{description}/https:\/\/github.com\/casperdcl\/git-fame/g' > "$@"
+
+.dockerignore: .gitignore
+	cat $^ > "$@"
+	echo -e ".git" > "$@"
+	git clean -xdn | sed -nr 's/^Would remove (.*)$$/\1/p' >> "$@"
 
 distclean:
 	@+make coverclean
@@ -98,6 +112,7 @@ install:
 
 build:
 	@make prebuildclean
+	@make testsetup
 	python setup.py sdist bdist_wheel
 	# python setup.py bdist_wininst
 
@@ -105,10 +120,18 @@ pypi:
 	twine upload dist/*
 
 buildupload:
-	@make testsetup
 	@make build
 	@make pypi
 
+snap:
+	@make snapcraft.yaml
+	snapcraft
+docker:
+	@make .dockerignore
+	@make coverclean
+	@make clean
+	docker build . -t casperdcl/git-fame
+	docker tag casperdcl/git-fame:latest casperdcl/git-fame:$(shell docker run --rm casperdcl/git-fame -v)
 none:
 	# used for unit testing
 
