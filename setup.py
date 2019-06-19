@@ -42,7 +42,7 @@ if sys.argv[1].lower().strip() == 'make':
 
 extras_require = dict(yaml=['pyyaml'], tabulate=[])
 extras_require['full'] = list(set(sum(extras_require.values(), ['tqdm'])))
-extras_require['dev'] = list(set(extras_require['full'] + ['py-make>=0.1.0']))
+extras_require['dev'] = list(set(extras_require['full'] + ['py-make>=0.1.0', 'twine']))
 
 README_rst = ''
 fndoc = os.path.join(src_dir, 'README.rst')
