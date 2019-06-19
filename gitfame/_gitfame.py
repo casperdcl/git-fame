@@ -24,6 +24,8 @@ Options:
                   rather than regular expressions [default: False].
                   NB: if regex is enabled `,` is equivalent to `|`.
   -s, --silent-progress    Suppress `tqdm` [default: False].
+  --warn-binary   Don't silently skip files which appear to be binary data
+                  [default: False].
   -t, --bytype             Show stats per file extension [default: False].
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
@@ -240,7 +242,7 @@ def run(args):
     try:
       blame_out = check_output(git_blame_cmd, stderr=subprocess.STDOUT)
     except Exception as e:
-      log.warn(fname + ':' + str(e))
+      getattr(log, "warn" if args.warn_binary else "debug")(fname + ':' + str(e))
       continue
     log.log(logging.NOTSET, blame_out)
     loc_auth_times = RE_AUTHS.findall(blame_out)
