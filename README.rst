@@ -147,7 +147,7 @@ Documentation
 
 |PyPI-Versions| |README-Hits|
 
-.. code:: sh
+.. code::
 
     Usage:
       gitfame [--help | options] [<gitdir>]
@@ -174,6 +174,8 @@ Documentation
                       rather than regular expressions [default: False].
                       NB: if regex is enabled `,` is equivalent to `|`.
       -s, --silent-progress    Suppress `tqdm` [default: False].
+      --warn-binary   Don't silently skip files which appear to be binary data
+                      [default: False].
       -t, --bytype             Show stats per file extension [default: False].
       -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                                version and the child's to find where the lines

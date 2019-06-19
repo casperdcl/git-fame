@@ -56,7 +56,7 @@ setup(
     long_description=README_rst,
     license=__licence__.lstrip('[').split(']')[0],
     author=__author__.split('<')[0].strip(),
-    author_email=__author__.split('<')[1][1:-1],
+    author_email=__author__.split('<')[1][:-1],
     url='https://github.com/casperdcl/git-fame',
     platforms=['any'],
     packages=['gitfame'],
@@ -122,8 +122,8 @@ setup(
         'Topic :: Terminals',
         'Topic :: Utilities'
     ],
-    keywords='git blame stat stats statistics count author commit commits' \
-             ' log shortlog ls-files',
+    keywords='git blame git-blame git-log code-analysis cost loc' +
+             ' author commit shortlog ls-files',
     test_suite='nose.collector',
     tests_require=['nose', 'flake8', 'coverage'],
 )

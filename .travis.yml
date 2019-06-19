@@ -33,14 +33,14 @@ matrix:
     - rm .casperdcl.gpg
     deploy:
     - provider: script
-      script: twine upload -s -i casper.dcl@physics.org dist/git-fame-*
+      script: twine upload -s -i casper.dcl@physics.org dist/git?fame-*
       skip_cleanup: true
       on:
         tags: true
     - provider: releases
       api_key: $GITHUB_TOKEN
       file_glob: true
-      file: dist/git-fame-*.whl*
+      file: dist/git?fame-*.whl*
       skip_cleanup: true
       draft: true
       name: git-fame v$TRAVIS_TAG stable
