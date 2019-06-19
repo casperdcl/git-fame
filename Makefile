@@ -62,7 +62,7 @@ testcoverage:
 testtimer:
 	nosetests gitfame --with-timer -d -v
 
-gitfame/git-fame.1: .git-fame.1.md gitfame/_gitfame.py
+gitfame/git-fame.1: .meta/.git-fame.1.md gitfame/_gitfame.py
 	python -m gitfame --help | tail -n+9 | head -n-2 |\
     sed -r -e 's/\\/\\\\/g' \
       -e 's/^  (--\S+) (\S+)\s*(.*)$$/\n\\\1=*\2*\n: \3/' \
@@ -70,7 +70,7 @@ gitfame/git-fame.1: .git-fame.1.md gitfame/_gitfame.py
     cat "$<" - |\
     pandoc -o "$@" -s -t man
 
-snapcraft.yaml: .snapcraft.yml
+snapcraft.yaml: .meta/.snapcraft.yml
 	cat "$<" | sed -e 's/{version}/'"`python -m gitfame --version`"'/g' \
     -e 's/{commit}/'"`git describe --always`"'/g' \
     -e 's/{source}/./g' \

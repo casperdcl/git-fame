@@ -22,12 +22,12 @@ matrix:
     - make -B docker
     - |
       if [[ -n "$TRAVIS_TAG" ]]; then
-      docker tag casperdcl/git-fame:latest casperdcl/git-fame:$TRAVIS_TAG ; fi
+      docker tag casperdcl/git-fame:latest casperdcl/git-fame:${TRAVIS_TAG#v} ; fi
     - docker tag casperdcl/git-fame:latest casperdcl/git-fame:devel
     - pip install .[dev]
     - make build
     - openssl aes-256-cbc -K $encrypted_88867ca921c3_key
-      -iv $encrypted_88867ca921c3_iv -in .casperdcl.gpg.enc
+      -iv $encrypted_88867ca921c3_iv -in .meta/.casperdcl.gpg.enc
       -out .casperdcl.gpg -d
     - gpg --import .casperdcl.gpg
     - rm .casperdcl.gpg
@@ -43,11 +43,11 @@ matrix:
       file: dist/git?fame-*.whl*
       skip_cleanup: true
       draft: true
-      name: git-fame v$TRAVIS_TAG stable
+      name: git-fame $TRAVIS_TAG stable
       on:
         tags: true
     - provider: script
-      script: docker push casperdcl/git-fame:$TRAVIS_TAG
+      script: docker push casperdcl/git-fame:${TRAVIS_TAG#v}
       on:
         tags: true
     - provider: script

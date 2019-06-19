@@ -247,7 +247,7 @@ We are grateful for all |GitHub-Contributions|.
 .. |GitHub-Updated| image:: https://img.shields.io/github/last-commit/casperdcl/git-fame/master.svg?logo=github&logoColor=white&label=pushed
    :target: https://github.com/casperdcl/git-fame/pulse
 .. |Gift-Casper| image:: https://img.shields.io/badge/gift-donate-dc10ff.svg
-   :target: https://caspersci.uk.to/donate.html
+   :target: https://caspersci.uk.to/donate
 .. |PyPI-Status| image:: https://img.shields.io/pypi/v/git-fame.svg
    :target: https://pypi.org/project/git-fame
 .. |PyPI-Downloads| image:: https://img.shields.io/pypi/dm/git-fame.svg?label=pypi%20downloads&logo=python&logoColor=white

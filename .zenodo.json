@@ -1,0 +1,8 @@
+{ "metadata": {
+  "title": "git-fame: Pretty-print `git` repository collaborators sorted by contributions",
+  "keywords": [
+    "git", "blame", "git-blame", "git-log", "code-analysis", "cost", "loc", "author",
+    "commit", "shortlog", "ls-files"],
+  "creators": [
+    {"name": "da Costa-Luis, Casper O.", "orcid": "0000-0002-7211-1557"}]
+}}
