@@ -183,6 +183,7 @@ def run(args):
   if args.sort not in "loc commits files hours months".split():
     log.warn("--sort argument (%s) unrecognised\n%s" % (
         args.sort, __doc__))
+    raise KeyError(args.sort)
 
   if not args.excl:
     args.excl = ""

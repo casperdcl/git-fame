@@ -199,7 +199,7 @@ def test_main():
   sys.stdout.seek(0)
   try:
     main(['-s', '--sort', 'badSortArg'])
-  except ValueError as e:
+  except KeyError as e:
     if "badSortArg" not in str(e):
       raise ValueError("Expected `--sort=badSortArg` to fail")
 
