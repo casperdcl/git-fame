@@ -308,7 +308,8 @@ def main(args=None):
                 version=__version__).parse_args(args=args)
   logging.basicConfig(
       level=getattr(logging, args.log, logging.INFO),
-      stream=TqdmStream)
+      stream=TqdmStream,
+      format="%(levelname)s:gitfame.%(funcName)s:%(lineno)d:%(message)s")
   log = logging.getLogger(__name__)
 
   log.debug(args)
