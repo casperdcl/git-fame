@@ -191,8 +191,8 @@ Documentation
 
 
 If multiple user names and/or emails correspond to the same user, aggregate
-`git-fame` statistics and maintain a `git` repository properly by adding a
-[`.mailmap` file](https://git-scm.com/docs/git-blame#_mapping_authors).
+``git-fame`` statistics and maintain a ``git`` repository properly by adding a
+`.mailmap file <https://git-scm.com/docs/git-blame#_mapping_authors>`_.
 
 Contributions
 -------------
