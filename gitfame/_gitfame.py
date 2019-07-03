@@ -60,10 +60,7 @@ __license__ = __licence__  # weird foreign language
 
 
 RE_AUTHS = re.compile(
-    r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?committer-time (\d+)',
-    flags=re.M | re.DOTALL)
-RE_AUTHS_EM = re.compile(
-    r'^\w+ \d+ \d+ (\d+)\nauthor .*?author-mail <(.*?)>.*?committer-time (\d+)',
+    r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?\ncommitter-time (\d+)',
     flags=re.M | re.DOTALL)
 # finds all non-escaped commas
 # NB: does not support escaping of escaped character
@@ -250,11 +247,7 @@ def run(args):
       getattr(log, "warn" if args.warn_binary else "debug")(fname + ':' + str(e))
       continue
     log.log(logging.NOTSET, blame_out)
-    if args.show_email:
-      #git_blame_cmd.append("-e")
-      loc_auth_times = RE_AUTHS_EM.findall(blame_out)
-    else:
-      loc_auth_times = RE_AUTHS.findall(blame_out)
+    loc_auth_times = RE_AUTHS.findall(blame_out)
 
     for loc, auth, tstamp in loc_auth_times:  # for each chunk
       loc = int(loc)
@@ -282,14 +275,25 @@ def run(args):
   for stats in auth_stats.values():
     stats.setdefault("commits", 0)
   log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
+  auth2em = {}
   for (ncom, auth, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
+    auth = _str(auth)
+    auth2em[auth] = em  # TODO: count most used email?
     try:
-      auth_stats[_str(em if args.show_email else auth)]["commits"] += int(ncom)
+      auth_stats[auth]["commits"] += int(ncom)
     except KeyError:
-      auth_stats[_str(em if args.show_email else auth)] = {"loc": 0,
-                                "files": set([]),
-                                "commits": int(ncom),
-                                "ctimes": []}
+      auth_stats[auth] = {"loc": 0,
+                          "files": set([]),
+                          "commits": int(ncom),
+                          "ctimes": []}
+  if args.show_email:
+    # replace author name with email
+    log.debug(auth2em)
+    old = auth_stats
+    auth_stats = {}
+    for auth, stats in getattr(old, 'iteritems', old.items)():
+      auth_stats[auth2em[auth]] = stats
+    del old
 
   stats_tot = dict((k, 0) for stats in auth_stats.values() for k in stats)
   log.debug(stats_tot)
