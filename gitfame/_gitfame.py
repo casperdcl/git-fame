@@ -26,6 +26,7 @@ Options:
   -s, --silent-progress    Suppress `tqdm` [default: False].
   --warn-binary   Don't silently skip files which appear to be binary data
                   [default: False].
+  -e, --show-email  Show author email instead of name [default: False].
   -t, --bytype             Show stats per file extension [default: False].
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
@@ -60,6 +61,9 @@ __license__ = __licence__  # weird foreign language
 
 RE_AUTHS = re.compile(
     r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?committer-time (\d+)',
+    flags=re.M | re.DOTALL)
+RE_AUTHS_EM = re.compile(
+    r'^\w+ \d+ \d+ (\d+)\nauthor .*?author-mail <(.*?)>.*?committer-time (\d+)',
     flags=re.M | re.DOTALL)
 # finds all non-escaped commas
 # NB: does not support escaping of escaped character
@@ -246,7 +250,11 @@ def run(args):
       getattr(log, "warn" if args.warn_binary else "debug")(fname + ':' + str(e))
       continue
     log.log(logging.NOTSET, blame_out)
-    loc_auth_times = RE_AUTHS.findall(blame_out)
+    if args.show_email:
+      #git_blame_cmd.append("-e")
+      loc_auth_times = RE_AUTHS_EM.findall(blame_out)
+    else:
+      loc_auth_times = RE_AUTHS.findall(blame_out)
 
     for loc, auth, tstamp in loc_auth_times:  # for each chunk
       loc = int(loc)
@@ -274,11 +282,11 @@ def run(args):
   for stats in auth_stats.values():
     stats.setdefault("commits", 0)
   log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
-  for (ncom, auth, _) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
+  for (ncom, auth, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
     try:
-      auth_stats[_str(auth)]["commits"] += int(ncom)
+      auth_stats[_str(em if args.show_email else auth)]["commits"] += int(ncom)
     except KeyError:
-      auth_stats[_str(auth)] = {"loc": 0,
+      auth_stats[_str(em if args.show_email else auth)] = {"loc": 0,
                                 "files": set([]),
                                 "commits": int(ncom),
                                 "ctimes": []}

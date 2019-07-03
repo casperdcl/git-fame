@@ -180,6 +180,7 @@ Documentation
       -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                                version and the child's to find where the lines
                                came from [default: False].
+      -e, --show-email      Show author email instead of name [default: False].
       -M  Detect intra-file line moves and copies [default: False].
       -C  Detect inter-file line moves and copies [default: False].
       --format=<format>        Table format
@@ -193,6 +194,25 @@ Documentation
 If multiple user names and/or emails correspond to the same user, aggregate
 ``git-fame`` statistics and maintain a ``git`` repository properly by adding a
 `.mailmap file <https://git-scm.com/docs/git-blame#_mapping_authors>`_.
+
+Examples
+--------
+
+CODEOWNERS
+~~~~~~~~~~
+
+Generating
+`CODEOWNERS <https://help.github.com/en/articles/about-code-owners>`__:
+
+.. code:: sh
+
+    for f in $(git ls-files); do
+      # filename
+      echo -n "$f "
+      # author emails if loc distribution >= 30%
+      git fame -esnwMC --incl "$f" | tail -n+7 | tr '/' '|' \
+        | awk -F '|' '$6 >= 30 {print $2}' | xargs echo
+    done >> .github/CODEOWNERS
 
 Contributions
 -------------
