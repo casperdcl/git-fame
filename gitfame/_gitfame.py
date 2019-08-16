@@ -26,6 +26,7 @@ Options:
   -s, --silent-progress    Suppress `tqdm` [default: False].
   --warn-binary   Don't silently skip files which appear to be binary data
                   [default: False].
+  -e, --show-email  Show author email instead of name [default: False].
   -t, --bytype             Show stats per file extension [default: False].
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
@@ -59,7 +60,7 @@ __license__ = __licence__  # weird foreign language
 
 
 RE_AUTHS = re.compile(
-    r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?committer-time (\d+)',
+    r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?\ncommitter-time (\d+)',
     flags=re.M | re.DOTALL)
 # finds all non-escaped commas
 # NB: does not support escaping of escaped character
@@ -274,14 +275,25 @@ def run(args):
   for stats in auth_stats.values():
     stats.setdefault("commits", 0)
   log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
-  for (ncom, auth, _) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
+  auth2em = {}
+  for (ncom, auth, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
+    auth = _str(auth)
+    auth2em[auth] = em  # TODO: count most used email?
     try:
-      auth_stats[_str(auth)]["commits"] += int(ncom)
+      auth_stats[auth]["commits"] += int(ncom)
     except KeyError:
-      auth_stats[_str(auth)] = {"loc": 0,
-                                "files": set([]),
-                                "commits": int(ncom),
-                                "ctimes": []}
+      auth_stats[auth] = {"loc": 0,
+                          "files": set([]),
+                          "commits": int(ncom),
+                          "ctimes": []}
+  if args.show_email:
+    # replace author name with email
+    log.debug(auth2em)
+    old = auth_stats
+    auth_stats = {}
+    for auth, stats in getattr(old, 'iteritems', old.items)():
+      auth_stats[auth2em[auth]] = stats
+    del old
 
   stats_tot = dict((k, 0) for stats in auth_stats.values() for k in stats)
   log.debug(stats_tot)
