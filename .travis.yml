@@ -1,34 +1,64 @@
 language: python
-matrix:
+env:
+  global:
+    - PIP_CACHE_DIR="$HOME/.cache/pip"  # unify pip cache location for all platforms
+cache:
+  pip: true
+  directories:
+  - $HOME/.cache/pip
+before_cache:
+- rm -f $HOME/.cache/pip/log/debug.log
+notifications:
+  email: false
+stages:
+- check
+- test
+- name: deploy
+  if: repo = tqdm/tqdm
+jobs:
   include:
-  - python: 2.6
+  - stage: test
+    name: py2.6
+    python: 2.6
     env: TOXENV=py26
     dist: trusty
-  - python: 2.7
+  - name: py2.7
+    python: 2.7
     env: TOXENV=py27
-  - python: 3.4
+  - name: py3.4
+    python: 3.4
     env: TOXENV=py34
-  - python: 3.5
+  - name: py3.5
+    python: 3.5
     env: TOXENV=py35
-  - python: 3.6
+  - name: py3.6
+    python: 3.6
     env: TOXENV=py36
-  - python: 3.7
+  - name: py3.7
+    python: 3.7
     env: TOXENV=py37
+  - name: pypy2.7
+    python: pypy2.7-5.10.0
+    env: TOXENV=pypy
+  - name: pypy3.5
+    python: pypy3.5-5.10.0
+    env: TOXENV=pypy3
+  - stage: check
+    name: style
+    python: 3.7
+    env: TOXENV=flake8
+  - name: setup
+    python: 3.7
+    env: TOXENV=setup.py
+  - name: nodeps
+    python: 3.7
+    env: TOXENV=nodeps
+  - stage: deploy
+    name: PyPI and GitHub
+    python: 3.7
     dist: xenial
-    sudo: true  # required for py37, docker
-    services:
-    - docker
-    after_success:
-    - echo "$DOCKER_PWD" | docker login -u $DOCKER_USR --password-stdin
-    - echo "$GITHUB_TOKEN" | docker login docker.pkg.github.com -u $GITHUB_USR --password-stdin
-    - make -B docker
-    - |
-      if [[ -n "$TRAVIS_TAG" ]]; then
-      docker tag casperdcl/git-fame:latest casperdcl/git-fame:${TRAVIS_TAG#v}
-      docker tag casperdcl/git-fame:latest docker.pkg.github.com/casperdcl/git-fame/git-fame:${TRAVIS_TAG#v} ; fi
-    - docker tag casperdcl/git-fame:latest casperdcl/git-fame:devel
-    - docker tag casperdcl/git-fame:latest docker.pkg.github.com/casperdcl/git-fame/git-fame:latest
-    - docker tag casperdcl/git-fame:latest docker.pkg.github.com/casperdcl/git-fame/git-fame:devel
+    install:
+    script:
     - pip install .[dev]
     - make build
     - openssl aes-256-cbc -K $encrypted_88867ca921c3_key
@@ -36,6 +66,7 @@ matrix:
       -out .casperdcl.gpg -d
     - gpg --import .casperdcl.gpg
     - rm .casperdcl.gpg
+    - git log --pretty='format:- %s%n%b---' $(git tag --sort=creatordate | tail -n2 | head -n1)..HEAD > CHANGES.md
     deploy:
     - provider: script
       script: twine upload -s -i casper.dcl@physics.org dist/git?fame-*
@@ -49,8 +80,28 @@ matrix:
       skip_cleanup: true
       draft: true
       name: git-fame $TRAVIS_TAG stable
+      edge: true
+      release_notes_file: CHANGES.md
       on:
         tags: true
+  - name: docker
+    python: 3.7
+    dist: xenial
+    services:
+    - docker
+    install:
+    script:
+    - echo "$DOCKER_PWD" | docker login -u $DOCKER_USR --password-stdin
+    - echo "$GITHUB_TOKEN" | docker login docker.pkg.github.com -u $GITHUB_USR --password-stdin
+    - make -B docker
+    - |
+      if [[ -n "$TRAVIS_TAG" ]]; then
+      docker tag casperdcl/git-fame:latest casperdcl/git-fame:${TRAVIS_TAG#v}
+      docker tag casperdcl/git-fame:latest docker.pkg.github.com/casperdcl/git-fame/git-fame:${TRAVIS_TAG#v} ; fi
+    - docker tag casperdcl/git-fame:latest casperdcl/git-fame:devel
+    - docker tag casperdcl/git-fame:latest docker.pkg.github.com/casperdcl/git-fame/git-fame:latest
+    - docker tag casperdcl/git-fame:latest docker.pkg.github.com/casperdcl/git-fame/git-fame:devel
+    deploy:
     - provider: script
       script: docker push casperdcl/git-fame:${TRAVIS_TAG#v}
       on:
@@ -71,24 +122,8 @@ matrix:
       script: docker push docker.pkg.github.com/casperdcl/git-fame/git-fame:devel
       on:
         branch: devel
-  - python: pypy2.7-5.10.0
-    env: TOXENV=pypy
-  - python: pypy3.5-5.10.0
-    env: TOXENV=pypy3
-  - python: 3.6
-    env: TOXENV=flake8
-  - python: 3.6
-    env: TOXENV=setup.py
-  - python: 3.6
-    env: TOXENV=nodeps
-cache:
-  pip: true
-  directories:
-  - $HOME/.cache/pip
-before_cache:
-- rm -f $HOME/.cache/pip/log/debug.log
-notifications:
-  email: false
+before_install:
+- git fetch --tags
 install:
 - pip install tox
 - pip install .
