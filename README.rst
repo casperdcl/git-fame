@@ -11,20 +11,30 @@ Pretty-print ``git`` repository collaborators sorted by contributions.
 
 .. code:: sh
 
-    ~$ git fame
-    Blame: 100%|██████████| 20/20 [00:00<00:00, 175.94file/s]
-    Total commits: 99
-    Total files: 21
-    Total loc: 305
-    | Author               |   loc |   coms |   fils |  distribution   |
-    |:---------------------|------:|-------:|-------:|:----------------|
-    | Casper da Costa-Luis |   304 |     97 |     20 | 99.7/98.0/95.2  |
-    | Igor Gnatenko        |     1 |      1 |      1 | 0.3/ 1.0/ 4.8   |
-    | Johann Mortara       |     0 |      1 |      0 | 0.0/ 1.0/ 0.0   |
+    ~$ git fame --cost hour,month
+    Blame: 100%|██████████| 74/74 [00:00<00:00, 96.51file/s] 
+    Total commits: 1173
+    Total ctimes: 1055
+    Total files: 180
+    Total hours: 255.1
+    Total loc: 2716
+    Total months: 8.7
+    | Author                     |   hrs |   mths |   loc |   coms |   fils |  distribution   |
+    |:---------------------------|------:|-------:|------:|-------:|-------:|:----------------|
+    | Casper da Costa-Luis       |   100 |      7 |  2171 |    770 |     63 | 79.9/65.6/35.0  |
+    | Stephen Larroque           |    16 |      1 |   243 |    202 |     19 | 8.9/17.2/10.6   |
+    | Kyle Altendorf             |     6 |      0 |    41 |     31 |      3 | 1.5/ 2.6/ 1.7   |
+    | Guangshuo Chen             |     2 |      0 |    35 |     18 |      6 | 1.3/ 1.5/ 3.3   |
+    | Matthew Stevens            |     2 |      0 |    32 |      3 |      2 | 1.2/ 0.3/ 1.1   |
+    | Noam Yorav-Raphael         |     3 |      0 |    23 |     11 |      4 | 0.8/ 0.9/ 2.2   |
+    | Daniel Panteleit           |     2 |      0 |    16 |      2 |      2 | 0.6/ 0.2/ 1.1   |
+    | Mikhail Korobov            |     2 |      0 |    15 |     11 |      6 | 0.6/ 0.9/ 3.3   |
+    | Hadrien Mary               |     3 |      0 |    15 |     31 |     10 | 0.6/ 2.6/ 5.6   |
+    | Johannes Hansen            |     2 |      0 |    14 |      1 |      2 | 0.5/ 0.1/ 1.1   |
 
-The ``distribution`` column is a percentage breakdown of the other columns
+The ``distribution`` column is a percentage breakdown of ``loc/coms/fils``.
 (e.g. in the table above, Casper has written surviving code in
-``20/21 = 95.2%`` of all files).
+``63/180 = 35.0%`` of all files).
 
 ------------------------------------------
 
