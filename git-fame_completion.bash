@@ -30,3 +30,4 @@ _git_fame()
       ;;
   esac
 }
+complete -F _git_fame git-fame
