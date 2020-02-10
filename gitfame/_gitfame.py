@@ -4,6 +4,8 @@ r"""Usage:
 
 Arguments:
   <gitdir>       Git directory [default: ./].
+                 May be specified multiple times to aggregate across
+                 multiple repositories.
 
 Options:
   -h, --help     Print this help and exit.
