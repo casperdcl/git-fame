@@ -14,7 +14,7 @@ stages:
 - check
 - test
 - name: deploy
-  if: repo = tqdm/tqdm
+  if: repo = casperdcl/git-fame
 jobs:
   include:
   - stage: test
@@ -56,7 +56,6 @@ jobs:
   - stage: deploy
     name: PyPI and GitHub
     python: 3.7
-    dist: xenial
     install:
     script:
     - pip install .[dev]
@@ -81,12 +80,13 @@ jobs:
       draft: true
       name: git-fame $TRAVIS_TAG stable
       edge: true
+      tag_name: $TRAVIS_TAG
+      target_commitish: $TRAVIS_COMMIT
       release_notes_file: CHANGES.md
       on:
         tags: true
   - name: docker
     python: 3.7
-    dist: xenial
     services:
     - docker
     install:
@@ -107,19 +107,19 @@ jobs:
       on:
         tags: true
     - provider: script
-      script: docker push docker.pkg.github.com/casperdcl/git-fame/git-fame:${TRAVIS_TAG#v}
+      script: 'docker push docker.pkg.github.com/casperdcl/git-fame/git-fame:${TRAVIS_TAG#v} || :'
       on:
         tags: true
     - provider: script
       script: docker push casperdcl/git-fame:latest
     - provider: script
-      script: docker push docker.pkg.github.com/casperdcl/git-fame/git-fame:latest
+      script: 'docker push docker.pkg.github.com/casperdcl/git-fame/git-fame:latest || :'
     - provider: script
       script: docker push casperdcl/git-fame:devel
       on:
         branch: devel
     - provider: script
-      script: docker push docker.pkg.github.com/casperdcl/git-fame/git-fame:devel
+      script: 'docker push docker.pkg.github.com/casperdcl/git-fame/git-fame:devel || :'
       on:
         branch: devel
 before_install:
