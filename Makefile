@@ -41,18 +41,17 @@ all:
 	@+make build
 
 flake8:
-	@+flake8 --max-line-length=80 --ignore=E111,E114 --exclude .tox,build \
-    -j 8 --count --statistics --exit-zero .
+	@+flake8 -j 8 --count --statistics --exit-zero .
 
 test:
-	tox --skip-missing-interpreters
+	tox --skip-missing-interpreters -p all
 
 testnose:
 	nosetests gitfame -d -v
 
 testsetup:
 	@make gitfame/git-fame.1
-	python setup.py check --restructuredtext --strict
+	python setup.py check --metadata --restructuredtext --strict
 	python setup.py make none
 
 testcoverage:
@@ -78,7 +77,7 @@ snapcraft.yaml: .meta/.snapcraft.yml
 
 .dockerignore: .gitignore
 	cat $^ > "$@"
-	echo ".git" >> "$@"
+	echo ".git" > "$@"
 	git clean -xdn | sed -nr 's/^Would remove (.*)$$/\1/p' >> "$@"
 
 distclean:
@@ -124,7 +123,7 @@ buildupload:
 	@make pypi
 
 snap:
-	@make snapcraft.yaml
+	@make -B snapcraft.yaml
 	snapcraft
 docker:
 	@make .dockerignore
