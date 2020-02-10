@@ -47,11 +47,11 @@ import logging
 import os
 from os import path
 import re
-from six import string_types
 import subprocess
 
 from ._utils import TERM_WIDTH, int_cast_or_len, fext, _str, \
-    check_output, tqdm, TqdmStream, print_unicode, Str, merge_stats
+    check_output, tqdm, TqdmStream, print_unicode, Str, string_types, \
+    merge_stats
 from ._version import __version__  # NOQA
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"

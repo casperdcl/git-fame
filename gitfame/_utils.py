@@ -9,11 +9,13 @@ try:
   _str = unicode
   _range = xrange
   from StringIO import StringIO
+  string_types = (basestring,)
 except NameError:
   # python3
   _str = str
   _range = range
   from io import StringIO
+  string_types = (str,)
 
 try:
   from tqdm import tqdm
