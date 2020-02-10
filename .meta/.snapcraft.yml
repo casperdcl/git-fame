@@ -10,14 +10,16 @@ license: MPL-2.0
 parts:
   git-fame:
     plugin: python
-    python-version: python3
     python-packages: [tqdm, pyyaml]
     stage-packages: [git]
     source: {source}
     source-commit: '{commit}'
     parse-info: [setup.py]
+    override-build: |
+        snapcraftctl build
+        cp $SNAPCRAFT_PART_BUILD/git-fame_completion.bash $SNAPCRAFT_PART_INSTALL/completion.sh
 apps:
   git-fame:
     command: bin/git-fame
-    #completer: git-fame_completion.bash
+    completer: completion.sh
     plugs: [home]
