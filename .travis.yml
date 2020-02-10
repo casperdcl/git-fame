@@ -38,10 +38,10 @@ jobs:
     python: 3.7
     env: TOXENV=py37
   - name: pypy2.7
-    python: pypy2.7-5.10.0
+    python: pypy
     env: TOXENV=pypy
-  - name: pypy3.5
-    python: pypy3.5-5.10.0
+  - name: pypy3
+    python: pypy3
     env: TOXENV=pypy3
   - stage: check
     name: style
