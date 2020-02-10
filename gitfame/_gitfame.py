@@ -45,6 +45,7 @@ Options:
 from __future__ import print_function
 from __future__ import division
 # from __future__ import absolute_import
+from functools import partial
 import logging
 import os
 from os import path
@@ -201,8 +202,8 @@ def _get_auth_stats(
   log.log(logging.NOTSET, "files:\n" + '\n'.join(file_list))
 
   auth_stats = {}
-  for fname in tqdm(file_list, desc="Blame", disable=silent_progress,
-                    unit="file"):
+  for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Blame",
+                    disable=silent_progress, unit="file"):
     git_blame_cmd = git_cmd + ["blame", "--porcelain", branch, fname] + \
         since
     if prefix_gitdir:
@@ -308,16 +309,28 @@ def run(args):
     # include_files = re.compile(args.incl, flags=re.M)
 
   auth_stats = {}
-  for gitdir in tqdm(gitdirs, desc="Repos", unit="repo",
-                     disable=args.silent_progress or len(gitdirs) <= 1):
-    res = _get_auth_stats(
-        gitdir, branch=args.branch, since=args.since,
-        include_files=include_files, exclude_files=exclude_files,
-        silent_progress=args.silent_progress,
-        ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
-        warn_binary=args.warn_binary, bytype=args.bytype,
-        show_email=args.show_email, prefix_gitdir=len(gitdirs) > 1)
+  statter = partial(
+      _get_auth_stats,
+      branch=args.branch, since=args.since,
+      include_files=include_files, exclude_files=exclude_files,
+      silent_progress=args.silent_progress,
+      ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
+      warn_binary=args.warn_binary, bytype=args.bytype,
+      show_email=args.show_email, prefix_gitdir=len(gitdirs) > 1)
 
+  # concurrent multi-repo processing
+  if len(gitdirs) > 1:
+    try:
+      from concurrent.futures import ThreadPoolExecutor  # NOQA
+      from tqdm.contrib.concurrent import thread_map
+      mapper = partial(thread_map, desc="Repos", unit="repo",
+                       disable=args.silent_progress or len(gitdirs) <= 1)
+    except ImportError:
+      mapper = map
+  else:
+    mapper = map
+
+  for res in mapper(statter, gitdirs):
     for auth, stats in getattr(res, 'iteritems', res.items)():
       if auth in auth_stats:
         merge_stats(auth_stats[auth], stats)
