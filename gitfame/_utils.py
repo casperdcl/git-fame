@@ -235,7 +235,7 @@ def print_unicode(msg, end='\n', err='?'):
       print(c, end='')
     except UnicodeEncodeError:
       print(err, end='')
-  print ('', end=end)
+  print('', end=end)
 
 
 def Str(i):

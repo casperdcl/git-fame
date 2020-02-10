@@ -120,9 +120,8 @@ def tabulate(
     stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
   # log.debug(auth_stats)
 
-  for i, j in [
-      ("commits", "coms"), ("files", "fils"), ("hours", "hrs"),
-      ("months", "mths")]:
+  for i, j in [("commits", "coms"), ("files", "fils"), ("hours", "hrs"),
+               ("months", "mths")]:
     sort = sort.replace(i, j)
   tab.sort(key=lambda i: i[COL_NAMES.index(sort)], reverse=True)
 
@@ -177,10 +176,11 @@ def tabulate(
     # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
 
 
-def _get_auth_stats(gitdir, branch="HEAD", since=None,
-    include_files=None, exclude_files=None, silent_progress=False,
-    ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False,
-    show_email=False, prefix_gitdir=False):
+def _get_auth_stats(
+        gitdir, branch="HEAD", since=None, include_files=None,
+        exclude_files=None, silent_progress=False, ignore_whitespace=False,
+        M=False, C=False, warn_binary=False, bytype=False, show_email=False,
+        prefix_gitdir=False):
   """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int,
                                  "ctimes": [int]}}"""
   since = ["--since", since] if since else []
@@ -307,8 +307,9 @@ def run(args):
 
   auth_stats = {}
   for gitdir in tqdm(gitdirs, desc="Repos", unit="repo",
-      disable=args.silent_progress or len(gitdirs) <= 1):
-    res = _get_auth_stats(gitdir, branch=args.branch, since=args.since,
+                     disable=args.silent_progress or len(gitdirs) <= 1):
+    res = _get_auth_stats(
+        gitdir, branch=args.branch, since=args.since,
         include_files=include_files, exclude_files=exclude_files,
         silent_progress=args.silent_progress,
         ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
