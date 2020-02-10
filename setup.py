@@ -42,7 +42,8 @@ if sys.argv[1].lower().strip() == 'make':
 
 extras_require = dict(yaml=['pyyaml'], tabulate=[])
 extras_require['full'] = list(set(sum(extras_require.values(), ['tqdm'])))
-extras_require['dev'] = list(set(extras_require['full'] + ['py-make>=0.1.0', 'twine']))
+extras_require['dev'] = list(set(
+    extras_require['full'] + ['py-make>=0.1.0', 'twine']))
 
 README_rst = ''
 fndoc = os.path.join(src_dir, 'README.rst')
@@ -127,7 +128,7 @@ setup(
         'Topic :: Terminals',
         'Topic :: Utilities'
     ],
-    keywords='git blame git-blame git-log code-analysis cost loc' +
+    keywords='git blame git-blame git-log code-analysis cost loc'
              ' author commit shortlog ls-files',
     test_suite='nose.collector',
     tests_require=['nose', 'flake8', 'coverage'],

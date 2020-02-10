@@ -2,6 +2,7 @@ from __future__ import print_function
 import sys
 import subprocess
 import logging
+log = logging.getLogger(__name__)  # NOQA
 
 try:
   # python2
@@ -19,7 +20,6 @@ try:
 except ImportError:
   class tqdm(object):
     def __init__(self, iterable=None, **kwargs):
-      log = logging.getLogger(__name__)
       log.info('install `tqdm` (https://github.com/tqdm/tqdm)'
                ' for a realtime progressbar')
       self.iterable = iterable
@@ -57,7 +57,6 @@ class TqdmStream(object):
 
 
 def check_output(*a, **k):
-  log = logging.getLogger(__name__)
   log.debug(' '.join(a[0][3:]))
   k.setdefault('stdout', subprocess.PIPE)
   return subprocess.Popen(*a, **k).communicate()[0].decode('utf-8')
