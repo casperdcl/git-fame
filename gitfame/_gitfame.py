@@ -43,9 +43,10 @@ Options:
 from __future__ import print_function
 from __future__ import division
 # from __future__ import absolute_import
-import subprocess
-import re
 import logging
+import os
+import re
+import subprocess
 
 from ._utils import TERM_WIDTH, int_cast_or_len, fext, _str, \
     check_output, tqdm, TqdmStream, print_unicode, Str
@@ -57,7 +58,7 @@ __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
-
+log = logging.getLogger(__name__)
 
 RE_AUTHS = re.compile(
     r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?\ncommitter-time (\d+)',
@@ -88,7 +89,6 @@ def tabulate(
   backends  : [default: md]|yaml|json|csv|tsv|tabulate|
     `in tabulate.tabulate_formats`
   """
-  log = logging.getLogger(__name__)
   COL_NAMES = ['Author', 'loc', 'coms', 'fils', ' distribution']
   it_as = getattr(auth_stats, 'iteritems', auth_stats.items)
   # get ready
@@ -323,7 +323,6 @@ def main(args=None):
       level=getattr(logging, args.log, logging.INFO),
       stream=TqdmStream,
       format="%(levelname)s:gitfame.%(funcName)s:%(lineno)d:%(message)s")
-  log = logging.getLogger(__name__)
 
   log.debug(args)
   if args.manpath is not None:
