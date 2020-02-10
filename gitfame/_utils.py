@@ -244,3 +244,17 @@ def Str(i):
     return '%g' % i
   except TypeError:
     return _str(i)
+
+
+def merge_stats(left, right):
+  """Add `right`'s values to `left` (modifies `left` in-place)"""
+  for k, val in getattr(right, 'iteritems', right.items)():
+    if isinstance(val, int):
+      left[k] += val
+    elif hasattr(val, 'extend'):
+      left[k].extend(val)
+    elif hasattr(val, 'update'):
+      left[k].update(val)
+    else:
+      raise TypeError(val)
+  return left

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 r"""Usage:
-  gitfame [--help | options] [<gitdir>]
+  gitfame [--help | options] [<gitdir>...]
 
 Arguments:
   <gitdir>       Git directory [default: ./].
@@ -45,11 +45,13 @@ from __future__ import division
 # from __future__ import absolute_import
 import logging
 import os
+from os import path
 import re
+from six import string_types
 import subprocess
 
 from ._utils import TERM_WIDTH, int_cast_or_len, fext, _str, \
-    check_output, tqdm, TqdmStream, print_unicode, Str
+    check_output, tqdm, TqdmStream, print_unicode, Str, merge_stats
 from ._version import __version__  # NOQA
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
@@ -178,7 +180,7 @@ def tabulate(
 def _get_auth_stats(gitdir, branch="HEAD", since=None,
     include_files=None, exclude_files=None, silent_progress=False,
     ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False,
-    show_email=False):
+    show_email=False, prefix_gitdir=False):
   """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int,
                                  "ctimes": [int]}}"""
   since = ["--since", since] if since else []
@@ -201,6 +203,8 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None,
                     unit="file"):
     git_blame_cmd = git_cmd + ["blame", "--porcelain", branch, fname] + \
         since
+    if prefix_gitdir:
+      fname = path.join(gitdir, fname)
     if ignore_whitespace:
       git_blame_cmd.append("-w")
     if M:
@@ -276,7 +280,9 @@ def run(args):
   if not args.excl:
     args.excl = ""
 
-  gitdir = args.gitdir.rstrip(os.sep)
+  if isinstance(args.gitdir, string_types):
+    args.gitdir = [args.gitdir]
+  gitdirs = [i.rstrip(os.sep) for i in args.gitdir]
 
   exclude_files = None
   include_files = None
@@ -299,12 +305,21 @@ def run(args):
     include_files = re.compile(args.incl)
     # include_files = re.compile(args.incl, flags=re.M)
 
-  auth_stats = _get_auth_stats(gitdir, branch=args.branch, since=args.since,
-      include_files=include_files, exclude_files=exclude_files,
-      silent_progress=args.silent_progress,
-      ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
-      warn_binary=args.warn_binary, bytype=args.bytype,
-      show_email=args.show_email)
+  auth_stats = {}
+  for gitdir in tqdm(gitdirs, desc="Repos", unit="repo",
+      disable=args.silent_progress or len(gitdirs) <= 1):
+    res = _get_auth_stats(gitdir, branch=args.branch, since=args.since,
+        include_files=include_files, exclude_files=exclude_files,
+        silent_progress=args.silent_progress,
+        ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
+        warn_binary=args.warn_binary, bytype=args.bytype,
+        show_email=args.show_email, prefix_gitdir=len(gitdirs) > 1)
+
+    for auth, stats in getattr(res, 'iteritems', res.items)():
+      if auth in auth_stats:
+        merge_stats(auth_stats[auth], stats)
+      else:
+        auth_stats[auth] = stats
 
   stats_tot = dict((k, 0) for stats in auth_stats.values() for k in stats)
   log.debug(stats_tot)
