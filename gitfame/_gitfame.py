@@ -175,76 +175,42 @@ def tabulate(
     # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
 
 
-def run(args):
-  """args  : Namespace (`argopt.DictAttrWrap` or from `argparse`)"""
-  log = logging.getLogger(__name__)
-
-  log.debug("parsing args")
-
-  if args.sort not in "loc commits files hours months".split():
-    log.warn("--sort argument (%s) unrecognised\n%s" % (
-        args.sort, __doc__))
-    raise KeyError(args.sort)
-
-  if not args.excl:
-    args.excl = ""
-
-  gitdir = args.gitdir.rstrip(r'\/').rstrip('\\')
-
-  exclude_files = None
-  include_files = None
-  if args.no_regex:
-    exclude_files = set(RE_CSPILT.split(args.excl))
-    include_files = set()
-    if args.incl == ".*":
-      args.incl = ""
-    else:
-      include_files.update(RE_CSPILT.split(args.incl))
-  else:
-    # cannot use findall in case of grouping:
-    # for i in include_files:
-    # for i in [include_files]:
-    #   for j in range(1, len(i)):
-    #     if i[j] == '(' and i[j - 1] != '\\':
-    #       raise ValueError('Parenthesis must be escaped'
-    #                        ' in include-files:\n\t' + i)
-    exclude_files = re.compile(args.excl)
-    include_files = re.compile(args.incl)
-    # include_files = re.compile(args.incl, flags=re.M)
-
-  # ! iterating over files
-
-  branch = args.branch
-  since = ["--since", args.since] if args.since else []
+def _get_auth_stats(gitdir, branch="HEAD", since=None,
+    include_files=None, exclude_files=None, silent_progress=False,
+    ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False,
+    show_email=False):
+  """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int,
+                                 "ctimes": [int]}}"""
+  since = ["--since", since] if since else []
   git_cmd = ["git", "-C", gitdir]
   log.debug("base command:" + ' '.join(git_cmd))
   file_list = check_output(
       git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
-  if args.no_regex:
+  if not hasattr(include_files, 'search'):
     file_list = [i for i in file_list
                  if (not include_files or (i in include_files))
-                 if not (i in exclude_files)]
+                 if i not in exclude_files]
   else:
     file_list = [i for i in file_list
                  if include_files.search(i)
-                 if not (args.excl and exclude_files.search(i))]
+                 if not (exclude_files and exclude_files.search(i))]
   log.log(logging.NOTSET, "files:\n" + '\n'.join(file_list))
 
   auth_stats = {}
-  for fname in tqdm(file_list, desc="Blame", disable=args.silent_progress,
+  for fname in tqdm(file_list, desc="Blame", disable=silent_progress,
                     unit="file"):
     git_blame_cmd = git_cmd + ["blame", "--porcelain", branch, fname] + \
         since
-    if args.ignore_whitespace:
+    if ignore_whitespace:
       git_blame_cmd.append("-w")
-    if args.M:
+    if M:
       git_blame_cmd.append("-M")
-    if args.C:
+    if C:
       git_blame_cmd.extend(["-C", "-C"])  # twice to include file creation
     try:
       blame_out = check_output(git_blame_cmd, stderr=subprocess.STDOUT)
     except Exception as e:
-      getattr(log, "warn" if args.warn_binary else "debug")(fname + ':' + str(e))
+      getattr(log, "warn" if warn_binary else "debug")(fname + ':' + str(e))
       continue
     log.log(logging.NOTSET, blame_out)
     loc_auth_times = RE_AUTHS.findall(blame_out)
@@ -261,7 +227,7 @@ def run(args):
         auth_stats[auth]["files"].add(fname)
         auth_stats[auth]["ctimes"].append(tstamp)
 
-      if args.bytype:
+      if bytype:
         fext_key = ("." + fext(fname)) if fext(fname) else "._None_ext"
         # auth_stats[auth].setdefault(fext_key, 0)
         try:
@@ -286,7 +252,7 @@ def run(args):
                           "files": set([]),
                           "commits": int(ncom),
                           "ctimes": []}
-  if args.show_email:
+  if show_email:
     # replace author name with email
     log.debug(auth2em)
     old = auth_stats
@@ -294,6 +260,51 @@ def run(args):
     for auth, stats in getattr(old, 'iteritems', old.items)():
       auth_stats[auth2em[auth]] = stats
     del old
+
+  return auth_stats
+
+
+def run(args):
+  """args  : Namespace (`argopt.DictAttrWrap` or from `argparse`)"""
+  log.debug("parsing args")
+
+  if args.sort not in "loc commits files hours months".split():
+    log.warn("--sort argument (%s) unrecognised\n%s" % (
+        args.sort, __doc__))
+    raise KeyError(args.sort)
+
+  if not args.excl:
+    args.excl = ""
+
+  gitdir = args.gitdir.rstrip(os.sep)
+
+  exclude_files = None
+  include_files = None
+  if args.no_regex:
+    exclude_files = set(RE_CSPILT.split(args.excl))
+    include_files = set()
+    if args.incl == ".*":
+      args.incl = ""
+    else:
+      include_files.update(RE_CSPILT.split(args.incl))
+  else:
+    # cannot use findall in case of grouping:
+    # for i in include_files:
+    # for i in [include_files]:
+    #   for j in range(1, len(i)):
+    #     if i[j] == '(' and i[j - 1] != '\\':
+    #       raise ValueError('Parenthesis must be escaped'
+    #                        ' in include-files:\n\t' + i)
+    exclude_files = re.compile(args.excl) if args.excl else None
+    include_files = re.compile(args.incl)
+    # include_files = re.compile(args.incl, flags=re.M)
+
+  auth_stats = _get_auth_stats(gitdir, branch=args.branch, since=args.since,
+      include_files=include_files, exclude_files=exclude_files,
+      silent_progress=args.silent_progress,
+      ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
+      warn_binary=args.warn_binary, bytype=args.bytype,
+      show_email=args.show_email)
 
   stats_tot = dict((k, 0) for stats in auth_stats.values() for k in stats)
   log.debug(stats_tot)
