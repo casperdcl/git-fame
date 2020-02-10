@@ -228,4 +228,7 @@ def test_main():
   assert path.exists(man)
   rmtree(tmp, True)
 
+  # test multiple gitdirs
+  main(['.', '.'])
+
   sys.argv, sys.stdout, sys.stderr = _SYS_AOE
