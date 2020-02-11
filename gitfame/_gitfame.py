@@ -204,7 +204,7 @@ def _get_auth_stats(
   auth_stats = {}
   for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Blame",
                     disable=silent_progress, unit="file"):
-    git_blame_cmd = git_cmd + ["blame", "--porcelain", branch, fname] + \
+    git_blame_cmd = git_cmd + ["blame", "--line-porcelain", branch, fname] + \
         since
     if prefix_gitdir:
       fname = path.join(gitdir, fname)
