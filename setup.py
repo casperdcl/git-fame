@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from ast import literal_eval
+from io import open as io_open
 import os
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
 import sys
-from io import open as io_open
 
 try:
     if '--cython' in sys.argv:
@@ -25,8 +26,10 @@ __version__ = None
 src_dir = os.path.abspath(os.path.dirname(__file__))
 main_file = os.path.join(src_dir, 'gitfame', '_gitfame.py')
 for l in io_open(main_file, mode='r'):
-    if any(l.startswith(i) for i in ('__author__', '__licence__')):
-        exec(l)
+    if l.startswith('__author__'):
+        __author__ = literal_eval(l.split('=', 1)[1].strip())
+    elif l.startswith('__licence__'):
+        __licence__ = literal_eval(l.split('=', 1)[1].strip())
 version_file = os.path.join(src_dir, 'gitfame', '_version.py')
 with io_open(version_file, mode='r') as fd:
     exec(fd.read())

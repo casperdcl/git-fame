@@ -39,7 +39,7 @@ except ImportError:
       sys.stderr.write(msg + end)
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
-__date__ = "2016-2018"
+__date__ = "2016-2020"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm",
            "tighten", "check_output", "print_unicode", "StringIO", "Str"]
@@ -133,7 +133,6 @@ def _environ_cols_windows(fp):  # pragma: no cover
 def _environ_cols_tput(*args):  # pragma: no cover
   """cygwin xterm (windows)"""
   try:
-    import subprocess
     import shlex
     cols = int(subprocess.check_call(shlex.split('tput cols')))
     # rows = int(subprocess.check_call(shlex.split('tput lines')))

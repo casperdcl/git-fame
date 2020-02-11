@@ -192,7 +192,6 @@ def test_main():
     res = ' '.join(sys.stdout.getvalue().strip().split()[:2])
     if res != "usage: gitfame":
       raise ValueError(sys.stdout.getvalue())
-      raise ValueError(res)
   else:
     raise ValueError("Expected --bad arg to fail")
 

@@ -58,7 +58,7 @@ from ._utils import TERM_WIDTH, int_cast_or_len, fext, _str, \
 from ._version import __version__  # NOQA
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
-__date__ = "2016-2018"
+__date__ = "2016-2020"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
