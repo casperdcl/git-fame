@@ -12,7 +12,7 @@ Pretty-print ``git`` repository collaborators sorted by contributions.
 .. code:: sh
 
     ~$ git fame --cost hour,month
-    Blame: 100%|██████████| 74/74 [00:00<00:00, 96.51file/s] 
+    Blame: 100%|██████████| 74/74 [00:00<00:00, 96.51file/s]
     Total commits: 1173
     Total ctimes: 1055
     Total files: 180
@@ -160,10 +160,12 @@ Documentation
 .. code::
 
     Usage:
-      gitfame [--help | options] [<gitdir>]
+      gitfame [--help | options] [<gitdir>...]
 
     Arguments:
       <gitdir>       Git directory [default: ./].
+                     May be specified multiple times to aggregate across
+                     multiple repositories.
 
     Options:
       -h, --help     Print this help and exit.
@@ -186,11 +188,11 @@ Documentation
       -s, --silent-progress    Suppress `tqdm` [default: False].
       --warn-binary   Don't silently skip files which appear to be binary data
                       [default: False].
+      -e, --show-email  Show author email instead of name [default: False].
       -t, --bytype             Show stats per file extension [default: False].
       -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                                version and the child's to find where the lines
                                came from [default: False].
-      -e, --show-email      Show author email instead of name [default: False].
       -M  Detect intra-file line moves and copies [default: False].
       -C  Detect inter-file line moves and copies [default: False].
       --format=<format>        Table format

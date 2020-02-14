@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 r"""Usage:
-  gitfame [--help | options] [<gitdir>]
+  gitfame [--help | options] [<gitdir>...]
 
 Arguments:
   <gitdir>       Git directory [default: ./].
+                 May be specified multiple times to aggregate across
+                 multiple repositories.
 
 Options:
   -h, --help     Print this help and exit.
@@ -43,21 +45,25 @@ Options:
 from __future__ import print_function
 from __future__ import division
 # from __future__ import absolute_import
-import subprocess
-import re
+from functools import partial
 import logging
+import os
+from os import path
+import re
+import subprocess
 
 from ._utils import TERM_WIDTH, int_cast_or_len, fext, _str, \
-    check_output, tqdm, TqdmStream, print_unicode, Str
+    check_output, tqdm, TqdmStream, print_unicode, Str, string_types, \
+    merge_stats
 from ._version import __version__  # NOQA
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
-__date__ = "2016-2018"
+__date__ = "2016-2020"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
-
+log = logging.getLogger(__name__)
 
 RE_AUTHS = re.compile(
     r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?\ncommitter-time (\d+)',
@@ -88,7 +94,6 @@ def tabulate(
   backends  : [default: md]|yaml|json|csv|tsv|tabulate|
     `in tabulate.tabulate_formats`
   """
-  log = logging.getLogger(__name__)
   COL_NAMES = ['Author', 'loc', 'coms', 'fils', ' distribution']
   it_as = getattr(auth_stats, 'iteritems', auth_stats.items)
   # get ready
@@ -118,9 +123,8 @@ def tabulate(
     stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
   # log.debug(auth_stats)
 
-  for i, j in [
-      ("commits", "coms"), ("files", "fils"), ("hours", "hrs"),
-      ("months", "mths")]:
+  for i, j in [("commits", "coms"), ("files", "fils"), ("hours", "hrs"),
+               ("months", "mths")]:
     sort = sort.replace(i, j)
   tab.sort(key=lambda i: i[COL_NAMES.index(sort)], reverse=True)
 
@@ -175,76 +179,45 @@ def tabulate(
     # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
 
 
-def run(args):
-  """args  : Namespace (`argopt.DictAttrWrap` or from `argparse`)"""
-  log = logging.getLogger(__name__)
-
-  log.debug("parsing args")
-
-  if args.sort not in "loc commits files hours months".split():
-    log.warn("--sort argument (%s) unrecognised\n%s" % (
-        args.sort, __doc__))
-    raise KeyError(args.sort)
-
-  if not args.excl:
-    args.excl = ""
-
-  gitdir = args.gitdir.rstrip(r'\/').rstrip('\\')
-
-  exclude_files = None
-  include_files = None
-  if args.no_regex:
-    exclude_files = set(RE_CSPILT.split(args.excl))
-    include_files = set()
-    if args.incl == ".*":
-      args.incl = ""
-    else:
-      include_files.update(RE_CSPILT.split(args.incl))
-  else:
-    # cannot use findall in case of grouping:
-    # for i in include_files:
-    # for i in [include_files]:
-    #   for j in range(1, len(i)):
-    #     if i[j] == '(' and i[j - 1] != '\\':
-    #       raise ValueError('Parenthesis must be escaped'
-    #                        ' in include-files:\n\t' + i)
-    exclude_files = re.compile(args.excl)
-    include_files = re.compile(args.incl)
-    # include_files = re.compile(args.incl, flags=re.M)
-
-  # ! iterating over files
-
-  branch = args.branch
-  since = ["--since", args.since] if args.since else []
+def _get_auth_stats(
+        gitdir, branch="HEAD", since=None, include_files=None,
+        exclude_files=None, silent_progress=False, ignore_whitespace=False,
+        M=False, C=False, warn_binary=False, bytype=False, show_email=False,
+        prefix_gitdir=False):
+  """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int,
+                                 "ctimes": [int]}}"""
+  since = ["--since", since] if since else []
   git_cmd = ["git", "-C", gitdir]
   log.debug("base command:" + ' '.join(git_cmd))
   file_list = check_output(
       git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
-  if args.no_regex:
+  if not hasattr(include_files, 'search'):
     file_list = [i for i in file_list
                  if (not include_files or (i in include_files))
-                 if not (i in exclude_files)]
+                 if i not in exclude_files]
   else:
     file_list = [i for i in file_list
                  if include_files.search(i)
-                 if not (args.excl and exclude_files.search(i))]
+                 if not (exclude_files and exclude_files.search(i))]
   log.log(logging.NOTSET, "files:\n" + '\n'.join(file_list))
 
   auth_stats = {}
-  for fname in tqdm(file_list, desc="Blame", disable=args.silent_progress,
-                    unit="file"):
-    git_blame_cmd = git_cmd + ["blame", "--porcelain", branch, fname] + \
+  for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Blame",
+                    disable=silent_progress, unit="file"):
+    git_blame_cmd = git_cmd + ["blame", "--line-porcelain", branch, fname] + \
         since
-    if args.ignore_whitespace:
+    if prefix_gitdir:
+      fname = path.join(gitdir, fname)
+    if ignore_whitespace:
       git_blame_cmd.append("-w")
-    if args.M:
+    if M:
       git_blame_cmd.append("-M")
-    if args.C:
+    if C:
       git_blame_cmd.extend(["-C", "-C"])  # twice to include file creation
     try:
       blame_out = check_output(git_blame_cmd, stderr=subprocess.STDOUT)
     except Exception as e:
-      getattr(log, "warn" if args.warn_binary else "debug")(fname + ':' + str(e))
+      getattr(log, "warn" if warn_binary else "debug")(fname + ':' + str(e))
       continue
     log.log(logging.NOTSET, blame_out)
     loc_auth_times = RE_AUTHS.findall(blame_out)
@@ -261,7 +234,7 @@ def run(args):
         auth_stats[auth]["files"].add(fname)
         auth_stats[auth]["ctimes"].append(tstamp)
 
-      if args.bytype:
+      if bytype:
         fext_key = ("." + fext(fname)) if fext(fname) else "._None_ext"
         # auth_stats[auth].setdefault(fext_key, 0)
         try:
@@ -286,7 +259,7 @@ def run(args):
                           "files": set([]),
                           "commits": int(ncom),
                           "ctimes": []}
-  if args.show_email:
+  if show_email:
     # replace author name with email
     log.debug(auth2em)
     old = auth_stats
@@ -294,6 +267,75 @@ def run(args):
     for auth, stats in getattr(old, 'iteritems', old.items)():
       auth_stats[auth2em[auth]] = stats
     del old
+
+  return auth_stats
+
+
+def run(args):
+  """args  : Namespace (`argopt.DictAttrWrap` or from `argparse`)"""
+  log.debug("parsing args")
+
+  if args.sort not in "loc commits files hours months".split():
+    log.warn("--sort argument (%s) unrecognised\n%s" % (
+        args.sort, __doc__))
+    raise KeyError(args.sort)
+
+  if not args.excl:
+    args.excl = ""
+
+  if isinstance(args.gitdir, string_types):
+    args.gitdir = [args.gitdir]
+  gitdirs = [i.rstrip(os.sep) for i in args.gitdir]
+
+  exclude_files = None
+  include_files = None
+  if args.no_regex:
+    exclude_files = set(RE_CSPILT.split(args.excl))
+    include_files = set()
+    if args.incl == ".*":
+      args.incl = ""
+    else:
+      include_files.update(RE_CSPILT.split(args.incl))
+  else:
+    # cannot use findall in case of grouping:
+    # for i in include_files:
+    # for i in [include_files]:
+    #   for j in range(1, len(i)):
+    #     if i[j] == '(' and i[j - 1] != '\\':
+    #       raise ValueError('Parenthesis must be escaped'
+    #                        ' in include-files:\n\t' + i)
+    exclude_files = re.compile(args.excl) if args.excl else None
+    include_files = re.compile(args.incl)
+    # include_files = re.compile(args.incl, flags=re.M)
+
+  auth_stats = {}
+  statter = partial(
+      _get_auth_stats,
+      branch=args.branch, since=args.since,
+      include_files=include_files, exclude_files=exclude_files,
+      silent_progress=args.silent_progress,
+      ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
+      warn_binary=args.warn_binary, bytype=args.bytype,
+      show_email=args.show_email, prefix_gitdir=len(gitdirs) > 1)
+
+  # concurrent multi-repo processing
+  if len(gitdirs) > 1:
+    try:
+      from concurrent.futures import ThreadPoolExecutor  # NOQA
+      from tqdm.contrib.concurrent import thread_map
+      mapper = partial(thread_map, desc="Repos", unit="repo",
+                       disable=args.silent_progress or len(gitdirs) <= 1)
+    except ImportError:
+      mapper = map
+  else:
+    mapper = map
+
+  for res in mapper(statter, gitdirs):
+    for auth, stats in getattr(res, 'iteritems', res.items)():
+      if auth in auth_stats:
+        merge_stats(auth_stats[auth], stats)
+      else:
+        auth_stats[auth] = stats
 
   stats_tot = dict((k, 0) for stats in auth_stats.values() for k in stats)
   log.debug(stats_tot)
@@ -323,7 +365,6 @@ def main(args=None):
       level=getattr(logging, args.log, logging.INFO),
       stream=TqdmStream,
       format="%(levelname)s:gitfame.%(funcName)s:%(lineno)d:%(message)s")
-  log = logging.getLogger(__name__)
 
   log.debug(args)
   if args.manpath is not None:

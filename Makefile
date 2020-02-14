@@ -62,10 +62,12 @@ testtimer:
 	nosetests gitfame --with-timer -d -v
 
 gitfame/git-fame.1: .meta/.git-fame.1.md gitfame/_gitfame.py
-	python -m gitfame --help | tail -n+11 | head -n-2 |\
+	python -c 'import gitfame; print(gitfame._gitfame.__doc__.rstrip())' |\
+    grep -A999 '^Options:$$' | tail -n+2 |\
     sed -r -e 's/\\/\\\\/g' \
-      -e 's/^  (--\S+) (\S+)\s*(.*)$$/\n\\\1=*\2*\n: \3/' \
-      -e 's/^  (-\S+, )(-\S+)\s*/\n\\\1\\\2\n: /' |\
+      -e 's/^  (--\S+=)<(\S+)>\s+(.*)$$/\n\\\1*\2*\n: \3/' \
+      -e 's/^  (-., )(-\S+)\s*/\n\\\1\\\2\n: /' \
+      -e 's/^  (--\S+)\s+/\n\\\1\n: /' |\
     cat "$<" - |\
     pandoc -o "$@" -s -t man
 

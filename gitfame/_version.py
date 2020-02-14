@@ -12,7 +12,7 @@ from subprocess import STDOUT
 __all__ = ["__version__"]
 
 # major, minor, patch, -extra
-version_info = 1, 10, 2
+version_info = 1, 11, 0
 
 # Nice string for the version
 __version__ = '.'.join(map(str, version_info))

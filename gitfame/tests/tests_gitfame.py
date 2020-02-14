@@ -192,7 +192,6 @@ def test_main():
     res = ' '.join(sys.stdout.getvalue().strip().split()[:2])
     if res != "usage: gitfame":
       raise ValueError(sys.stdout.getvalue())
-      raise ValueError(res)
   else:
     raise ValueError("Expected --bad arg to fail")
 
@@ -227,5 +226,8 @@ def test_main():
     raise SystemExit("Expected system exit")
   assert path.exists(man)
   rmtree(tmp, True)
+
+  # test multiple gitdirs
+  main(['.', '.'])
 
   sys.argv, sys.stdout, sys.stderr = _SYS_AOE

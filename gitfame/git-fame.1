@@ -8,7 +8,7 @@ git\-fame \- Pretty\-print \f[C]git\f[] repository collaborators sorted
 by contributions.
 .SH SYNOPSIS
 .PP
-gitfame [\-\-help | \f[I]options\f[]] [<\f[I]gitdir\f[]>]
+gitfame [\-\-help | \f[I]options\f[]] [<\f[I]gitdir\f[]>...]
 .SH DESCRIPTION
 .PP
 See <https://github.com/casperdcl/git-fame>.
@@ -33,12 +33,24 @@ git\ fame\ \-\-incl\ \[aq]\\.[cht][puh]{0,2}$\[aq]\ \-twMC
 .SH OPTIONS
 .TP
 .B <gitdir>
-[default: ./]
+Git directory [default: ./].
+May be specified multiple times to aggregate across multiple
+repositories.
 .RS
 .RE
 .TP
 .B \-h, \-\-help
-show this help message and exit
+Print this help and exit.
+.RS
+.RE
+.TP
+.B \-v, \-\-version
+Print module version and exit.
+.RS
+.RE
+.TP
+.B \-\-branch=\f[I]b\f[]
+Branch or tag [default: HEAD] up to which to check.
 .RS
 .RE
 .TP
@@ -47,33 +59,10 @@ show this help message and exit
 .RS
 .RE
 .TP
-.B \-t, \-\-bytype
-Show stats per file extension [default: False].
-.RS
-.RE
-.TP
-.B \-\-log=\f[I]lvl\f[]
-FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
-.RS
-.RE
-.TP
-.B \-\-cost=\f[I]method\f[]
-Include time cost in person\-months (COCOMO) or person\- hours (based on
-commit times).
-Methods: month(s)|cocomo|hour(s)|commit(s).
-May be multiple comma\-separated values.
-.RS
-.RE
-.TP
-.B \-w, \-\-ignore\-whitespace
-.IP
-.nf
-\f[C]
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Ignore\ whitespace\ when\ comparing\ the\ parent\[aq]s\ version
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ and\ the\ child\[aq]s\ to\ find\ where\ the\ lines\ came\ from
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [default:\ False].
-\f[]
-.fi
+.B \-\-excl=\f[I]f\f[]
+Excluded files (default: None).
+In no\-regex mode, may be a comma\-separated list.
+Escape (\\,) for a literal comma (may require \\\\, in shell).
 .RS
 .RE
 .TP
@@ -83,54 +72,17 @@ See \f[C]\-\-excl\f[] for format.
 .RS
 .RE
 .TP
-.B \-\-format=\f[I]format\f[]
-Table format [default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
-May require \f[C]git\-fame[<format>]\f[], e.g.
-\f[C]pip\ install\ git\-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ fame[yaml]\f[].
-Any \f[C]tabulate.tabulate_formats\f[] is also accepted.
-.RS
-.RE
-.TP
-.B \-\-branch=\f[I]b\f[]
-Branch or tag [default: HEAD] up to which to check.
-.RS
-.RE
-.TP
-.B \-C, \-C
-Detect inter\-file line moves and copies [default: False].
-.RS
-.RE
-.TP
 .B \-\-since=\f[I]date\f[]
 Date from which to check.
 Can be absoulte (eg: 1970\-01\-31) or relative to now (eg: 3.weeks).
 .RS
 .RE
 .TP
-.B \-v, \-\-version
-show program\[aq]s version number and exit
-.RS
-.RE
-.TP
-.B \-s, \-\-silent\-progress
-.IP
-.nf
-\f[C]
-\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Suppress\ `tqdm`\ [default:\ False].
-\f[]
-.fi
-.RS
-\-\-warn\-binary Don\[aq]t silently skip files which appear to be binary
-data [default: False].
-.RE
-.TP
-.B \-e, \-\-show\-email
-Show author email instead of name [default: False].
-.RS
-.RE
-.TP
-.B \-M, \-M
-Detect intra\-file line moves and copies [default: False].
+.B \-\-cost=\f[I]method\f[]
+Include time cost in person\-months (COCOMO) or person\-hours (based on
+commit times).
+Methods: month(s)|cocomo|hour(s)|commit(s).
+May be multiple comma\-separated values.
 .RS
 .RE
 .TP
@@ -141,15 +93,50 @@ NB: if regex is enabled \f[C],\f[] is equivalent to \f[C]|\f[].
 .RS
 .RE
 .TP
+.B \-s, \-\-silent\-progress
+Suppress \f[C]tqdm\f[] [default: False].
+.RS
+.RE
+.TP
+.B \-\-warn\-binary
+Don\[aq]t silently skip files which appear to be binary data [default:
+False].
+.RS
+.RE
+.TP
+.B \-e, \-\-show\-email
+Show author email instead of name [default: False].
+.RS
+.RE
+.TP
+.B \-t, \-\-bytype
+Show stats per file extension [default: False].
+.RS
+.RE
+.TP
+.B \-w, \-\-ignore\-whitespace
+Ignore whitespace when comparing the parent\[aq]s version and the
+child\[aq]s to find where the lines came from [default: False].
+\-M Detect intra\-file line moves and copies [default: False].
+\-C Detect inter\-file line moves and copies [default: False].
+.RS
+.RE
+.TP
+.B \-\-format=\f[I]format\f[]
+Table format [default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
+May require \f[C]git\-fame[<format>]\f[], e.g.
+\f[C]pip\ install\ git\-fame[yaml]\f[].
+Any \f[C]tabulate.tabulate_formats\f[] is also accepted.
+.RS
+.RE
+.TP
 .B \-\-manpath=\f[I]path\f[]
 Directory in which to install git\-fame man pages.
 .RS
 .RE
 .TP
-.B \-\-excl=\f[I]f\f[]
-Excluded files (default: None).
-In no\-regex mode, may be a comma\-separated list.
-Escape (\\,) for a literal comma (may require \\\\, in shell).
+.B \-\-log=\f[I]lvl\f[]
+FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 .RS
 .RE
 .SH AUTHORS

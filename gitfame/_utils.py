@@ -2,24 +2,26 @@ from __future__ import print_function
 import sys
 import subprocess
 import logging
+log = logging.getLogger(__name__)  # NOQA
 
 try:
   # python2
   _str = unicode
   _range = xrange
   from StringIO import StringIO
+  string_types = (basestring,)
 except NameError:
   # python3
   _str = str
   _range = range
   from io import StringIO
+  string_types = (str,)
 
 try:
   from tqdm import tqdm
 except ImportError:
   class tqdm(object):
     def __init__(self, iterable=None, **kwargs):
-      log = logging.getLogger(__name__)
       log.info('install `tqdm` (https://github.com/tqdm/tqdm)'
                ' for a realtime progressbar')
       self.iterable = iterable
@@ -37,7 +39,7 @@ except ImportError:
       sys.stderr.write(msg + end)
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
-__date__ = "2016-2018"
+__date__ = "2016-2020"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm",
            "tighten", "check_output", "print_unicode", "StringIO", "Str"]
@@ -57,7 +59,6 @@ class TqdmStream(object):
 
 
 def check_output(*a, **k):
-  log = logging.getLogger(__name__)
   log.debug(' '.join(a[0][3:]))
   k.setdefault('stdout', subprocess.PIPE)
   return subprocess.Popen(*a, **k).communicate()[0].decode('utf-8')
@@ -132,7 +133,6 @@ def _environ_cols_windows(fp):  # pragma: no cover
 def _environ_cols_tput(*args):  # pragma: no cover
   """cygwin xterm (windows)"""
   try:
-    import subprocess
     import shlex
     cols = int(subprocess.check_call(shlex.split('tput cols')))
     # rows = int(subprocess.check_call(shlex.split('tput lines')))
@@ -235,7 +235,7 @@ def print_unicode(msg, end='\n', err='?'):
       print(c, end='')
     except UnicodeEncodeError:
       print(err, end='')
-  print ('', end=end)
+  print('', end=end)
 
 
 def Str(i):
@@ -244,3 +244,17 @@ def Str(i):
     return '%g' % i
   except TypeError:
     return _str(i)
+
+
+def merge_stats(left, right):
+  """Add `right`'s values to `left` (modifies `left` in-place)"""
+  for k, val in getattr(right, 'iteritems', right.items)():
+    if isinstance(val, int):
+      left[k] += val
+    elif hasattr(val, 'extend'):
+      left[k].extend(val)
+    elif hasattr(val, 'update'):
+      left[k].update(val)
+    else:
+      raise TypeError(val)
+  return left
