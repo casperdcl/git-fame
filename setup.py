@@ -8,6 +8,8 @@ try:
 except ImportError:
     from distutils.core import setup
 import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 try:
     if '--cython' in sys.argv:
