@@ -221,7 +221,10 @@ def _get_auth_stats(
       continue
     log.log(logging.NOTSET, blame_out)
 
-    blame_out_noboundaries = re.sub(r'''
+    # Python 2.6, a declared supported runtime for this package, does not have re.sub(patt, replstr, str, flags).
+    # Thus, work around this with below. Python's re.compile() caches compilations, 
+    # dodging what otherwise appears to be a performance hit
+    blame_out_noboundaries = re.compile(r'''
       # Exclude git blame entries that exist outside of the requested range (e.g. with --since=<date>)
       # Otherwise, the user with the nearest commit to the boundary earns the LOC count.
       # Thus, remove all `boundary` porcelain messages.
@@ -241,10 +244,11 @@ def _get_auth_stats(
       # Finally, eat the last line of the message, which is a tab followed by arbitrary text
       \t  .*
       ''',
+      re.VERBOSE
+    ).sub(
       #Replace all boundary messages with the empty string
       '',
-      blame_out,
-      flags=re.VERBOSE
+      blame_out
     )
     loc_auth_times = RE_AUTHS.findall(blame_out_noboundaries)
 
