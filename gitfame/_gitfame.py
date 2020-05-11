@@ -226,7 +226,7 @@ def _get_auth_stats(
       # Otherwise, the user with the nearest commit to the boundary earns the LOC count.
       # Thus, remove all `boundary` porcelain messages.
 
-      # First, anchor the match against the SHA1 commit hash and line numbers  
+      # First, anchor the match against the SHA1 commit hash and line numbers
       (^|\r?\n) [a-zA-Z0-9]{40}  \s\d+  \s\d+   (\s\d+)?   \r?\n
       
       # Skip over non-commit hash, non line contents, porcelain entries.
@@ -238,11 +238,11 @@ def _get_auth_stats(
       # Skip over non-commit hash, non line contents that follow a boundary line
       ([a-z\-]+ \s.+  \r?\n)+
       
-      # Finally, eat the last line of the message, which is a tab followed by arbitrary text 
+      # Finally, eat the last line of the message, which is a tab followed by arbitrary text
       \t  .*
       ''',
-      #Replace all boundary messages with the empty string 
-      '', 
+      #Replace all boundary messages with the empty string
+      '',
       blame_out,
       flags=re.VERBOSE
     )
