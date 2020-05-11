@@ -220,7 +220,33 @@ def _get_auth_stats(
       getattr(log, "warn" if warn_binary else "debug")(fname + ':' + str(e))
       continue
     log.log(logging.NOTSET, blame_out)
-    loc_auth_times = RE_AUTHS.findall(blame_out)
+
+    blame_out_noboundaries = re.sub(r'''
+      # Exclude git blame entries that exist outside of the requested range (e.g. with --since=<date>)
+      # Otherwise, the user with the nearest commit to the boundary earns the LOC count.
+      # Thus, remove all `boundary` porcelain messages.
+
+      # First, anchor the match against the SHA1 commit hash and line numbers  
+      (^|\r?\n) [a-zA-Z0-9]{40}  \s\d+  \s\d+   (\s\d+)?   \r?\n
+      
+      # Skip over non-commit hash, non line contents, porcelain entries.
+      ([a-z\-]+ \s.+  \r?\n)+
+      
+      # Require the boundary line to be here to match - we're removing these entries
+      boundary        \r?\n
+      
+      # Skip over non-commit hash, non line contents that follow a boundary line
+      ([a-z\-]+ \s.+  \r?\n)+
+      
+      # Finally, eat the last line of the message, which is a tab followed by arbitrary text 
+      \t  .*
+      ''',
+      #Replace all boundary messages with the empty string 
+      '', 
+      blame_out,
+      flags=re.VERBOSE
+    )
+    loc_auth_times = RE_AUTHS.findall(blame_out_noboundaries)
 
     for loc, auth, tstamp in loc_auth_times:  # for each chunk
       loc = int(loc)
