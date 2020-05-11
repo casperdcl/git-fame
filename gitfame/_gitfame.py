@@ -265,7 +265,16 @@ def _get_auth_stats(
     old = auth_stats
     auth_stats = {}
     for auth, stats in getattr(old, 'iteritems', old.items)():
-      auth_stats[auth2em[auth]] = stats
+      # Some users will change their name over time while keeping the same email address,
+      # such as capitalization or middle names shown.
+      # Handle this by merging together all stats for same email
+      i = auth_stats.setdefault(auth2em[auth], { "loc": 0, "files": set([]), "commits": 0, "ctimes": [] })
+      i["loc"] += stats["loc"]
+      i["files"].update(stats["files"])
+      i["commits"] += stats["commits"]
+      i["ctimes"] += stats["ctimes"]
+      # mutating the returned object sidesteps the need to perform another dict lookup
+      # auth_stats[auth2em[auth]] = i
     del old
 
   return auth_stats
