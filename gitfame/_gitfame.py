@@ -222,7 +222,7 @@ def _get_auth_stats(
     log.log(logging.NOTSET, blame_out)
 
     # Python 2.6, a declared supported runtime for this package, does not have re.sub(patt, replstr, str, flags).
-    # Thus, work around this with below. Python's re.compile() caches compilations, 
+    # Thus, work around this with below. Python's re.compile() caches compilations,
     # dodging what otherwise appears to be a performance hit
     blame_out_noboundaries = re.compile(r'''
       # Exclude git blame entries that exist outside of the requested range (e.g. with --since=<date>)
@@ -231,16 +231,16 @@ def _get_auth_stats(
 
       # First, anchor the match against the SHA1 commit hash and line numbers
       (^|\r?\n) [a-zA-Z0-9]{40}  \s\d+  \s\d+   (\s\d+)?   \r?\n
-      
+
       # Skip over non-commit hash, non line contents, porcelain entries.
       ([a-z\-]+ \s.+  \r?\n)+
-      
+
       # Require the boundary line to be here to match - we're removing these entries
       boundary        \r?\n
-      
+
       # Skip over non-commit hash, non line contents that follow a boundary line
       ([a-z\-]+ \s.+  \r?\n)+
-      
+
       # Finally, eat the last line of the message, which is a tab followed by arbitrary text
       \t  .*
       ''',
