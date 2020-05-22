@@ -73,19 +73,9 @@ RE_AUTHS = re.compile(
 RE_CSPILT = re.compile(r'(?<!\\),')
 RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
 # finds "boundary" line-porcelain messages
-RE_BLAME_BOUNDS = re.compile(r'''
-  # anchor against commit hash & line numbers
-  ^\w+\s+\d+\s+\d+(\s+\d+)?\s*$\s+
-  # metadata lines
-  (^[\w-]+\s+.+\s*$\s+)+
-  # boundary metadata
-  ^boundary\s*$\s+
-  # metadata lines
-  (^[\w-]+\s+.+\s*$\s+)+
-  # anchor against final line (loc)
-  ^\t.*?$\s+
-  ''',
-  flags=re.M | re.VERBOSE)
+RE_BLAME_BOUNDS = re.compile(
+    r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
+    flags=re.M | re.DOTALL)
 
 
 def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
