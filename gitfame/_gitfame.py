@@ -72,18 +72,18 @@ RE_AUTHS = re.compile(
 # NB: does not support escaping of escaped character
 RE_CSPILT = re.compile(r'(?<!\\),')
 RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
-# finds "boundary" porcelain messages
+# finds "boundary" line-porcelain messages
 RE_BLAME_BOUNDS = re.compile(r'''
   # anchor against commit hash & line numbers
-  (^|\r?\n) [a-zA-Z0-9]{40}  \s\d+  \s\d+   (\s\d+)?   \r?\n
-  # skip non-commit hash/non line contents/porcelain entries
-  ([a-z\-]+ \s.+  \r?\n)+
-  # require boundary line
-  boundary        \r?\n
-  # skip again
-  ([a-z\-]+ \s.+  \r?\n)+
-  # catch last line
-  \t  .*
+  ^\w+\s+\d+\s+\d+(\s+\d+)?\s*$\s+
+  # metadata lines
+  (^[\w-]+\s+.+\s*$\s+)+
+  # boundary metadata
+  ^boundary\s*$\s+
+  # metadata lines
+  (^[\w-]+\s+.+\s*$\s+)+
+  # anchor against final line (loc)
+  ^\t.*?$\s+
   ''',
   flags=re.M | re.VERBOSE)
 
