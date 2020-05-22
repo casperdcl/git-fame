@@ -1,4 +1,5 @@
 from __future__ import print_function
+from functools import partial
 import sys
 import subprocess
 import logging
@@ -19,6 +20,13 @@ except NameError:
 
 try:
   from tqdm import tqdm
+  try:
+    from threading import RLock
+  except ImportError:
+    pass
+  else:
+    tqdm.set_lock(RLock())
+    tqdm = partial(tqdm, lock_args=(False,))
 except ImportError:
   class tqdm(object):
     def __init__(self, iterable=None, **kwargs):

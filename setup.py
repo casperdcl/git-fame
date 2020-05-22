@@ -44,7 +44,8 @@ if sys.argv[1].lower().strip() == 'make':
     sys.exit(0)
 
 extras_require = dict(yaml=['pyyaml'], tabulate=[])
-extras_require['full'] = list(set(sum(extras_require.values(), ['tqdm'])))
+extras_require['full'] = list(set(sum(
+    extras_require.values(), ['tqdm>=4.42.0'])))
 extras_require['dev'] = list(set(
     extras_require['full'] + ['py-make>=0.1.0', 'twine']))
 

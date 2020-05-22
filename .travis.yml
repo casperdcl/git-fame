@@ -14,7 +14,7 @@ stages:
 - check
 - test
 - name: deploy
-  if: repo = casperdcl/git-fame
+  if: repo = casperdcl/git-fame AND NOT type = pull_request
 jobs:
   include:
   - stage: test

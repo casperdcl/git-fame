@@ -323,7 +323,7 @@ def run(args):
     try:
       from concurrent.futures import ThreadPoolExecutor  # NOQA
       from tqdm.contrib.concurrent import thread_map
-      mapper = partial(thread_map, desc="Repos", unit="repo",
+      mapper = partial(thread_map, desc="Repos", unit="repo", miniters=1,
                        disable=args.silent_progress or len(gitdirs) <= 1)
     except ImportError:
       mapper = map
