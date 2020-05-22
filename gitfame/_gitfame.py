@@ -72,6 +72,20 @@ RE_AUTHS = re.compile(
 # NB: does not support escaping of escaped character
 RE_CSPILT = re.compile(r'(?<!\\),')
 RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
+# finds "boundary" porcelain messages
+RE_BLAME_BOUNDS = re.compile(r'''
+  # anchor against commit hash & line numbers
+  (^|\r?\n) [a-zA-Z0-9]{40}  \s\d+  \s\d+   (\s\d+)?   \r?\n
+  # skip non-commit hash/non line contents/porcelain entries
+  ([a-z\-]+ \s.+  \r?\n)+
+  # require boundary line
+  boundary        \r?\n
+  # skip again
+  ([a-z\-]+ \s.+  \r?\n)+
+  # catch last line
+  \t  .*
+  ''',
+  flags=re.M | re.VERBOSE)
 
 
 def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
@@ -221,36 +235,10 @@ def _get_auth_stats(
       continue
     log.log(logging.NOTSET, blame_out)
 
-    # Python 2.6, a declared supported runtime for this package, does not have re.sub(patt, replstr, str, flags).
-    # Thus, work around this with below. Python's re.compile() caches compilations,
-    # dodging what otherwise appears to be a performance hit
-    blame_out_noboundaries = re.compile(r'''
-      # Exclude git blame entries that exist outside of the requested range (e.g. with --since=<date>)
-      # Otherwise, the user with the nearest commit to the boundary earns the LOC count.
-      # Thus, remove all `boundary` porcelain messages.
-
-      # First, anchor the match against the SHA1 commit hash and line numbers
-      (^|\r?\n) [a-zA-Z0-9]{40}  \s\d+  \s\d+   (\s\d+)?   \r?\n
-
-      # Skip over non-commit hash, non line contents, porcelain entries.
-      ([a-z\-]+ \s.+  \r?\n)+
-
-      # Require the boundary line to be here to match - we're removing these entries
-      boundary        \r?\n
-
-      # Skip over non-commit hash, non line contents that follow a boundary line
-      ([a-z\-]+ \s.+  \r?\n)+
-
-      # Finally, eat the last line of the message, which is a tab followed by arbitrary text
-      \t  .*
-      ''',
-      re.VERBOSE
-    ).sub(
-      #Replace all boundary messages with the empty string
-      '',
-      blame_out
-    )
-    loc_auth_times = RE_AUTHS.findall(blame_out_noboundaries)
+    # Strip boundary messages,
+    # preventing user with nearest commit to boundary owning the LOC
+    blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
+    loc_auth_times = RE_AUTHS.findall(blame_out)
 
     for loc, auth, tstamp in loc_auth_times:  # for each chunk
       loc = int(loc)
@@ -295,16 +283,14 @@ def _get_auth_stats(
     old = auth_stats
     auth_stats = {}
     for auth, stats in getattr(old, 'iteritems', old.items)():
-      # Some users will change their name over time while keeping the same email address,
-      # such as capitalization or middle names shown.
-      # Handle this by merging together all stats for same email
-      i = auth_stats.setdefault(auth2em[auth], { "loc": 0, "files": set([]), "commits": 0, "ctimes": [] })
+      i = auth_stats.setdefault(auth2em[auth], {"loc": 0,
+                                                "files": set([]),
+                                                "commits": 0,
+                                                "ctimes": []})
       i["loc"] += stats["loc"]
       i["files"].update(stats["files"])
       i["commits"] += stats["commits"]
       i["ctimes"] += stats["ctimes"]
-      # mutating the returned object sidesteps the need to perform another dict lookup
-      # auth_stats[auth2em[auth]] = i
     del old
 
   return auth_stats
