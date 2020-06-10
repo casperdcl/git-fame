@@ -72,6 +72,10 @@ RE_AUTHS = re.compile(
 # NB: does not support escaping of escaped character
 RE_CSPILT = re.compile(r'(?<!\\),')
 RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
+# finds "boundary" line-porcelain messages
+RE_BLAME_BOUNDS = re.compile(
+    r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
+    flags=re.M | re.DOTALL)
 
 
 def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
@@ -220,6 +224,10 @@ def _get_auth_stats(
       getattr(log, "warn" if warn_binary else "debug")(fname + ':' + str(e))
       continue
     log.log(logging.NOTSET, blame_out)
+
+    # Strip boundary messages,
+    # preventing user with nearest commit to boundary owning the LOC
+    blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
     loc_auth_times = RE_AUTHS.findall(blame_out)
 
     for loc, auth, tstamp in loc_auth_times:  # for each chunk
@@ -265,7 +273,14 @@ def _get_auth_stats(
     old = auth_stats
     auth_stats = {}
     for auth, stats in getattr(old, 'iteritems', old.items)():
-      auth_stats[auth2em[auth]] = stats
+      i = auth_stats.setdefault(auth2em[auth], {"loc": 0,
+                                                "files": set([]),
+                                                "commits": 0,
+                                                "ctimes": []})
+      i["loc"] += stats["loc"]
+      i["files"].update(stats["files"])
+      i["commits"] += stats["commits"]
+      i["ctimes"] += stats["ctimes"]
     del old
 
   return auth_stats
