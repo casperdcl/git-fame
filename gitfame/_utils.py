@@ -69,7 +69,7 @@ class TqdmStream(object):
 def check_output(*a, **k):
   log.debug(' '.join(a[0][3:]))
   k.setdefault('stdout', subprocess.PIPE)
-  return subprocess.Popen(*a, **k).communicate()[0].decode('utf-8')
+  return subprocess.Popen(*a, **k).communicate()[0].decode('utf-8', errors='replace')
 
 
 def blank_col(rows, i, blanks):
