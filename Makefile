@@ -72,7 +72,6 @@ gitfame/git-fame.1: .meta/.git-fame.1.md gitfame/_gitfame.py
     pandoc -o "$@" -s -t man
 
 snapcraft.yaml: .meta/.snapcraft.yml
-	python -c 'import setuptools_scm'  # requires setuptools_scm
 	cat "$<" | sed -e 's/{version}/'"`python -m gitfame --version`"'/g' \
     -e 's/{commit}/'"`git describe --always`"'/g' \
     -e 's/{source}/./g' \

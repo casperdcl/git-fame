@@ -60,8 +60,8 @@ jobs:
         packages:
         - pandoc
     install:
-    script:
     - pip install .[dev]
+    script:
     - make build
     - openssl aes-256-cbc -K $encrypted_88867ca921c3_key
       -iv $encrypted_88867ca921c3_iv -in .meta/.casperdcl.gpg.enc
@@ -90,9 +90,14 @@ jobs:
         tags: true
   - name: docker
     python: 3.7
+    addons:
+      apt:
+        packages:
+        - pandoc
     services:
     - docker
     install:
+    - pip install .[dev]
     script:
     - echo "$DOCKER_PWD" | docker login -u $DOCKER_USR --password-stdin
     - echo "$GITHUB_TOKEN" | docker login docker.pkg.github.com -u $GITHUB_USR --password-stdin
@@ -128,6 +133,9 @@ jobs:
   - name: snap
     python: 3.7
     addons:
+     apt:
+      packages:
+      - pandoc
      snaps:
      - name: snapcraft
        channel: stable
@@ -147,9 +155,9 @@ jobs:
     - sudo /snap/bin/lxd waitready
     - sudo /snap/bin/lxd init --auto
     install:
-    - pip install setuptools_scm
-    - make snapcraft.yaml
+    - pip install .
     script:
+    - make snapcraft.yaml
     - sg lxd -c snapcraft
     after_failure:
     - sudo journalctl -u snapd
