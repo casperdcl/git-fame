@@ -69,7 +69,7 @@ setup(
     package_data={'gitfame': ['LICENCE', 'git-fame.1']},
     ext_modules=cythonize(["gitfame/_gitfame.py", "gitfame/_utils.py"],
                           nthreads=2),
-    python_requires='>=2.6, !=3.0.*, !=3.1.*',
+    python_requires='>=2.7, !=3.0.*, !=3.1.*',
     classifiers=[
         # Trove classifiers
         # (https://pypi.org/pypi?%3Aaction=list_classifiers)
@@ -99,7 +99,6 @@ setup(
         'Operating System :: Unix',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.2',
