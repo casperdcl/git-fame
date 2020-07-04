@@ -149,12 +149,11 @@ jobs:
         '{"build_url": "$TRAVIS_JOB_WEB_URL"}'
     - SNAPCRAFT_BUILD_ENVIRONMENT: lxd
     - SNAPCRAFT_BUILD_INFO: 1  # https://snapcraft.io/blog/introducing-developer-notifications-for-snap-security-updates
-    before_install:
+    install:
     - sudo usermod --append --groups lxd $USER
     - sudo /snap/bin/lxd.migrate -yes
     - sudo /snap/bin/lxd waitready
     - sudo /snap/bin/lxd init --auto
-    install:
     - pip install setuptools_scm
     - pip install .
     script:
@@ -180,7 +179,7 @@ jobs:
       on:
         branch: devel
 before_install:
-- git fetch --tags
+- git fetch --unshallow --tags
 install:
 - pip install tox
 - pip install .
