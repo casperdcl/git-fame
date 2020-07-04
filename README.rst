@@ -121,9 +121,7 @@ followed by a terminal restart.
 Changelog
 ---------
 
-The list of all changes is available either on GitHub's Releases:
-|GitHub-Status| or on crawlers such as
-`allmychanges.com <https://allmychanges.com/p/python/git-fame/>`_.
+The list of all changes is available on the Releases page: |GitHub-Status|.
 
 
 Usage

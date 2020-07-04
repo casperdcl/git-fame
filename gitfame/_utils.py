@@ -69,7 +69,8 @@ class TqdmStream(object):
 def check_output(*a, **k):
   log.debug(' '.join(a[0][3:]))
   k.setdefault('stdout', subprocess.PIPE)
-  return subprocess.Popen(*a, **k).communicate()[0].decode('utf-8')
+  return subprocess.Popen(*a, **k).communicate()[0].decode(
+      'utf-8', errors='replace')
 
 
 def blank_col(rows, i, blanks):
@@ -258,7 +259,7 @@ def merge_stats(left, right):
   """Add `right`'s values to `left` (modifies `left` in-place)"""
   for k, val in getattr(right, 'iteritems', right.items)():
     if isinstance(val, int):
-      left[k] += val
+      left[k] = left.get(k, 0) + val
     elif hasattr(val, 'extend'):
       left[k].extend(val)
     elif hasattr(val, 'update'):
