@@ -1,7 +1,6 @@
 name: git-fame
 summary: Pretty-print `git` repository collaborators sorted by contributions
-description: |
- {description}
+version: '{version}'
 adopt-info: git-fame
 grade: stable
 confinement: strict

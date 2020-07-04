@@ -155,6 +155,7 @@ jobs:
     - sudo /snap/bin/lxd waitready
     - sudo /snap/bin/lxd init --auto
     install:
+    - pip install setuptools_scm
     - pip install .
     script:
     - make snapcraft.yaml
