@@ -56,6 +56,7 @@ from ._utils import TERM_WIDTH, int_cast_or_len, fext, _str, \
     check_output, tqdm, TqdmStream, print_unicode, Str, string_types, \
     merge_stats
 
+
 def get_version_dist(name=__name__):
     from pkg_resources import DistributionNotFound, get_distribution
 
@@ -68,8 +69,6 @@ def get_version_dist(name=__name__):
 try:
     from setuptools_scm import get_version
 except ImportError:
-    from os import path
-
     ROOT = path.abspath(path.dirname(path.dirname(__file__)))
     if path.exists(path.join(ROOT, ".git")):
         __version__ = "UNKNOWN - please install setuptools_scm"
