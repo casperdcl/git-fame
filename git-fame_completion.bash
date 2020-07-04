@@ -9,17 +9,26 @@ _git_fame()
       ;;
     *)
       case ${prv} in
-        "--sort")
-          COMPREPLY=($(compgen -W 'loc commits files' -- ${cur}))
+        --sort)
+          COMPREPLY=($(compgen -W 'loc commits files hours months' -- ${cur}))
           ;;
-        "--cost")
+        --cost)
           COMPREPLY=($(compgen -W 'months cocomo hours commits' -- ${cur}))
           ;;
-        "--format")
+        --format)
           COMPREPLY=($(compgen -W 'pipe markdown yaml json csv tsv tabulate' -- ${cur}))
           ;;
-        "--log")
+        --log)
           COMPREPLY=($(compgen -W 'FATAL CRITICAL ERROR WARNING INFO DEBUG NOTSET' -- ${cur}))
+          ;;
+        --branch)
+          COMPREPLY=($(compgen -W "$(git branch | sed 's/*/ /')" -- ${cur}))
+          ;;
+        --manpath)
+          COMPREPLY=($(compgen -d -- ${cur}))
+          ;;
+        --incl|--excl|--since)
+          COMPREPLY=( )
           ;;
         *)
           if [ ${COMP_WORDS[1]} == fame ]; then
