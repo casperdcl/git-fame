@@ -72,15 +72,15 @@ gitfame/git-fame.1: .meta/.git-fame.1.md gitfame/_gitfame.py
     pandoc -o "$@" -s -t man
 
 snapcraft.yaml: .meta/.snapcraft.yml
+	python -c 'import setuptools_scm'  # requires setuptools_scm
 	cat "$<" | sed -e 's/{version}/'"`python -m gitfame --version`"'/g' \
     -e 's/{commit}/'"`git describe --always`"'/g' \
     -e 's/{source}/./g' \
     -e 's/{description}/https:\/\/github.com\/casperdcl\/git-fame/g' > "$@"
 
-.dockerignore: .gitignore
-	cat $^ > "$@"
-	echo ".git" > "$@"
-	git clean -xdn | sed -nr 's/^Would remove (.*)$$/\1/p' >> "$@"
+.dockerignore:
+	echo '*' > $@
+	echo '!dist/*.whl' >> $@
 
 distclean:
 	@+make coverclean
@@ -128,9 +128,8 @@ snap:
 	@make -B snapcraft.yaml
 	snapcraft
 docker:
+	@make build
 	@make .dockerignore
-	@make coverclean
-	@make clean
 	docker build . -t casperdcl/git-fame
 	docker tag casperdcl/git-fame:latest casperdcl/git-fame:$(shell docker run --rm casperdcl/git-fame -v)
 none:
