@@ -206,7 +206,7 @@ def _get_auth_stats(
   log.log(logging.NOTSET, "files:\n" + '\n'.join(file_list))
 
   auth_stats = {}
-  for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "fame",
+  for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing",
                     disable=silent_progress, unit="file"):
     git_blame_cmd = git_cmd + ["blame", "--line-porcelain", branch, fname] + \
         since
