@@ -22,7 +22,6 @@ except ImportError:
 
 __author__ = None
 __licence__ = None
-__version__ = None
 src_dir = os.path.abspath(os.path.dirname(__file__))
 main_file = os.path.join(src_dir, 'gitfame', '_gitfame.py')
 for l in io_open(main_file, mode='r'):
@@ -30,9 +29,6 @@ for l in io_open(main_file, mode='r'):
         __author__ = literal_eval(l.split('=', 1)[1].strip())
     elif l.startswith('__licence__'):
         __licence__ = literal_eval(l.split('=', 1)[1].strip())
-version_file = os.path.join(src_dir, 'gitfame', '_version.py')
-with io_open(version_file, mode='r') as fd:
-    exec(fd.read())
 
 # Executing makefile commands if specified
 if sys.argv[1].lower().strip() == 'make':
@@ -55,7 +51,8 @@ with io_open(fndoc, mode='r', encoding='utf-8') as fd:
     README_rst = fd.read()
 setup(
     name='git-fame',
-    version=__version__,
+    use_scm_version=True,
+    setup_requires=["setuptools_scm"],
     description='Pretty-print `git` repository collaborators'
                 ' sorted by contributions',
     long_description=README_rst,
