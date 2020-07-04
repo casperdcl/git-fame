@@ -394,11 +394,15 @@ def run(args):
       args.sort, args.bytype, args.format, args.cost))
 
 
+def get_main_parser():
+  from argopt import argopt
+  return argopt(__doc__ + '\n' + __copyright__, version=__version__)
+
+
 def main(args=None):
   """args  : list [default: sys.argv[1:]]"""
-  from argopt import argopt
-  args = argopt(__doc__ + '\n' + __copyright__,
-                version=__version__).parse_args(args=args)
+  parser = get_main_parser()
+  args = parser.parse_args(args=args)
   logging.basicConfig(
       level=getattr(logging, args.log, logging.INFO),
       stream=TqdmStream,
