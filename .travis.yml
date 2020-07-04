@@ -72,7 +72,7 @@ jobs:
       -out .casperdcl.gpg -d
     - gpg --import .casperdcl.gpg
     - rm .casperdcl.gpg
-    - git log --pretty='format:- %s%n%b---' $(git tag --sort=creatordate | tail -n2 | head -n1)..HEAD > CHANGES.md
+    - git log --pretty='format:%d%n- %s%n%b---' $(git tag --sort=v:refname | tail -n2 | head -n1)..HEAD > _CHANGES.md
     deploy:
     - provider: script
       script: twine upload -s -i casper.dcl@physics.org dist/git?fame-*
@@ -89,7 +89,7 @@ jobs:
       edge: true
       tag_name: $TRAVIS_TAG
       target_commitish: $TRAVIS_COMMIT
-      release_notes_file: CHANGES.md
+      release_notes_file: _CHANGES.md
       on:
         tags: true
   - name: docker
