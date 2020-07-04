@@ -10,7 +10,7 @@ license: MPL-2.0
 parts:
   git-fame:
     plugin: python
-    python-packages: [tqdm, pyyaml]
+    python-packages: [tqdm, pyyaml, setuptools_scm]
     stage-packages: [git]
     source: {source}
     source-commit: '{commit}'
