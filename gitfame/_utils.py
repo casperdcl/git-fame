@@ -258,7 +258,7 @@ def merge_stats(left, right):
   """Add `right`'s values to `left` (modifies `left` in-place)"""
   for k, val in getattr(right, 'iteritems', right.items)():
     if isinstance(val, int):
-      left[k] += val
+      left[k] = left.get(k, 0) + val
     elif hasattr(val, 'extend'):
       left[k].extend(val)
     elif hasattr(val, 'update'):
