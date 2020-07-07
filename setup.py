@@ -41,7 +41,7 @@ if sys.argv[1].lower().strip() == 'make':
 
 extras_require = dict(yaml=['pyyaml'], tabulate=[])
 extras_require['full'] = list(set(sum(
-    extras_require.values(), ['tqdm>=4.42.0'])))
+    extras_require.values(), [])))
 extras_require['dev'] = list(set(
     extras_require['full'] + ['py-make>=0.1.0', 'twine']))
 
@@ -63,7 +63,7 @@ setup(
     platforms=['any'],
     packages=['gitfame'],
     provides=['gitfame'],
-    install_requires=['argopt>=0.3.5', 'tabulate'],
+    install_requires=['argopt>=0.3.5', 'tabulate', 'tqdm>=4.44.0'],
     extras_require=extras_require,
     entry_points={'console_scripts': ['git-fame=gitfame:main'], },
     package_data={'gitfame': ['LICENCE', 'git-fame.1']},
