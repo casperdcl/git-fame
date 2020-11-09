@@ -147,6 +147,15 @@ def test_tabulate_tabulate():
     raise SkipTest
 
 
+def test_tabulate_enum():
+  """Test --enum tabulate"""
+  from json import loads
+  res = loads(_gitfame.tabulate(
+      auth_stats, stats_tot, backend='json', row_nums=True))
+  assert res['columns'][0] == '#'
+  assert [int(i[0]) for i in res['data']] == [1, 2]
+
+
 def test_tabulate_unknown():
   """Test unknown tabulate format"""
   try:

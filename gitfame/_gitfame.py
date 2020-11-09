@@ -137,11 +137,11 @@ def tabulate(
   if cost:
     cost = set(cost.lower().split(','))
     stats_tot = dict(stats_tot)
-    if cost & {'cocomo', 'month'}:
+    if cost & {'cocomo', 'month', 'months'}:
       COL_NAMES.insert(1, 'mths')
       tab = [i[:1] + [3.2 * (i[1] / 1e3)**1.05] + i[1:] for i in tab]
       stats_tot.setdefault('months', '%.1f' % sum(i[1] for i in tab))
-    if cost & {'commit', 'hour'}:
+    if cost & {'commit', 'commits', 'hour', 'hours'}:
       COL_NAMES.insert(1, 'hrs')
       tab = [i[:1] + [hours(auth_stats[i[0]]['ctimes'])] + i[1:] for i in tab]
 
