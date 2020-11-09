@@ -24,11 +24,11 @@ __author__ = None
 __licence__ = None
 src_dir = os.path.abspath(os.path.dirname(__file__))
 main_file = os.path.join(src_dir, 'gitfame', '_gitfame.py')
-for l in io_open(main_file, mode='r'):
-    if l.startswith('__author__'):
-        __author__ = literal_eval(l.split('=', 1)[1].strip())
-    elif l.startswith('__licence__'):
-        __licence__ = literal_eval(l.split('=', 1)[1].strip())
+for line in io_open(main_file, mode='r'):
+    if line.startswith('__author__'):
+        __author__ = literal_eval(line.split('=', 1)[1].strip())
+    elif line.startswith('__licence__'):
+        __licence__ = literal_eval(line.split('=', 1)[1].strip())
 
 # Executing makefile commands if specified
 if sys.argv[1].lower().strip() == 'make':
