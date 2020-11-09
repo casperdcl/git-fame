@@ -3,7 +3,9 @@ from functools import partial
 import sys
 import subprocess
 import logging
-log = logging.getLogger(__name__)  # NOQA
+
+from tqdm import tqdm
+from tqdm.utils import _screen_shape_wrapper
 
 try:
   # python2
@@ -17,9 +19,6 @@ except NameError:
   _range = range
   from io import StringIO
   string_types = (str,)
-
-from tqdm import tqdm
-from tqdm.utils import _screen_shape_wrapper
 try:
   from threading import RLock
 except ImportError:
@@ -36,6 +35,7 @@ __all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm",
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
 
+log = logging.getLogger(__name__)
 TERM_WIDTH = _screen_shape_wrapper()(sys.stdout)[0]
 if not TERM_WIDTH:
   # non interactive pipe
