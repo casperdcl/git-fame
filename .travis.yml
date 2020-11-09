@@ -12,7 +12,6 @@ before_cache:
 notifications:
   email: false
 stages:
-- check
 - test
 - name: deploy
   if: repo = casperdcl/git-fame AND NOT type = pull_request
@@ -21,33 +20,14 @@ jobs:
   - stage: test
     name: py2.7
     python: 2.7
-  - name: py3.4
-    python: 3.4
-    env: TOXENV=py34
-  - name: py3.5
-    python: 3.5
-  - name: py3.6
-    python: 3.6
   - name: py3.7
     python: 3.7
-  - name: py3.8
-    python: 3.8
   - name: pypy2
     python: pypy2
     env: CRYPTOGRAPHY_ALLOW_OPENSSL_102=1
   - name: pypy3
     python: pypy3
     env: TOXENV=pypy3
-  - stage: check
-    name: style
-    python: 3.7
-    env: TOXENV=flake8
-  - name: setup
-    python: 3.7
-    env: TOXENV=setup.py
-  - name: nodeps
-    python: 3.7
-    env: TOXENV=nodeps
   - stage: deploy
     name: PyPI and GitHub
     python: 3.7

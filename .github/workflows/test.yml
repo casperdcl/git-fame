@@ -1,0 +1,41 @@
+name: Test
+on:
+  push:
+  schedule:
+    - cron: '3 2 1 * *'  # M H d m w (monthly at 2:03)
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Install
+      run: |
+        pip install -U tox
+        pip install -U .
+    - name: Test
+      run: tox
+      env:
+        TOXENV: 'flake8,setup.py,nodeps'
+  test:
+    strategy:
+      matrix:
+        python: [3.4, 3.5, 3.6, 3.8]
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python }}
+    - name: Install
+      run: |
+        pip install -U tox setuptools_scm
+        pip install -U .
+    - name: Test
+      run: tox -e py${PYVER/./}
+      env:
+        PYVER: ${{ matrix.python }}
