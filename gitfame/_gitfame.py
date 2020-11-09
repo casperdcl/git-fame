@@ -29,6 +29,7 @@ Options:
   --warn-binary   Don't silently skip files which appear to be binary data
                   [default: False].
   -e, --show-email  Show author email instead of name [default: False].
+  --enum    Show row numbers [default: False].
   -t, --bytype             Show stats per file extension [default: False].
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
@@ -115,7 +116,7 @@ def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
 
 def tabulate(
         auth_stats, stats_tot, sort='loc', bytype=False, backend='md',
-        cost=None):
+        cost=None, row_nums=False):
   """
   backends  : [default: md]|yaml|json|csv|tsv|tabulate|
     `in tabulate.tabulate_formats`
@@ -133,16 +134,14 @@ def tabulate(
               100 * len(s.get('files', [])) / max(1, stats_tot['files'])
           ))).replace('/100.0/', '/ 100/')]
          for (auth, s) in it_as()]
-  if cost is None:
-    cost = ''
   if cost:
-    cost = cost.lower()
+    cost = set(cost.lower().split(','))
     stats_tot = dict(stats_tot)
-    if any(i in cost for i in ['cocomo', 'month']):
+    if cost & {'cocomo', 'month'}:
       COL_NAMES.insert(1, 'mths')
       tab = [i[:1] + [3.2 * (i[1] / 1e3)**1.05] + i[1:] for i in tab]
       stats_tot.setdefault('months', '%.1f' % sum(i[1] for i in tab))
-    if any(i in cost for i in ['commit', 'hour']):
+    if cost & {'commit', 'hour'}:
       COL_NAMES.insert(1, 'hrs')
       tab = [i[:1] + [hours(auth_stats[i[0]]['ctimes'])] + i[1:] for i in tab]
 
@@ -153,6 +152,9 @@ def tabulate(
                ("months", "mths")]:
     sort = sort.replace(i, j)
   tab.sort(key=lambda i: i[COL_NAMES.index(sort)], reverse=True)
+  if row_nums:
+    tab = [[str(i)] + j for i, j in enumerate(tab, 1)]
+    COL_NAMES.insert(0, '#')
 
   totals = 'Total ' + '\nTotal '.join(
       "%s: %s" % i for i in sorted(stats_tot.items())) + '\n'
@@ -390,7 +392,7 @@ def run(args):
 
   print_unicode(tabulate(
       auth_stats, stats_tot,
-      args.sort, args.bytype, args.format, args.cost))
+      args.sort, args.bytype, args.format, args.cost, args.enum))
 
 
 def get_main_parser():

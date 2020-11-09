@@ -187,6 +187,7 @@ Documentation
       --warn-binary   Don't silently skip files which appear to be binary data
                       [default: False].
       -e, --show-email  Show author email instead of name [default: False].
+      --enum    Show row numbers [default: False].
       -t, --bytype             Show stats per file extension [default: False].
       -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                                version and the child's to find where the lines
