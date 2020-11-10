@@ -3,6 +3,5 @@
 
 .git*          export-ignore
 MANIFEST.in    export-ignore
-.travis.yml    export-ignore
 codecov.yml    export-ignore
 .git-fame.1.md  export-ignore
