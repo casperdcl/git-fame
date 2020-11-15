@@ -238,6 +238,18 @@ Generating
         --unit file --desc "Generating CODEOWNERS" \
       > .github/CODEOWNERS
 
+Zenodo config
+~~~~~~~~~~~~~
+
+Generating `.zenodo.json <https://developers.zenodo.org/#deposit-metadata>`__:
+
+.. code:: sh
+
+    git fame -wMC --format json \
+      | jq -c '{creators: [.data[] | {name: .[0]}]}' \
+      | sed -r -e 's/(\{"name")/\n    \1/g' -e 's/:/: /g' \
+      > .zenodo.json
+
 Contributions
 -------------
 
@@ -266,8 +278,8 @@ We are grateful for all |GitHub-Contributions|.
 
 |README-Hits|
 
-.. |Build-Status| image:: https://img.shields.io/travis/casperdcl/git-fame/master.svg?logo=travis
-   :target: https://travis-ci.org/casperdcl/git-fame
+.. |Build-Status| image:: https://img.shields.io/github/workflow/status/casperdcl/git-fame/Test/master?logo=GitHub
+   :target: https://github.com/casperdcl/git-fame/actions?query=workflow%3ATest
 .. |Coverage-Status| image:: https://coveralls.io/repos/casperdcl/git-fame/badge.svg?branch=master
    :target: https://coveralls.io/github/casperdcl/git-fame
 .. |Branch-Coverage-Status| image:: https://codecov.io/gh/casperdcl/git-fame/branch/master/graph/badge.svg
