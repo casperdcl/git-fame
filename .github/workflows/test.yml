@@ -49,12 +49,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Coveralls Finished
-      uses: AndreMiras/coveralls-python-action@develop
+      uses: exoplanet-dev/coveralls-python-action@develop  # https://github.com/AndreMiras/coveralls-python-action/pull/5
       with:
         parallel-finished: true
   deploy:
     name: Deploy
-    needs: [check, test]
+    needs: [check, test, finish]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
