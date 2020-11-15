@@ -238,6 +238,18 @@ Generating
         --unit file --desc "Generating CODEOWNERS" \
       > .github/CODEOWNERS
 
+Zenodo config
+~~~~~~~~~~~~~
+
+Generating `.zenodo.json <https://developers.zenodo.org/#deposit-metadata>`__:
+
+.. code:: sh
+
+    git fame -wMC --format json \
+      | jq -c '{creators: [.data[] | {name: .[0]}]}' \
+      | sed -r -e 's/(\{"name")/\n    \1/g' -e 's/:/: /g' \
+      > .zenodo.json
+
 Contributions
 -------------
 
