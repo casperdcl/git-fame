@@ -1,6 +1,7 @@
 name: Test
 on:
   push:
+  pull_request:
   schedule:
   - cron: '3 2 1 * *'  # M H d m w (monthly at 2:03)
 jobs:
