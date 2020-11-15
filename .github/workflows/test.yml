@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Coveralls Finished
-      uses: exoplanet-dev/coveralls-python-action@develop  # https://github.com/AndreMiras/coveralls-python-action/pull/5
+      uses: AndreMiras/coveralls-python-action@develop
       with:
         parallel-finished: true
   deploy:
