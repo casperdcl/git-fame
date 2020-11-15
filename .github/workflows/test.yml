@@ -40,6 +40,11 @@ jobs:
         PYVER: ${{ matrix.python }}
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        CI_NAME: github
+        CI_BUILD_NUMBER: ${{ github.run_id }}
+        CI_BUILD_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        CI_BRANCH: ${{ github.ref }}
+        CI_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
   deploy:
     name: Deploy
     needs: [check, test]
