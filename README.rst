@@ -280,7 +280,7 @@ We are grateful for all |GitHub-Contributions|.
 
 .. |Build-Status| image:: https://img.shields.io/github/workflow/status/casperdcl/git-fame/Test/master?logo=GitHub
    :target: https://github.com/casperdcl/git-fame/actions?query=workflow%3ATest
-.. |Coverage-Status| image:: https://coveralls.io/repos/casperdcl/git-fame/badge.svg?branch=master
+.. |Coverage-Status| image:: https://img.shields.io/coveralls/github/casperdcl/git-fame/master?logo=coveralls
    :target: https://coveralls.io/github/casperdcl/git-fame
 .. |Branch-Coverage-Status| image:: https://codecov.io/gh/casperdcl/git-fame/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/casperdcl/git-fame
@@ -304,7 +304,7 @@ We are grateful for all |GitHub-Contributions|.
    :target: https://github.com/casperdcl/git-fame/pulse
 .. |Gift-Casper| image:: https://img.shields.io/badge/gift-donate-dc10ff.svg
    :target: https://caspersci.uk.to/donate
-.. |PyPI-Status| image:: https://img.shields.io/pypi/v/git-fame.svg
+.. |PyPI-Status| image:: https://img.shields.io/pypi/v/git-fame.svg?logo=python&logoColor=white
    :target: https://pypi.org/project/git-fame
 .. |PyPI-Downloads| image:: https://img.shields.io/pypi/dm/git-fame.svg?label=pypi%20downloads&logo=python&logoColor=white
    :target: https://pypi.org/project/git-fame
