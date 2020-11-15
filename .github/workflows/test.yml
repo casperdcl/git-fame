@@ -23,7 +23,7 @@ jobs:
   test:
     strategy:
       matrix:
-        python: [2.7, 3.4, 3.5, 3.6, 3.7, 3.8]
+        python: [2.7, 3.5, 3.6, 3.7, 3.8]
     name: Python ${{ matrix.python }}
     runs-on: ubuntu-latest
     steps:
@@ -39,12 +39,19 @@ jobs:
       env:
         PYVER: ${{ matrix.python }}
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        CI_NAME: github
-        CI_BUILD_NUMBER: ${{ github.run_id }}
-        CI_BUILD_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        CI_BRANCH: ${{ github.ref }}
-        CI_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
+    - name: Coveralls Parallel
+      uses: AndreMiras/coveralls-python-action@develop
+      with:
+        parallel: true
+  finish:
+    name: Coverage
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Coveralls Finished
+      uses: AndreMiras/coveralls-python-action@develop
+      with:
+        parallel-finished: true
   deploy:
     name: Deploy
     needs: [check, test]
