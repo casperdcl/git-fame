@@ -1,7 +1,7 @@
 name: git-fame
 summary: Pretty-print `git` repository collaborators sorted by contributions
+description: https://github.com/casperdcl/git-fame
 version: '{version}'
-adopt-info: git-fame
 grade: stable
 confinement: strict
 base: core18
@@ -9,11 +9,12 @@ license: MPL-2.0
 parts:
   git-fame:
     plugin: python
-    python-packages: [tqdm, pyyaml, setuptools_scm]
+    python-packages: [pyyaml, setuptools>=42, 'setuptools_scm[toml]>=3.4']
+    python-version: python3
     stage-packages: [git]
     source: {source}
     source-commit: '{commit}'
-    parse-info: [setup.py]
+    build-packages: [git]
     override-build: |
         snapcraftctl build
         cp $SNAPCRAFT_PART_BUILD/git-fame_completion.bash $SNAPCRAFT_PART_INSTALL/completion.sh

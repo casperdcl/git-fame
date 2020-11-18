@@ -77,8 +77,7 @@ snapcraft.yaml: .meta/.snapcraft.yml
     -e 's/{source}/./g' > "$@"
 
 .dockerignore:
-	echo '*' > $@
-	echo '!dist/*.whl' >> $@
+	@+python -c "fd=open('.dockerignore', 'w'); fd.write('*\n!dist/*.whl\n')"
 
 distclean:
 	@+make coverclean
@@ -88,6 +87,8 @@ prebuildclean:
 	@+python -c "import shutil; shutil.rmtree('build', True)"
 	@+python -c "import shutil; shutil.rmtree('dist', True)"
 	@+python -c "import shutil; shutil.rmtree('git_fame.egg-info', True)"
+	@+python -c "import shutil; shutil.rmtree('.eggs', True)"
+	@+python -c "import os; os.remove('gitfame/_dist_ver.py') if os.path.exists('gitfame/_dist_ver.py') else None"
 coverclean:
 	@+python -c "import os; os.remove('.coverage') if os.path.exists('.coverage') else None"
 	@+python -c "import shutil; shutil.rmtree('gitfame/__pycache__', True)"
