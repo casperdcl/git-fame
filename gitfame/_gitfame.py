@@ -90,19 +90,22 @@ __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
 log = logging.getLogger(__name__)
 
-RE_AUTHS = re.compile(
+# processing `blame --line-porcelain`
+RE_AUTHS_BLAME = re.compile(
     r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?\ncommitter-time (\d+)',
     flags=re.M | re.DOTALL)
-RE_AUTHS_LOG = re.compile(
-    r'^aN(.+?) ct(\d+)\n\n(?:.*? (\d+) insert)?(?:.*? (\d+) del)?', flags=re.M)
-# finds all non-escaped commas
-# NB: does not support escaping of escaped character
-RE_CSPILT = re.compile(r'(?<!\\),')
 RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
-# finds "boundary" line-porcelain messages
 RE_BLAME_BOUNDS = re.compile(
     r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
     flags=re.M | re.DOTALL)
+# processing `log --format="aN%aN ct%ct" --numstat`
+RE_AUTHS_LOG = re.compile(r"^aN(.+?) ct(\d+)\n\n", flags=re.M)
+RE_STAT_BINARY = re.compile(r"^\s*?-\s*-.*?\n", flags=re.M)
+RE_RENAME = re.compile(r"\{.+? => (.+?)\}")
+# finds all non-escaped commas
+# NB: does not support escaping of escaped character
+RE_CSPILT = re.compile(r'(?<!\\),')
+# options
 COST_MONTHS = {'cocomo', 'month', 'months'}
 COST_HOURS = {'commit', 'commits', 'hour', 'hours'}
 CHURN_SLOC = {'surv', 'survive', 'surviving'}
@@ -243,7 +246,7 @@ def _get_auth_stats(
   if churn & CHURN_SLOC:
     base_cmd = git_cmd + ["blame", "--line-porcelain"] + since
   else:
-    base_cmd = git_cmd + ["log", "--format=aN%aN ct%ct", "--shortstat"] + since
+    base_cmd = git_cmd + ["log", "--format=aN%aN ct%ct", "--numstat"] + since
 
   if ignore_whitespace:
     base_cmd.append("-w")
@@ -273,36 +276,56 @@ def _get_auth_stats(
       except KeyError:
         auth_stats[auth][fext_key] = loc
 
-  for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing",
-                    disable=silent_progress, unit="file"):
+  if churn & CHURN_SLOC:
+    for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing",
+                      disable=silent_progress, unit="file"):
 
-    git_blame_cmd = base_cmd + [branch, fname]
-    if prefix_gitdir:
-      fname = path.join(gitdir, fname)
-    try:
-      blame_out = check_output(git_blame_cmd, stderr=subprocess.STDOUT)
-    except Exception as e:
-      getattr(log, "warn" if warn_binary else "debug")(fname + ':' + str(e))
-      continue
-    log.log(logging.NOTSET, blame_out)
+      if prefix_gitdir:
+        fname = path.join(gitdir, fname)
+      try:
+        blame_out = check_output(
+            base_cmd + [branch, fname], stderr=subprocess.STDOUT)
+      except Exception as err:
+        getattr(log, "warn" if warn_binary else "debug")(fname + ':' + str(err))
+        continue
+      log.log(logging.NOTSET, blame_out)
 
-    if churn & CHURN_SLOC:
       # Strip boundary messages,
       # preventing user with nearest commit to boundary owning the LOC
       blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
-      loc_auth_times = RE_AUTHS.findall(blame_out)
+      loc_auth_times = RE_AUTHS_BLAME.findall(blame_out)
 
       for loc, auth, tstamp in loc_auth_times:  # for each chunk
         loc = int(loc)
         stats_append(fname, auth, loc, tstamp)
-    else:
-      auth_time_ins_dels = RE_AUTHS_LOG.findall(blame_out)
+  else:
+    with tqdm(total=1, desc=gitdir if prefix_gitdir else "Processing",
+              disable=silent_progress, unit="repo") as t:
+      blame_out = check_output(base_cmd + [branch], stderr=subprocess.STDOUT)
+      t.update()
+    log.log(logging.NOTSET, blame_out)
 
-      for auth, tstamp, inss, dels in auth_time_ins_dels:  # for each chunk
-        loc = (
-            int(inss) if churn & CHURN_INS and inss else 0) + (
-            int(dels) if churn & CHURN_DEL and dels else 0)
-        stats_append(fname, auth, loc, tstamp)
+    # Strip binary files
+    for fname in set(RE_STAT_BINARY.findall(blame_out)):
+      getattr(log, "warn" if warn_binary else "debug")(
+          "binary:" + fname.strip())
+    blame_out = RE_STAT_BINARY.sub('', blame_out)
+
+    blame_out = RE_AUTHS_LOG.split(blame_out)
+    blame_out = zip(blame_out[1::3], blame_out[2::3], blame_out[3::3])
+    for auth, tstamp, fnames in blame_out:
+      fnames = fnames.split('\naN', 1)[0]
+      for i in fnames.strip().split('\n'):
+        try:
+          inss, dels, fname = i.split('\t')
+        except ValueError:
+            log.warn(i)
+        else:
+          fname = RE_RENAME.sub(r'\\2', fname)
+          loc = (
+              int(inss) if churn & CHURN_INS and inss else 0) + (
+              int(dels) if churn & CHURN_DEL and dels else 0)
+          stats_append(fname, auth, loc, tstamp)
 
   # quickly count commits (even if no surviving loc)
   log.log(logging.NOTSET, "authors:" + '; '.join(auth_stats.keys()))
