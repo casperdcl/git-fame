@@ -170,6 +170,8 @@ Documentation
       -v, --version  Print module version and exit.
       --branch=<b>   Branch or tag [default: HEAD] up to which to check.
       --sort=<key>   [default: loc]|commits|files|hours|months.
+      --loc=<type>   [default: surviving]|ins(ertions)|del(etions)
+                     What `loc` represents. Use 'ins,del' to count both.
       --excl=<f>     Excluded files (default: None).
                      In no-regex mode, may be a comma-separated list.
                      Escape (\,) for a literal comma (may require \\, in shell).
@@ -182,7 +184,7 @@ Documentation
                        May be multiple comma-separated values.
       -n, --no-regex  Assume <f> are comma-separated exact matches
                       rather than regular expressions [default: False].
-                      NB: if regex is enabled `,` is equivalent to `|`.
+                      NB: if regex is enabled ',' is equivalent to '|'.
       -s, --silent-progress    Suppress `tqdm` [default: False].
       --warn-binary   Don't silently skip files which appear to be binary data
                       [default: False].

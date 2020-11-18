@@ -12,7 +12,7 @@ Options:
   -v, --version  Print module version and exit.
   --branch=<b>   Branch or tag [default: HEAD] up to which to check.
   --sort=<key>   [default: loc]|commits|files|hours|months.
-  --churn=<c>    [default: surviving]|ins(ertions)|del(etions)
+  --loc=<type>   [default: surviving]|ins(ertions)|del(etions)
                  What `loc` represents. Use 'ins,del' to count both.
   --excl=<f>     Excluded files (default: None).
                  In no-regex mode, may be a comma-separated list.
@@ -387,7 +387,7 @@ def run(args):
       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
       warn_binary=args.warn_binary, bytype=args.bytype,
       show_email=args.show_email, prefix_gitdir=len(gitdirs) > 1,
-      churn=args.churn)
+      churn=args.loc)
 
   # concurrent multi-repo processing
   if len(gitdirs) > 1:
