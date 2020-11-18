@@ -59,6 +59,13 @@ Branch or tag [default: HEAD] up to which to check.
 .RS
 .RE
 .TP
+.B \-\-churn=\f[I]c\f[]
+[default: surviving]|ins(ertions)|del(etions) What \f[C]loc\f[]
+represents.
+Use \[aq]ins,del\[aq] to count both.
+.RS
+.RE
+.TP
 .B \-\-excl=\f[I]f\f[]
 Excluded files (default: None).
 In no\-regex mode, may be a comma\-separated list.
@@ -89,7 +96,7 @@ May be multiple comma\-separated values.
 .B \-n, \-\-no\-regex
 Assume are comma\-separated exact matches rather than regular
 expressions [default: False].
-NB: if regex is enabled \f[C],\f[] is equivalent to \f[C]|\f[].
+NB: if regex is enabled \[aq],\[aq] is equivalent to \[aq]|\[aq].
 .RS
 .RE
 .TP

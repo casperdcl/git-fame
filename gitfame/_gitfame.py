@@ -12,6 +12,8 @@ Options:
   -v, --version  Print module version and exit.
   --branch=<b>   Branch or tag [default: HEAD] up to which to check.
   --sort=<key>   [default: loc]|commits|files|hours|months.
+  --churn=<c>    [default: surviving]|ins(ertions)|del(etions)
+                 What `loc` represents. Use 'ins,del' to count both.
   --excl=<f>     Excluded files (default: None).
                  In no-regex mode, may be a comma-separated list.
                  Escape (\,) for a literal comma (may require \\, in shell).
@@ -24,7 +26,7 @@ Options:
                    May be multiple comma-separated values.
   -n, --no-regex  Assume <f> are comma-separated exact matches
                   rather than regular expressions [default: False].
-                  NB: if regex is enabled `,` is equivalent to `|`.
+                  NB: if regex is enabled ',' is equivalent to '|'.
   -s, --silent-progress    Suppress `tqdm` [default: False].
   --warn-binary   Don't silently skip files which appear to be binary data
                   [default: False].
@@ -91,6 +93,8 @@ log = logging.getLogger(__name__)
 RE_AUTHS = re.compile(
     r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?\ncommitter-time (\d+)',
     flags=re.M | re.DOTALL)
+RE_AUTHS_LOG = re.compile(
+    r'^aN(.+?) ct(\d+)\n\n(?:.*? (\d+) insert)?(?:.*? (\d+) del)?', flags=re.M)
 # finds all non-escaped commas
 # NB: does not support escaping of escaped character
 RE_CSPILT = re.compile(r'(?<!\\),')
@@ -99,6 +103,12 @@ RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
 RE_BLAME_BOUNDS = re.compile(
     r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
     flags=re.M | re.DOTALL)
+COST_MONTHS = {'cocomo', 'month', 'months'}
+COST_HOURS = {'commit', 'commits', 'hour', 'hours'}
+CHURN_SLOC = {'surv', 'survive', 'surviving'}
+CHURN_INS = {'ins', 'insert', 'insertion', 'insertions',
+             'add', 'addition', 'additions', '+'}
+CHURN_DEL = {'del', 'deletion', 'deletions', 'delete', '-'}
 
 
 def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
@@ -137,11 +147,11 @@ def tabulate(
   if cost:
     cost = set(cost.lower().split(','))
     stats_tot = dict(stats_tot)
-    if cost & {'cocomo', 'month', 'months'}:
+    if cost & COST_MONTHS:
       COL_NAMES.insert(1, 'mths')
       tab = [i[:1] + [3.2 * (i[1] / 1e3)**1.05] + i[1:] for i in tab]
       stats_tot.setdefault('months', '%.1f' % sum(i[1] for i in tab))
-    if cost & {'commit', 'commits', 'hour', 'hours'}:
+    if cost & COST_HOURS:
       COL_NAMES.insert(1, 'hrs')
       tab = [i[:1] + [hours(auth_stats[i[0]]['ctimes'])] + i[1:] for i in tab]
 
@@ -211,7 +221,7 @@ def _get_auth_stats(
         gitdir, branch="HEAD", since=None, include_files=None,
         exclude_files=None, silent_progress=False, ignore_whitespace=False,
         M=False, C=False, warn_binary=False, bytype=False, show_email=False,
-        prefix_gitdir=False):
+        prefix_gitdir=False, churn="surviving"):
   """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int,
                                  "ctimes": [int]}}"""
   since = ["--since", since] if since else []
@@ -228,20 +238,47 @@ def _get_auth_stats(
                  if include_files.search(i)
                  if not (exclude_files and exclude_files.search(i))]
   log.log(logging.NOTSET, "files:\n" + '\n'.join(file_list))
+  churn = set(churn.lower().split(','))
+
+  if churn & CHURN_SLOC:
+    base_cmd = git_cmd + ["blame", "--line-porcelain"] + since
+  else:
+    base_cmd = git_cmd + ["log", "--format=aN%aN ct%ct", "--shortstat"] + since
+
+  if ignore_whitespace:
+    base_cmd.append("-w")
+  if M:
+    base_cmd.append("-M")
+  if C:
+    base_cmd.extend(["-C", "-C"])  # twice to include file creation
 
   auth_stats = {}
+
+  def stats_append(fname, auth, loc, tstamp):
+    auth = _str(auth)
+    tstamp = int(tstamp)
+    try:
+      auth_stats[auth]["loc"] += loc
+    except KeyError:
+      auth_stats[auth] = {"loc": loc, "files": set([fname]), "ctimes": []}
+    else:
+      auth_stats[auth]["files"].add(fname)
+      auth_stats[auth]["ctimes"].append(tstamp)
+
+    if bytype:
+      fext_key = ("." + fext(fname)) if fext(fname) else "._None_ext"
+      # auth_stats[auth].setdefault(fext_key, 0)
+      try:
+        auth_stats[auth][fext_key] += loc
+      except KeyError:
+        auth_stats[auth][fext_key] = loc
+
   for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing",
                     disable=silent_progress, unit="file"):
-    git_blame_cmd = git_cmd + ["blame", "--line-porcelain", branch, fname] + \
-        since
+
+    git_blame_cmd = base_cmd + [branch, fname]
     if prefix_gitdir:
       fname = path.join(gitdir, fname)
-    if ignore_whitespace:
-      git_blame_cmd.append("-w")
-    if M:
-      git_blame_cmd.append("-M")
-    if C:
-      git_blame_cmd.extend(["-C", "-C"])  # twice to include file creation
     try:
       blame_out = check_output(git_blame_cmd, stderr=subprocess.STDOUT)
     except Exception as e:
@@ -249,31 +286,25 @@ def _get_auth_stats(
       continue
     log.log(logging.NOTSET, blame_out)
 
-    # Strip boundary messages,
-    # preventing user with nearest commit to boundary owning the LOC
-    blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
-    loc_auth_times = RE_AUTHS.findall(blame_out)
+    if churn & CHURN_SLOC:
+      # Strip boundary messages,
+      # preventing user with nearest commit to boundary owning the LOC
+      blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
+      loc_auth_times = RE_AUTHS.findall(blame_out)
 
-    for loc, auth, tstamp in loc_auth_times:  # for each chunk
-      loc = int(loc)
-      auth = _str(auth)
-      tstamp = int(tstamp)
-      try:
-        auth_stats[auth]["loc"] += loc
-      except KeyError:
-        auth_stats[auth] = {"loc": loc, "files": set([fname]), "ctimes": []}
-      else:
-        auth_stats[auth]["files"].add(fname)
-        auth_stats[auth]["ctimes"].append(tstamp)
+      for loc, auth, tstamp in loc_auth_times:  # for each chunk
+        loc = int(loc)
+        stats_append(fname, auth, loc, tstamp)
+    else:
+      auth_time_ins_dels = RE_AUTHS_LOG.findall(blame_out)
 
-      if bytype:
-        fext_key = ("." + fext(fname)) if fext(fname) else "._None_ext"
-        # auth_stats[auth].setdefault(fext_key, 0)
-        try:
-          auth_stats[auth][fext_key] += loc
-        except KeyError:
-          auth_stats[auth][fext_key] = loc
+      for auth, tstamp, inss, dels in auth_time_ins_dels:  # for each chunk
+        loc = (
+            int(inss) if churn & CHURN_INS and inss else 0) + (
+            int(dels) if churn & CHURN_DEL and dels else 0)
+        stats_append(fname, auth, loc, tstamp)
 
+  # quickly count commits (even if no surviving loc)
   log.log(logging.NOTSET, "authors:" + '; '.join(auth_stats.keys()))
   auth_commits = check_output(
       git_cmd + ["shortlog", "-s", "-e", branch] + since)
@@ -355,7 +386,8 @@ def run(args):
       silent_progress=args.silent_progress,
       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
       warn_binary=args.warn_binary, bytype=args.bytype,
-      show_email=args.show_email, prefix_gitdir=len(gitdirs) > 1)
+      show_email=args.show_email, prefix_gitdir=len(gitdirs) > 1,
+      churn=args.churn)
 
   # concurrent multi-repo processing
   if len(gitdirs) > 1:

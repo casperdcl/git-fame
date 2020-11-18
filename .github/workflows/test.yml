@@ -33,8 +33,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: Install
-      run: |
-        pip install -U tox setuptools_scm
+      run: pip install -U tox setuptools_scm
     - name: Test
       run: tox -e py${PYVER/./}
       env:
