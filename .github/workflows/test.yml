@@ -70,7 +70,7 @@ jobs:
   deploy:
     if: github.event_name != 'pull_request' || github.head_ref != 'devel'
     name: Deploy
-    needs: [check, test, finish]
+    needs: [check, test]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
