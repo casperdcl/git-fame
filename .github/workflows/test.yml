@@ -16,22 +16,33 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-    - name: Install
-      run: pip install -U tox
+    - name: set PYSHA
+      run: echo "PYSHA=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+    - uses: actions/cache@v1
+      with:
+        path: ~/.cache/pre-commit
+        key: pre-commit|${{ env.PYSHA }}|${{ hashFiles('.pre-commit-config.yaml') }}
     - name: Test
-      run: tox
+      run: |
+        pip install -U tox
+        tox
       env:
         TOXENV: 'setup.py,nodeps'
     - name: Self install
-      run: pip install -U .
-    - uses: reviewdog/action-setup@v1
-    - name: flake8
+      run: pip install -U .[dev]
+    - name: Build
       run: |
-        pip install -U flake8
-        set -o pipefail
-        flake8 -j8 --count --statistics . | reviewdog -f=pep8 -name=Format -tee -reporter=github-check -filter-mode nofilter
+        python setup.py sdist bdist_wheel
+        twine check dist/*
+    - uses: reviewdog/action-setup@v1
+    - if: github.event_name != 'schedule'
+      name: flake8
+      run: |
+        pre-commit run -a flake8 | reviewdog -f=pep8 -name=Format -tee -reporter=github-check -filter-mode nofilter
       env:
         REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Lint
+      run: pre-commit run -a --show-diff-on-failure
   test:
     if: github.event_name != 'pull_request' || github.head_ref != 'devel'
     strategy:
