@@ -15,6 +15,9 @@ _git_fame()
         --cost)
           COMPREPLY=($(compgen -W 'months cocomo hours commits' -- ${cur}))
           ;;
+        --loc)
+          COMPREPLY=($(compgen -W 'surviving insertions deletions' -- ${cur}))
+          ;;
         --format)
           COMPREPLY=($(compgen -W 'pipe markdown yaml json csv tsv tabulate' -- ${cur}))
           ;;
@@ -32,7 +35,7 @@ _git_fame()
           ;;
         *)
           if [ ${COMP_WORDS[1]} == fame ]; then
-            COMPREPLY=($(compgen -dW '-h --help -v --version --cost --branch --since --sort --incl --excl -n --no-regex -s --silent-progress --warn-binary -t --bytype -w --ignore-whitespace -e --show-email --enum -M -C --format --manpath --log' -- ${cur}))
+            COMPREPLY=($(compgen -dW '-h --help -v --version --cost --branch --since --sort --loc --incl --excl -n --no-regex -s --silent-progress --warn-binary -t --bytype -w --ignore-whitespace -e --show-email --enum -M -C --format --manpath --log' -- ${cur}))
           fi
           ;;
       esac

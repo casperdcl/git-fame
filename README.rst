@@ -170,6 +170,8 @@ Documentation
       -v, --version  Print module version and exit.
       --branch=<b>   Branch or tag [default: HEAD] up to which to check.
       --sort=<key>   [default: loc]|commits|files|hours|months.
+      --loc=<type>   [default: surviving]|ins(ertions)|del(etions)
+                     What `loc` represents. Use 'ins,del' to count both.
       --excl=<f>     Excluded files (default: None).
                      In no-regex mode, may be a comma-separated list.
                      Escape (\,) for a literal comma (may require \\, in shell).
@@ -182,7 +184,7 @@ Documentation
                        May be multiple comma-separated values.
       -n, --no-regex  Assume <f> are comma-separated exact matches
                       rather than regular expressions [default: False].
-                      NB: if regex is enabled `,` is equivalent to `|`.
+                      NB: if regex is enabled ',' is equivalent to '|'.
       -s, --silent-progress    Suppress `tqdm` [default: False].
       --warn-binary   Don't silently skip files which appear to be binary data
                       [default: False].
@@ -280,7 +282,7 @@ We are grateful for all |GitHub-Contributions|.
 
 .. |Build-Status| image:: https://img.shields.io/github/workflow/status/casperdcl/git-fame/Test/master?logo=GitHub
    :target: https://github.com/casperdcl/git-fame/actions?query=workflow%3ATest
-.. |Coverage-Status| image:: https://coveralls.io/repos/casperdcl/git-fame/badge.svg?branch=master
+.. |Coverage-Status| image:: https://img.shields.io/coveralls/github/casperdcl/git-fame/master?logo=coveralls
    :target: https://coveralls.io/github/casperdcl/git-fame
 .. |Branch-Coverage-Status| image:: https://codecov.io/gh/casperdcl/git-fame/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/casperdcl/git-fame
@@ -304,7 +306,7 @@ We are grateful for all |GitHub-Contributions|.
    :target: https://github.com/casperdcl/git-fame/pulse
 .. |Gift-Casper| image:: https://img.shields.io/badge/gift-donate-dc10ff.svg
    :target: https://caspersci.uk.to/donate
-.. |PyPI-Status| image:: https://img.shields.io/pypi/v/git-fame.svg
+.. |PyPI-Status| image:: https://img.shields.io/pypi/v/git-fame.svg?logo=python&logoColor=white
    :target: https://pypi.org/project/git-fame
 .. |PyPI-Downloads| image:: https://img.shields.io/pypi/dm/git-fame.svg?label=pypi%20downloads&logo=python&logoColor=white
    :target: https://pypi.org/project/git-fame

@@ -1,10 +1,11 @@
 from __future__ import print_function
-from functools import partial
-import sys
-import subprocess
-import logging
 
-from tqdm import tqdm
+import logging
+import subprocess
+import sys
+from functools import partial
+
+from tqdm import tqdm as tqdm_std
 from tqdm.utils import _screen_shape_wrapper
 
 try:
@@ -22,10 +23,10 @@ except NameError:
 try:
   from threading import RLock
 except ImportError:
-  pass
+  tqdm = tqdm_std
 else:
-  tqdm.set_lock(RLock())
-  tqdm = partial(tqdm, lock_args=(False,))
+  tqdm_std.set_lock(RLock())
+  tqdm = partial(tqdm_std, lock_args=(False,))
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016-2020"
@@ -45,7 +46,7 @@ if not TERM_WIDTH:
 class TqdmStream(object):
   @classmethod
   def write(cls, msg):
-    tqdm.write(msg, end='')
+    tqdm_std.write(msg, end='')
 
 
 def check_output(*a, **k):

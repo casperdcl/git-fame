@@ -71,14 +71,8 @@ gitfame/git-fame.1: .meta/.git-fame.1.md gitfame/_gitfame.py
     cat "$<" - |\
     pandoc -o "$@" -s -t man
 
-snapcraft.yaml: .meta/.snapcraft.yml
-	cat "$<" | sed -e "s/{version}/$$(python -m gitfame --version 2>&1)/g" \
-    -e "s/{commit}/$$(git describe --always)/g" \
-    -e 's/{source}/./g' > "$@"
-
 .dockerignore:
-	echo '*' > $@
-	echo '!dist/*.whl' >> $@
+	@+python -c "fd=open('.dockerignore', 'w'); fd.write('*\n!dist/*.whl\n')"
 
 distclean:
 	@+make coverclean
@@ -88,6 +82,8 @@ prebuildclean:
 	@+python -c "import shutil; shutil.rmtree('build', True)"
 	@+python -c "import shutil; shutil.rmtree('dist', True)"
 	@+python -c "import shutil; shutil.rmtree('git_fame.egg-info', True)"
+	@+python -c "import shutil; shutil.rmtree('.eggs', True)"
+	@+python -c "import os; os.remove('gitfame/_dist_ver.py') if os.path.exists('gitfame/_dist_ver.py') else None"
 coverclean:
 	@+python -c "import os; os.remove('.coverage') if os.path.exists('.coverage') else None"
 	@+python -c "import shutil; shutil.rmtree('gitfame/__pycache__', True)"
@@ -122,9 +118,6 @@ buildupload:
 	@make build
 	@make pypi
 
-snap:
-	@make -B snapcraft.yaml
-	snapcraft
 docker:
 	@make build
 	@make .dockerignore

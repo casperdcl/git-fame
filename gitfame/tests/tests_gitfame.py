@@ -1,29 +1,32 @@
 from __future__ import unicode_literals
 
 import sys
+from json import loads
 from os import path
 from shutil import rmtree
 from tempfile import mkdtemp
+from textwrap import dedent
+
 # import re
 # from nose import with_setup
 from nose.plugins.skip import SkipTest
+
+from gitfame import _gitfame, main
+
 # from io import IOBase  # to support unicode strings
 from gitfame._utils import StringIO
-from gitfame import _gitfame
-from gitfame import main
-from textwrap import dedent
 
 # test data
 auth_stats = {
-    u'Not Committed Yet': {'files': set([
+    u'Not Committed Yet': {'files': {
         'gitfame/_gitfame.py', 'gitfame/_utils.py', 'Makefile', 'MANIFEST.in'
-    ]),
+    },
         'loc': 75, 'ctimes': [], 'commits': 0},
-    u'Casper da Costa-Luis': {'files': set([
+    u'Casper da Costa-Luis': {'files': {
         'gitfame/_utils.py', 'gitfame/__main__.py', 'setup.cfg',
         'gitfame/_gitfame.py', 'gitfame/__init__.py',
         'git-fame_completion.bash', 'Makefile', 'MANIFEST.in', '.gitignore',
-        'setup.py']), 'loc': 538, 'ctimes': [
+        'setup.py'}, 'loc': 538, 'ctimes': [
         1510942009, 1517426360, 1532103452, 1543323944, 1548030670, 1459558286,
         1510942009, 1459559144, 1481150373, 1510942009, 1548030670, 1517178199,
         1481150379, 1517426360, 1548030670, 1459625059, 1510942009, 1517426360,
@@ -51,8 +54,8 @@ def test_tabulate():
 
 def test_tabulate_cost():
   """Test cost estimates"""
-  assert (_gitfame.tabulate(
-      auth_stats, stats_tot, cost="hours,COCOMO") == dedent("""\
+  assert (_gitfame.tabulate(auth_stats, stats_tot, cost={"hours", "months"}) == dedent(
+      """\
     Total commits: 35
     Total files: 14
     Total hours: 5.5
@@ -114,7 +117,6 @@ def test_tabulate_yaml():
 
 def test_tabulate_json():
   """Test JSON tabulate"""
-  from json import loads
   res = loads(_gitfame.tabulate(auth_stats, stats_tot, backend='json'))
   assert (res == loads(dedent("""\
     {"total": {"files": 14, "loc": 613, "commits": 35},
@@ -149,7 +151,6 @@ def test_tabulate_tabulate():
 
 def test_tabulate_enum():
   """Test --enum tabulate"""
-  from json import loads
   res = loads(_gitfame.tabulate(
       auth_stats, stats_tot, backend='json', row_nums=True))
   assert res['columns'][0] == '#'
@@ -216,6 +217,11 @@ def test_main():
       ['--no-regex'],
       ['--no-regex', '--incl', 'setup.py,README.rst'],
       ['--excl', r'.*\.py'],
+      ['--loc', 'ins,del'],
+      ['--cost', 'hour'],
+      ['--cost', 'month'],
+      ['--cost', 'month', '--excl', r'.*\.py'],
+      ['-e'],
       ['-w'],
       ['-M'],
       ['-C'],
