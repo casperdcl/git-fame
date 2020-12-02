@@ -170,8 +170,9 @@ Documentation
       -v, --version  Print module version and exit.
       --branch=<b>   Branch or tag [default: HEAD] up to which to check.
       --sort=<key>   [default: loc]|commits|files|hours|months.
-      --loc=<type>   [default: surviving]|ins(ertions)|del(etions)
+      --loc=<type>   surviving|ins(ertions)|del(etions)
                      What `loc` represents. Use 'ins,del' to count both.
+                     defaults to 'surviving' unless `--cost` is specified.
       --excl=<f>     Excluded files (default: None).
                      In no-regex mode, may be a comma-separated list.
                      Escape (\,) for a literal comma (may require \\, in shell).
@@ -182,6 +183,8 @@ Documentation
                        person-hours (based on commit times).
                        Methods: month(s)|cocomo|hour(s)|commit(s).
                        May be multiple comma-separated values.
+                       Alters `--loc` default to imply 'ins' (COCOMO) or
+                       'ins,del' (hours).
       -n, --no-regex  Assume <f> are comma-separated exact matches
                       rather than regular expressions [default: False].
                       NB: if regex is enabled ',' is equivalent to '|'.
