@@ -4,26 +4,28 @@ import sys
 from os import path
 from shutil import rmtree
 from tempfile import mkdtemp
+from textwrap import dedent
+
 # import re
 # from nose import with_setup
 from nose.plugins.skip import SkipTest
+
+from gitfame import _gitfame, main
+
 # from io import IOBase  # to support unicode strings
 from gitfame._utils import StringIO
-from gitfame import _gitfame
-from gitfame import main
-from textwrap import dedent
 
 # test data
 auth_stats = {
-    u'Not Committed Yet': {'files': set([
+    u'Not Committed Yet': {'files': {
         'gitfame/_gitfame.py', 'gitfame/_utils.py', 'Makefile', 'MANIFEST.in'
-    ]),
+    },
         'loc': 75, 'ctimes': [], 'commits': 0},
-    u'Casper da Costa-Luis': {'files': set([
+    u'Casper da Costa-Luis': {'files': {
         'gitfame/_utils.py', 'gitfame/__main__.py', 'setup.cfg',
         'gitfame/_gitfame.py', 'gitfame/__init__.py',
         'git-fame_completion.bash', 'Makefile', 'MANIFEST.in', '.gitignore',
-        'setup.py']), 'loc': 538, 'ctimes': [
+        'setup.py'}, 'loc': 538, 'ctimes': [
         1510942009, 1517426360, 1532103452, 1543323944, 1548030670, 1459558286,
         1510942009, 1459559144, 1481150373, 1510942009, 1548030670, 1517178199,
         1481150379, 1517426360, 1548030670, 1459625059, 1510942009, 1517426360,

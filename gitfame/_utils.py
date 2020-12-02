@@ -1,8 +1,9 @@
 from __future__ import print_function
-from functools import partial
-import sys
-import subprocess
+
 import logging
+import subprocess
+import sys
+from functools import partial
 
 from tqdm import tqdm as tqdm_std
 from tqdm.utils import _screen_shape_wrapper

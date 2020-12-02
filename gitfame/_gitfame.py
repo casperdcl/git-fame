@@ -45,19 +45,30 @@ Options:
   --manpath=<path>         Directory in which to install git-fame man pages.
   --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 """
-from __future__ import print_function
-from __future__ import division
-# from __future__ import absolute_import
-from functools import partial
+from __future__ import division, print_function
+
 import logging
 import os
-from os import path
 import re
 import subprocess
 
-from ._utils import TERM_WIDTH, int_cast_or_len, fext, _str, \
-    check_output, tqdm, TqdmStream, print_unicode, Str, string_types, \
-    merge_stats
+# from __future__ import absolute_import
+from functools import partial
+from os import path
+
+from ._utils import (
+    TERM_WIDTH,
+    Str,
+    TqdmStream,
+    _str,
+    check_output,
+    fext,
+    int_cast_or_len,
+    merge_stats,
+    print_unicode,
+    string_types,
+    tqdm,
+)
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
 try:
@@ -164,9 +175,8 @@ def tabulate(
 
   if backend in ['yaml', 'yml', 'json', 'csv', 'tsv']:
     tab = [i[:-1] + [float(pc.strip()) for pc in i[-1].split('/')] for i in tab]
-    tab = dict(
-        total=stats_tot, data=tab,
-        columns=COL_NAMES[:-1] + ['%' + i for i in COL_NAMES[-4:-1]])
+    tab = {"total": stats_tot, "data": tab,
+           "columns": COL_NAMES[:-1] + ['%' + i for i in COL_NAMES[-4:-1]]}
     if backend in ['yaml', 'yml']:
       log.debug("backend:yaml")
       from yaml import safe_dump as tabber
@@ -178,6 +188,7 @@ def tabulate(
     elif backend in ['csv', 'tsv']:
       log.debug("backend:csv")
       from csv import writer as tabber
+
       from ._utils import StringIO
       res = StringIO()
       t = tabber(res, delimiter=',' if backend == 'csv' else '\t')
@@ -249,7 +260,7 @@ def _get_auth_stats(
     try:
       auth_stats[auth]["loc"] += loc
     except KeyError:
-      auth_stats[auth] = {"loc": loc, "files": set([fname]), "ctimes": []}
+      auth_stats[auth] = {"loc": loc, "files": {fname}, "ctimes": []}
     else:
       auth_stats[auth]["files"].add(fname)
       auth_stats[auth]["ctimes"].append(tstamp)
@@ -328,7 +339,7 @@ def _get_auth_stats(
       auth_stats[auth]["commits"] += int(ncom)
     except KeyError:
       auth_stats[auth] = {"loc": 0,
-                          "files": set([]),
+                          "files": set(),
                           "commits": int(ncom),
                           "ctimes": []}
   if show_email:
@@ -338,7 +349,7 @@ def _get_auth_stats(
     auth_stats = {}
     for auth, stats in getattr(old, 'iteritems', old.items)():
       i = auth_stats.setdefault(auth2em[auth], {"loc": 0,
-                                                "files": set([]),
+                                                "files": set(),
                                                 "commits": 0,
                                                 "ctimes": []})
       i["loc"] += stats["loc"]
@@ -402,6 +413,7 @@ def run(args):
   if len(gitdirs) > 1:
     try:
       from concurrent.futures import ThreadPoolExecutor  # NOQA
+
       from tqdm.contrib.concurrent import thread_map
       mapper = partial(thread_map, desc="Repos", unit="repo", miniters=1,
                        disable=args.silent_progress or len(gitdirs) <= 1)
@@ -417,7 +429,7 @@ def run(args):
       else:
         auth_stats[auth] = stats
 
-  stats_tot = dict((k, 0) for stats in auth_stats.values() for k in stats)
+  stats_tot = {k: 0 for stats in auth_stats.values() for k in stats}
   log.debug(stats_tot)
   for k in stats_tot:
     stats_tot[k] = sum(int_cast_or_len(stats.get(k, 0))
@@ -452,10 +464,11 @@ def main(args=None):
 
   log.debug(args)
   if args.manpath is not None:
+    import sys
     from os import path
     from shutil import copyfile
-    from pkg_resources import resource_filename, Requirement
-    import sys
+
+    from pkg_resources import Requirement, resource_filename
     fi = resource_filename(Requirement.parse('git-fame'), 'gitfame/git-fame.1')
     fo = path.join(args.manpath, 'git-fame.1')
     copyfile(fi, fo)
