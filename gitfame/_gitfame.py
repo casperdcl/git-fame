@@ -484,8 +484,8 @@ def main(args=None):
     from os import path
     from shutil import copyfile
 
-    from pkg_resources import Requirement, resource_filename
-    fi = resource_filename(Requirement.parse('git-fame'), 'gitfame/git-fame.1')
+    from pkg_resources import resource_filename
+    fi = resource_filename(__name__, 'git-fame.1')
     fo = path.join(args.manpath, 'git-fame.1')
     copyfile(fi, fo)
     log.info("written:" + fo)
