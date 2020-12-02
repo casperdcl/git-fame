@@ -12,8 +12,9 @@ Options:
   -v, --version  Print module version and exit.
   --branch=<b>   Branch or tag [default: HEAD] up to which to check.
   --sort=<key>   [default: loc]|commits|files|hours|months.
-  --loc=<type>   [default: surviving]|ins(ertions)|del(etions)
+  --loc=<type>   [default: auto]|surviving|ins(ertions)|del(etions)
                  What `loc` represents. Use 'ins,del' to count both.
+                 'auto' means 'surviving' unless `--cost` is specified.
   --excl=<f>     Excluded files (default: None).
                  In no-regex mode, may be a comma-separated list.
                  Escape (\,) for a literal comma (may require \\, in shell).
@@ -24,6 +25,8 @@ Options:
                    person-hours (based on commit times).
                    Methods: month(s)|cocomo|hour(s)|commit(s).
                    May be multiple comma-separated values.
+                   Alters meaning of `--loc='auto'` to mean 'ins' (COCOMO) or
+                   'ins,del' (hours).
   -n, --no-regex  Assume <f> are comma-separated exact matches
                   rather than regular expressions [default: False].
                   NB: if regex is enabled ',' is equivalent to '|'.
@@ -145,7 +148,6 @@ def tabulate(
           ))).replace('/100.0/', '/ 100/')]
          for (auth, s) in it_as()]
   if cost:
-    cost = set(cost.lower().split(','))
     stats_tot = dict(stats_tot)
     if cost & COST_MONTHS:
       COL_NAMES.insert(1, 'mths')
@@ -398,6 +400,16 @@ def run(args):
     include_files = re.compile(args.incl)
     # include_files = re.compile(args.incl, flags=re.M)
 
+  cost = set(args.cost.lower().split(',')) if args.cost else set()
+  churn = args.loc
+  if churn == "auto":
+    if cost & COST_HOURS:
+      churn = "ins,del"
+    elif cost & COST_MONTHS:
+      churn = "ins"
+    else:
+      churn = "surviving"
+
   auth_stats = {}
   statter = partial(
       _get_auth_stats,
@@ -407,7 +419,7 @@ def run(args):
       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
       warn_binary=args.warn_binary, bytype=args.bytype,
       show_email=args.show_email, prefix_gitdir=len(gitdirs) > 1,
-      churn=args.loc)
+      churn=churn)
 
   # concurrent multi-repo processing
   if len(gitdirs) > 1:
@@ -445,7 +457,7 @@ def run(args):
 
   print_unicode(tabulate(
       auth_stats, stats_tot,
-      args.sort, args.bytype, args.format, args.cost, args.enum))
+      args.sort, args.bytype, args.format, cost, args.enum))
 
 
 def get_main_parser():

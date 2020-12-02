@@ -16,7 +16,7 @@ _git_fame()
           COMPREPLY=($(compgen -W 'months cocomo hours commits' -- ${cur}))
           ;;
         --loc)
-          COMPREPLY=($(compgen -W 'surviving insertions deletions' -- ${cur}))
+          COMPREPLY=($(compgen -W 'auto surviving insertions deletions' -- ${cur}))
           ;;
         --format)
           COMPREPLY=($(compgen -W 'pipe markdown yaml json csv tsv tabulate' -- ${cur}))

@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import sys
+from json import loads
 from os import path
 from shutil import rmtree
 from tempfile import mkdtemp
@@ -53,8 +54,8 @@ def test_tabulate():
 
 def test_tabulate_cost():
   """Test cost estimates"""
-  assert (_gitfame.tabulate(
-      auth_stats, stats_tot, cost="hours,COCOMO") == dedent("""\
+  assert (_gitfame.tabulate(auth_stats, stats_tot, cost={"hours", "months"}) == dedent(
+      """\
     Total commits: 35
     Total files: 14
     Total hours: 5.5
@@ -116,7 +117,6 @@ def test_tabulate_yaml():
 
 def test_tabulate_json():
   """Test JSON tabulate"""
-  from json import loads
   res = loads(_gitfame.tabulate(auth_stats, stats_tot, backend='json'))
   assert (res == loads(dedent("""\
     {"total": {"files": 14, "loc": 613, "commits": 35},
@@ -151,7 +151,6 @@ def test_tabulate_tabulate():
 
 def test_tabulate_enum():
   """Test --enum tabulate"""
-  from json import loads
   res = loads(_gitfame.tabulate(
       auth_stats, stats_tot, backend='json', row_nums=True))
   assert res['columns'][0] == '#'
