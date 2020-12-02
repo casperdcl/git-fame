@@ -220,6 +220,7 @@ def test_main():
       ['--loc', 'ins,del'],
       ['--cost', 'hour'],
       ['--cost', 'month'],
+      ['--cost', 'month', '--excl', r'.*\.py'],
       ['-e'],
       ['-w'],
       ['-M'],

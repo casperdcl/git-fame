@@ -12,9 +12,9 @@ Options:
   -v, --version  Print module version and exit.
   --branch=<b>   Branch or tag [default: HEAD] up to which to check.
   --sort=<key>   [default: loc]|commits|files|hours|months.
-  --loc=<type>   [default: auto]|surviving|ins(ertions)|del(etions)
+  --loc=<type>   surviving|ins(ertions)|del(etions)
                  What `loc` represents. Use 'ins,del' to count both.
-                 'auto' means 'surviving' unless `--cost` is specified.
+                 defaults to 'surviving' unless `--cost` is specified.
   --excl=<f>     Excluded files (default: None).
                  In no-regex mode, may be a comma-separated list.
                  Escape (\,) for a literal comma (may require \\, in shell).
@@ -25,7 +25,7 @@ Options:
                    person-hours (based on commit times).
                    Methods: month(s)|cocomo|hour(s)|commit(s).
                    May be multiple comma-separated values.
-                   Alters meaning of `--loc='auto'` to mean 'ins' (COCOMO) or
+                   Alters `--loc` default to imply 'ins' (COCOMO) or
                    'ins,del' (hours).
   -n, --no-regex  Assume <f> are comma-separated exact matches
                   rather than regular expressions [default: False].
@@ -223,7 +223,7 @@ def _get_auth_stats(
         gitdir, branch="HEAD", since=None, include_files=None,
         exclude_files=None, silent_progress=False, ignore_whitespace=False,
         M=False, C=False, warn_binary=False, bytype=False, show_email=False,
-        prefix_gitdir=False, churn="surviving"):
+        prefix_gitdir=False, churn=None):
   """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int,
                                  "ctimes": [int]}}"""
   since = ["--since", since] if since else []
@@ -240,7 +240,7 @@ def _get_auth_stats(
                  if include_files.search(i)
                  if not (exclude_files and exclude_files.search(i))]
   log.log(logging.NOTSET, "files:\n" + '\n'.join(file_list))
-  churn = set(churn.lower().split(','))
+  churn = churn or set()
 
   if churn & CHURN_SLOC:
     base_cmd = git_cmd + ["blame", "--line-porcelain"] + since
@@ -401,14 +401,18 @@ def run(args):
     # include_files = re.compile(args.incl, flags=re.M)
 
   cost = set(args.cost.lower().split(',')) if args.cost else set()
-  churn = args.loc
-  if churn == "auto":
+  churn = set(args.loc.lower().split(',')) if args.loc else set()
+  if not churn:
     if cost & COST_HOURS:
-      churn = "ins,del"
+      churn = CHURN_INS | CHURN_DEL
     elif cost & COST_MONTHS:
-      churn = "ins"
+      churn = CHURN_INS
     else:
-      churn = "surviving"
+      churn = CHURN_SLOC
+
+  if churn & (CHURN_INS | CHURN_DEL) and args.excl:
+      log.warn("--loc=ins,del includes historical files"
+               " which may need to be added to --excl")
 
   auth_stats = {}
   statter = partial(
