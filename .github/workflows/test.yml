@@ -83,7 +83,7 @@ jobs:
       run: |
         sudo apt-get install -yqq pandoc
         pip install .[dev]
-        make build .dockerignore snapcraft.yaml
+        make build .dockerignore
     - if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
       uses: casperdcl/deploy-pypi@v1
       with:
@@ -99,13 +99,10 @@ jobs:
         echo "::set-output name=asset_name_sig::$(basename dist/*.whl.asc 2>/dev/null)"
         if [[ $GITHUB_REF == refs/tags/v* ]]; then
           echo ::set-output name=docker_tags::latest,${GITHUB_REF/refs\/tags\/v/}
-          echo ::set-output name=snap_channel::stable
         elif [[ $GITHUB_REF == refs/heads/master ]]; then
           echo ::set-output name=docker_tags::master
-          echo ::set-output name=snap_channel::candidate
         elif [[ $GITHUB_REF == refs/heads/devel ]]; then
           echo ::set-output name=docker_tags::devel
-          echo ::set-output name=snap_channel::edge
         fi
         git log --pretty='format:%d%n- %s%n%b---' $(git tag --sort=v:refname | tail -n2 | head -n1)..HEAD > _CHANGES.md
     - if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
@@ -136,14 +133,6 @@ jobs:
         asset_path: ${{ steps.collect_assets.outputs.asset_path_sig }}
         asset_name: ${{ steps.collect_assets.outputs.asset_name_sig }}
         asset_content_type: text/plain
-    - uses: snapcore/action-build@v1
-      id: snap_build
-    - if: github.event_name == 'push' && steps.collect_assets.outputs.snap_channel
-      uses: snapcore/action-publish@v1
-      with:
-        store_login: ${{ secrets.SNAP_TOKEN }}
-        snap: ${{ steps.snap_build.outputs.snap }}
-        release: ${{ steps.collect_assets.outputs.snap_channel }}
     - name: Docker build push
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
@@ -161,3 +150,30 @@ jobs:
         username: ${{ github.actor }}
         registry: docker.pkg.github.com
         no_push: ${{ steps.collect_assets.outputs.docker_tags == '' }}
+  deploy-snap:
+    if: github.event_name != 'pull_request' || github.head_ref != 'devel'
+    name: Deploy Snap
+    needs: [check, test]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - id: snap_channel
+      name: Snap channel
+      run: |
+        if [[ $GITHUB_REF == refs/tags/v* ]]; then
+          echo ::set-output name=release::stable,candidate
+        elif [[ $GITHUB_REF == refs/heads/master ]]; then
+          echo ::set-output name=release::candidate
+        elif [[ $GITHUB_REF == refs/heads/devel ]]; then
+          echo ::set-output name=release::edge
+        fi
+    - id: snap_build
+      uses: snapcore/action-build@v1
+    - if: github.event_name == 'push' && steps.snap_channel.outputs.release
+      uses: snapcore/action-publish@v1
+      with:
+        store_login: ${{ secrets.SNAP_TOKEN }}
+        snap: ${{ steps.snap_build.outputs.snap }}
+        release: ${{ steps.snap_channel.outputs.release }}

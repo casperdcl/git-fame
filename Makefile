@@ -71,11 +71,6 @@ gitfame/git-fame.1: .meta/.git-fame.1.md gitfame/_gitfame.py
     cat "$<" - |\
     pandoc -o "$@" -s -t man
 
-snapcraft.yaml: .meta/.snapcraft.yml
-	cat "$<" | sed -e "s/{version}/$$(python -m gitfame --version 2>&1)/g" \
-    -e "s/{commit}/$$(git describe --always)/g" \
-    -e 's/{source}/./g' > "$@"
-
 .dockerignore:
 	@+python -c "fd=open('.dockerignore', 'w'); fd.write('*\n!dist/*.whl\n')"
 
@@ -123,9 +118,6 @@ buildupload:
 	@make build
 	@make pypi
 
-snap:
-	@make -B snapcraft.yaml
-	snapcraft
 docker:
 	@make build
 	@make .dockerignore
