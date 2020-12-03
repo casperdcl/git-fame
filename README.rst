@@ -3,7 +3,7 @@ git-fame
 
 Pretty-print ``git`` repository collaborators sorted by contributions.
 
-|PyPI-Versions| |PyPI-Status| |Docker| |Snapcraft|
+|Py-Versions| |PyPI| |Conda-Forge| |Docker| |Snapcraft|
 
 |Build-Status| |Coverage-Status| |Branch-Coverage-Status| |Codacy-Grade| |Libraries-Rank| |PyPI-Downloads|
 
@@ -49,7 +49,7 @@ Installation
 Latest PyPI stable release
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-|PyPI-Status| |PyPI-Downloads| |Libraries-Dependents|
+|PyPI| |PyPI-Downloads| |Libraries-Dependents|
 
 .. code:: sh
 
@@ -64,7 +64,16 @@ Pull and install in the current directory:
 
 .. code:: sh
 
-    pip install -e git+https://github.com/casperdcl/git-fame.git@master#egg=git-fame
+    pip install "git+https://github.com/casperdcl/git-fame.git@master#egg=git-fame"
+
+Latest Conda release
+~~~~~~~~~~~~~~~~~~~~
+
+|Conda-Forge|
+
+.. code:: sh
+
+    conda install -c conda-forge git-fame
 
 Latest Snapcraft release
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -153,7 +162,7 @@ It is also possible to run from within a python shell or script.
 Documentation
 -------------
 
-|PyPI-Versions| |README-Hits|
+|Py-Versions| |README-Hits|
 
 .. code::
 
@@ -291,43 +300,45 @@ We are grateful for all |GitHub-Contributions|.
    :target: https://codecov.io/gh/casperdcl/git-fame
 .. |Codacy-Grade| image:: https://api.codacy.com/project/badge/Grade/bde789ee0e57491eb2bb8609bd4190c3
    :target: https://www.codacy.com/app/casper-dcl/git-fame/dashboard
-.. |GitHub-Status| image:: https://img.shields.io/github/tag/casperdcl/git-fame.svg?maxAge=86400&logo=github&logoColor=white
+.. |GitHub-Status| image:: https://img.shields.io/github/tag/casperdcl/git-fame.svg?maxAge=86400&logo=github
    :target: https://github.com/casperdcl/git-fame/releases
-.. |GitHub-Forks| image:: https://img.shields.io/github/forks/casperdcl/git-fame.svg?logo=github&logoColor=white
+.. |GitHub-Forks| image:: https://img.shields.io/github/forks/casperdcl/git-fame.svg?logo=github
    :target: https://github.com/casperdcl/git-fame/network
-.. |GitHub-Stars| image:: https://img.shields.io/github/stars/casperdcl/git-fame.svg?logo=github&logoColor=white
+.. |GitHub-Stars| image:: https://img.shields.io/github/stars/casperdcl/git-fame.svg?logo=github
    :target: https://github.com/casperdcl/git-fame/stargazers
-.. |GitHub-Commits| image:: https://img.shields.io/github/commit-activity/y/casperdcl/git-fame.svg?logo=git&logoColor=white
+.. |GitHub-Commits| image:: https://img.shields.io/github/commit-activity/y/casperdcl/git-fame?label=commits&logo=git
    :target: https://github.com/casperdcl/git-fame/graphs/commit-activity
-.. |GitHub-Issues| image:: https://img.shields.io/github/issues-closed/casperdcl/git-fame.svg?logo=github&logoColor=white
+.. |GitHub-Issues| image:: https://img.shields.io/github/issues-closed/casperdcl/git-fame.svg?logo=github
    :target: https://github.com/casperdcl/git-fame/issues
-.. |GitHub-PRs| image:: https://img.shields.io/github/issues-pr-closed/casperdcl/git-fame.svg?logo=github&logoColor=white
+.. |GitHub-PRs| image:: https://img.shields.io/github/issues-pr-closed/casperdcl/git-fame.svg?logo=github
    :target: https://github.com/casperdcl/git-fame/pulls
-.. |GitHub-Contributions| image:: https://img.shields.io/github/contributors/casperdcl/git-fame.svg?logo=github&logoColor=white
+.. |GitHub-Contributions| image:: https://img.shields.io/github/contributors/casperdcl/git-fame.svg?logo=github
    :target: https://github.com/casperdcl/git-fame/graphs/contributors
-.. |GitHub-Updated| image:: https://img.shields.io/github/last-commit/casperdcl/git-fame/master.svg?logo=github&logoColor=white&label=pushed
+.. |GitHub-Updated| image:: https://img.shields.io/github/last-commit/casperdcl/git-fame?label=pushed&logo=github
    :target: https://github.com/casperdcl/git-fame/pulse
-.. |Gift-Casper| image:: https://img.shields.io/badge/gift-donate-dc10ff.svg
+.. |Gift-Casper| image:: https://img.shields.io/badge/gift-donate-dc10ff.svg?logo=Contactless%20Payment
    :target: https://caspersci.uk.to/donate
-.. |PyPI-Status| image:: https://img.shields.io/pypi/v/git-fame.svg?logo=python&logoColor=white
+.. |PyPI| image:: https://img.shields.io/pypi/v/git-fame.svg?logo=PyPI&logoColor=white
    :target: https://pypi.org/project/git-fame
-.. |PyPI-Downloads| image:: https://img.shields.io/pypi/dm/git-fame.svg?label=pypi%20downloads&logo=python&logoColor=white
+.. |PyPI-Downloads| image:: https://img.shields.io/pypi/dm/git-fame.svg?label=pypi%20downloads&logo=DocuSign
    :target: https://pypi.org/project/git-fame
-.. |PyPI-Versions| image:: https://img.shields.io/pypi/pyversions/git-fame.svg?logo=python&logoColor=white
+.. |Py-Versions| image:: https://img.shields.io/pypi/pyversions/git-fame.svg?logo=python&logoColor=white
    :target: https://pypi.org/project/git-fame
-.. |Snapcraft| image:: https://img.shields.io/badge/snap-install-82BEA0.svg?logo=snapcraft
+.. |Conda-Forge| image:: https://img.shields.io/conda/v/conda-forge/git-fame.svg?label=conda-forge&logo=conda-forge
+   :target: https://anaconda.org/conda-forge/git-fame
+.. |Snapcraft| image:: https://img.shields.io/badge/snap-install-blue.svg?logo=snapcraft&logoColor=white
    :target: https://snapcraft.io/git-fame
-.. |Docker| image:: https://img.shields.io/badge/docker-pull-blue.svg?logo=docker
+.. |Docker| image:: https://img.shields.io/badge/docker-pull-blue.svg?logo=docker&logoColor=white
    :target: https://hub.docker.com/r/casperdcl/git-fame
-.. |Libraries-Rank| image:: https://img.shields.io/librariesio/sourcerank/pypi/git-fame.svg?logo=koding&logoColor=white
+.. |Libraries-Rank| image:: https://img.shields.io/librariesio/sourcerank/pypi/git-fame.svg?color=green&logo=koding
    :target: https://libraries.io/pypi/git-fame
-.. |Libraries-Dependents| image:: https://img.shields.io/librariesio/dependent-repos/pypi/git-fame.svg?logo=koding&logoColor=white
+.. |Libraries-Dependents| image:: https://img.shields.io/librariesio/dependent-repos/pypi/git-fame.svg?logo=koding
     :target: https://github.com/casperdcl/git-fame/network/dependents
 .. |OpenHub-Status| image:: https://www.openhub.net/p/git-fame/widgets/project_thin_badge?format=gif
    :target: https://www.openhub.net/p/git-fame?ref=Thin+badge
-.. |LICENCE| image:: https://img.shields.io/pypi/l/git-fame.svg
+.. |LICENCE| image:: https://img.shields.io/pypi/l/git-fame.svg?color=purple&logo=SPDX
    :target: https://raw.githubusercontent.com/casperdcl/git-fame/master/LICENCE
-.. |DOI-URI| image:: https://img.shields.io/badge/DOI-10.5281/zenodo.2544975-blue.svg
+.. |DOI-URI| image:: https://img.shields.io/badge/DOI-10.5281/zenodo.2544975-blue.svg?color=purple&logo=ORCID
    :target: https://doi.org/10.5281/zenodo.2544975
 .. |README-Hits| image:: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&style=social&r=https://github.com/casperdcl/git-fame
    :target: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&a=plot&r=https://github.com/casperdcl/git-fame&style=social
