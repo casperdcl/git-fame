@@ -174,9 +174,9 @@ jobs:
       name: Snap channel
       run: |
         if [[ $GITHUB_REF == refs/tags/v* ]]; then
-          echo ::set-output name=release::stable,candidate
+          echo ::set-output name=release::stable,candidate,edge
         elif [[ $GITHUB_REF == refs/heads/master ]]; then
-          echo ::set-output name=release::candidate
+          echo ::set-output name=release::candidate,edge
         elif [[ $GITHUB_REF == refs/heads/devel ]]; then
           echo ::set-output name=release::edge
         fi
