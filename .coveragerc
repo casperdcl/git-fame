@@ -1,7 +1,7 @@
 [run]
 branch = True
 omit =
-    gitfame/tests/*
+    tests/*
 relative_files = True
 [report]
 show_missing = True

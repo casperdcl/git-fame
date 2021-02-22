@@ -60,7 +60,7 @@ Latest development release on GitHub
 
 |GitHub-Status| |GitHub-Stars| |GitHub-Commits| |GitHub-Forks| |GitHub-Updated|
 
-Pull and install in the current directory:
+Pull and install:
 
 .. code:: sh
 
