@@ -12,7 +12,7 @@ Options:
   -v, --version  Print module version and exit.
   --branch=<b>   Branch or tag [default: HEAD] up to which to check.
   --sort=<key>   [default: loc]|commits|files|hours|months.
-  --loc=<type>   surviving|ins(ertions)|del(etions)
+  --loc=<type>   surv(iving)|ins(ertions)|del(etions)
                  What `loc` represents. Use 'ins,del' to count both.
                  defaults to 'surviving' unless `--cost` is specified.
   --excl=<f>     Excluded files (default: None).

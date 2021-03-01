@@ -11,30 +11,31 @@ Pretty-print ``git`` repository collaborators sorted by contributions.
 
 .. code:: sh
 
-    ~$ git fame --cost hour,month
-    Blame: 100%|██████████| 74/74 [00:00<00:00, 96.51file/s]
-    Total commits: 1173
-    Total ctimes: 1055
-    Total files: 180
-    Total hours: 255.1
-    Total loc: 2716
-    Total months: 8.7
-    | Author                     |   hrs |   mths |   loc |   coms |   fils |  distribution   |
-    |:---------------------------|------:|-------:|------:|-------:|-------:|:----------------|
-    | Casper da Costa-Luis       |   100 |      7 |  2171 |    770 |     63 | 79.9/65.6/35.0  |
-    | Stephen Larroque           |    16 |      1 |   243 |    202 |     19 | 8.9/17.2/10.6   |
-    | Kyle Altendorf             |     6 |      0 |    41 |     31 |      3 | 1.5/ 2.6/ 1.7   |
-    | Guangshuo Chen             |     2 |      0 |    35 |     18 |      6 | 1.3/ 1.5/ 3.3   |
-    | Matthew Stevens            |     2 |      0 |    32 |      3 |      2 | 1.2/ 0.3/ 1.1   |
-    | Noam Yorav-Raphael         |     3 |      0 |    23 |     11 |      4 | 0.8/ 0.9/ 2.2   |
-    | Daniel Panteleit           |     2 |      0 |    16 |      2 |      2 | 0.6/ 0.2/ 1.1   |
-    | Mikhail Korobov            |     2 |      0 |    15 |     11 |      6 | 0.6/ 0.9/ 3.3   |
-    | Hadrien Mary               |     3 |      0 |    15 |     31 |     10 | 0.6/ 2.6/ 5.6   |
-    | Johannes Hansen            |     2 |      0 |    14 |      1 |      2 | 0.5/ 0.1/ 1.1   |
+    ~$ git fame --cost hour,month --loc ins
+    Processing: 100%|██████████████████████████| 1/1 [00:00<00:00,  2.16repo/s]
+    Total commits: 1775
+    Total ctimes: 2770
+    Total files: 461
+    Total hours: 449.7
+    Total loc: 41659
+    Total months: 151.0
+    | Author               |   hrs |   mths |   loc |   coms |   fils |  distribution   |
+    |:---------------------|------:|-------:|------:|-------:|-------:|:----------------|
+    | Casper da Costa-Luis |   228 |    108 | 28572 |   1314 |    172 | 68.6/74.0/37.3  |
+    | Stephen Larroque     |    28 |     18 |  5243 |    203 |     25 | 12.6/11.4/ 5.4  |
+    | pgajdos              |     2 |      9 |  2606 |      2 |     18 | 6.3/ 0.1/ 3.9   |
+    | Martin Zugnoni       |     2 |      5 |  1656 |      3 |      3 | 4.0/ 0.2/ 0.7   |
+    | Kyle Altendorf       |     7 |      2 |   541 |     31 |      7 | 1.3/ 1.7/ 1.5   |
+    | Hadrien Mary         |     5 |      1 |   469 |     31 |     17 | 1.1/ 1.7/ 3.7   |
+    | Richard Sheridan     |     2 |      1 |   437 |     23 |      3 | 1.0/ 1.3/ 0.7   |
+    | Guangshuo Chen       |     3 |      1 |   321 |     18 |      7 | 0.8/ 1.0/ 1.5   |
+    | Noam Yorav-Raphael   |     4 |      1 |   229 |     11 |      6 | 0.5/ 0.6/ 1.3   |
+    | github-actions[bot]  |     2 |      1 |   186 |      1 |     51 | 0.4/ 0.1/11.1   |
+    ...
 
 The ``distribution`` column is a percentage breakdown of ``loc/coms/fils``.
 (e.g. in the table above, Casper has written surviving code in
-``63/180 = 35.0%`` of all files).
+``172/461 = 37.3%`` of all files).
 
 ------------------------------------------
 
@@ -179,7 +180,7 @@ Documentation
       -v, --version  Print module version and exit.
       --branch=<b>   Branch or tag [default: HEAD] up to which to check.
       --sort=<key>   [default: loc]|commits|files|hours|months.
-      --loc=<type>   surviving|ins(ertions)|del(etions)
+      --loc=<type>   surv(iving)|ins(ertions)|del(etions)
                      What `loc` represents. Use 'ins,del' to count both.
                      defaults to 'surviving' unless `--cost` is specified.
       --excl=<f>     Excluded files (default: None).
@@ -219,6 +220,28 @@ Documentation
 If multiple user names and/or emails correspond to the same user, aggregate
 ``git-fame`` statistics and maintain a ``git`` repository properly by adding a
 `.mailmap file <https://git-scm.com/docs/git-blame#_mapping_authors>`_.
+
+FAQs
+~~~~
+
+Options such as ``-w``, ``-M``, and ``-C`` can increase accuracy, but take
+longer to compute.
+
+Note that specifying ``--sort=hours`` or ``--sort=months`` requires ``--cost``
+to be specified appropriately.
+
+Note that ``--cost=months`` (``--cost=COCOMO``) approximates
+`person-months <https://en.wikipedia.org/wiki/COCOMO>`_ and should be used with
+``--loc=ins``.
+
+Meanwhile, ``--cost=hours`` (``--cost=commits``) approximates
+`person-hours <https://github.com/kimmobrunfeldt/git-hours/blob/8aaeee237cb9d9028e7a2592a25ad8468b1f45e4/index.js#L114-L143>`_.
+
+Extra care should be taken when using ``ins`` and/or ``del`` for ``--loc``
+since all historical files (including those no longer surviving) are counted.
+In such cases, ``--excl`` may need to be significantly extended.
+On the plus side, it is faster to compute ``ins`` and ``del`` compared to
+``surv``.
 
 Examples
 --------
