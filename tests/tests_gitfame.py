@@ -177,7 +177,7 @@ def test_main():
   res = subprocess.Popen(
       (sys.executable, '-c', 'import gitfame; import sys;\
        sys.argv = ["", "--silent-progress", "%s"];\
-       gitfame.main()' % dn(dn(dn(__file__)))),
+       gitfame.main()' % dn(dn(__file__))),
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT).communicate()[0]
 
