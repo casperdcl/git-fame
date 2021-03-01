@@ -14,33 +14,28 @@ jobs:
       with:
         fetch-depth: 0
     - uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-    - name: set PYSHA
+    - name: Prepare cache
       run: echo "PYSHA=$(python -VV | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
     - uses: actions/cache@v1
       with:
         path: ~/.cache/pre-commit
         key: pre-commit|${{ env.PYSHA }}|${{ hashFiles('.pre-commit-config.yaml') }}
-    - name: Test
-      run: |
-        pip install -U tox
-        tox
-      env:
-        TOXENV: 'setup.py,nodeps'
-    - name: Self install
-      run: pip install -U .[dev]
-    - name: Build
-      run: |
-        python setup.py sdist bdist_wheel
-        twine check dist/*
+    - name: Dependencies
+      run: pip install -U pre-commit
     - uses: reviewdog/action-setup@v1
     - if: github.event_name != 'schedule'
-      name: flake8
+      name: Comment
       run: |
-        pre-commit run -a flake8 | reviewdog -f=pep8 -name=Format -tee -reporter=github-check -filter-mode nofilter
+        if [[ $EVENT == pull_request ]]; then
+          REPORTER=github-pr-review
+        else
+          REPORTER=github-check
+        fi
+        pre-commit run -a todo | reviewdog -efm="%f:%l: %m" -name=TODO -tee -reporter=$REPORTER -filter-mode nofilter
+        pre-commit run -a flake8 | reviewdog -f=pep8 -name=flake8 -tee -reporter=$REPORTER -filter-mode nofilter
       env:
         REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        EVENT: ${{ github.event_name }}
     - name: Lint
       run: pre-commit run -a --show-diff-on-failure
   test:
@@ -60,24 +55,33 @@ jobs:
     - name: Install
       run: pip install -U tox
     - name: Test
-      run: tox -e py${PYVER/./}
+      run: |
+        if [[ "$PYVER" == py3.8 ]]; then
+          tox -e py${PYVER/./},nodeps                               # full:incl nodeps
+        else
+          tox -e py${PYVER/./}                                      # normal
+        fi
       env:
         PYVER: ${{ matrix.python }}
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-    - name: Coveralls Parallel
-      uses: AndreMiras/coveralls-python-action@develop
-      with:
-        parallel: true
+        COVERALLS_FLAG_NAME: py${{ matrix.python }}
+        COVERALLS_PARALLEL: true
+        COVERALLS_SERVICE_NAME: github
+        # coveralls needs explicit token
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   finish:
     if: github.event_name != 'pull_request' || github.head_ref != 'devel'
     name: Coverage
+    continue-on-error: ${{ github.event_name != 'push' }}
     needs: test
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/setup-python@v2
     - name: Coveralls Finished
-      uses: AndreMiras/coveralls-python-action@develop
-      with:
-        parallel-finished: true
+      run: |
+        pip install -U coveralls
+        coveralls --finish || :
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   deploy:
     if: github.event_name != 'pull_request' || github.head_ref != 'devel'
     name: Deploy
@@ -88,39 +92,36 @@ jobs:
       with:
         fetch-depth: 0
     - uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
     - name: Install
       run: |
         sudo apt-get install -yqq pandoc
-        pip install .[dev]
+        pip install -r .meta/requirements-build.txt
         make build .dockerignore
-    - if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-      uses: casperdcl/deploy-pypi@v1
+    - id: dist
+      uses: casperdcl/deploy-pypi@v2
       with:
         password: ${{ secrets.TWINE_PASSWORD }}
         gpg_key: ${{ secrets.GPG_KEY }}
-        skip_existing: true
+        upload: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') }}
     - id: collect_assets
       name: Collect assets
       run: |
-        echo "::set-output name=asset_path::$(ls dist/*.whl)"
-        echo "::set-output name=asset_name::$(basename dist/*.whl)"
-        echo "::set-output name=asset_path_sig::$(ls dist/*.whl.asc 2>/dev/null)"
-        echo "::set-output name=asset_name_sig::$(basename dist/*.whl.asc 2>/dev/null)"
         if [[ $GITHUB_REF == refs/tags/v* ]]; then
           echo ::set-output name=docker_tags::latest,${GITHUB_REF/refs\/tags\/v/}
+          echo ::set-output name=snap_channel::stable,candidate,edge
         elif [[ $GITHUB_REF == refs/heads/master ]]; then
           echo ::set-output name=docker_tags::master
+          echo ::set-output name=snap_channel::candidate,edge
         elif [[ $GITHUB_REF == refs/heads/devel ]]; then
           echo ::set-output name=docker_tags::devel
+          echo ::set-output name=snap_channel::edge
         fi
         git log --pretty='format:%d%n- %s%n%b---' $(git tag --sort=v:refname | tail -n2 | head -n1)..HEAD > _CHANGES.md
     - if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
       id: create_release
       uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
         release_name: git-fame ${{ github.ref }} stable
@@ -129,21 +130,29 @@ jobs:
     - if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
       uses: actions/upload-release-asset@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ steps.collect_assets.outputs.asset_path }}
-        asset_name: ${{ steps.collect_assets.outputs.asset_name }}
+        asset_path: dist/${{ steps.dist.outputs.whl }}
+        asset_name: ${{ steps.dist.outputs.whl }}
         asset_content_type: application/zip
     - if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
       uses: actions/upload-release-asset@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ steps.collect_assets.outputs.asset_path_sig }}
-        asset_name: ${{ steps.collect_assets.outputs.asset_name_sig }}
+        asset_path: dist/${{ steps.dist.outputs.whl_asc }}
+        asset_name: ${{ steps.dist.outputs.whl_asc }}
         asset_content_type: text/plain
+    - uses: snapcore/action-build@v1
+      id: snap_build
+    - if: github.event_name == 'push' && steps.collect_assets.outputs.snap_channel
+      uses: snapcore/action-publish@v1
+      with:
+        store_login: ${{ secrets.SNAP_TOKEN }}
+        snap: ${{ steps.snap_build.outputs.snap }}
+        release: ${{ steps.collect_assets.outputs.snap_channel }}
     - name: Docker build push
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
@@ -161,30 +170,3 @@ jobs:
         username: ${{ github.actor }}
         registry: docker.pkg.github.com
         no_push: ${{ steps.collect_assets.outputs.docker_tags == '' }}
-  deploy-snap:
-    if: github.event_name != 'pull_request' || github.head_ref != 'devel'
-    name: Deploy Snap
-    needs: [check, test]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - id: snap_channel
-      name: Snap channel
-      run: |
-        if [[ $GITHUB_REF == refs/tags/v* ]]; then
-          echo ::set-output name=release::stable,candidate,edge
-        elif [[ $GITHUB_REF == refs/heads/master ]]; then
-          echo ::set-output name=release::candidate,edge
-        elif [[ $GITHUB_REF == refs/heads/devel ]]; then
-          echo ::set-output name=release::edge
-        fi
-    - id: snap_build
-      uses: snapcore/action-build@v1
-    - if: github.event_name == 'push' && steps.snap_channel.outputs.release
-      uses: snapcore/action-publish@v1
-      with:
-        store_login: ${{ secrets.SNAP_TOKEN }}
-        snap: ${{ steps.snap_build.outputs.snap }}
-        release: ${{ steps.snap_channel.outputs.release }}
