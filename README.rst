@@ -103,7 +103,7 @@ This is probably not necessary on UNIX systems.
 
 .. code:: sh
 
-    git config --global alias.fame "!python -m gitfame"
+    git config --global alias.fame '!python -m gitfame'
 
 Tab completion
 ~~~~~~~~~~~~~~
