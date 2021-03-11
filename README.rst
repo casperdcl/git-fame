@@ -99,11 +99,18 @@ Latest Docker release
 Register alias with git
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-This is probably not necessary on UNIX systems.
+On Windows, run:
 
 .. code:: sh
 
     git config --global alias.fame "!python -m gitfame"
+
+This is probably not necessary on UNIX systems.
+If ``git fame`` doesn't work after restarting the terminal on Linux & Mac OS, try (with single quotes):
+
+.. code:: sh
+
+    git config --global alias.fame '!python -m gitfame'
 
 Tab completion
 ~~~~~~~~~~~~~~
