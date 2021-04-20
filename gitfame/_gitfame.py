@@ -27,26 +27,27 @@ Options:
                    May be multiple comma-separated values.
                    Alters `--loc` default to imply 'ins' (COCOMO) or
                    'ins,del' (hours).
+  -R, --recurse  Recursively find repositories & submodules within <gitdir>.
   -n, --no-regex  Assume <f> are comma-separated exact matches
                   rather than regular expressions [default: False].
                   NB: if regex is enabled ',' is equivalent to '|'.
   -s, --silent-progress    Suppress `tqdm` [default: False].
-  --warn-binary   Don't silently skip files which appear to be binary data
-                  [default: False].
+  --warn-binary  Don't silently skip files which appear to be binary data
+                 [default: False].
   -e, --show-email  Show author email instead of name [default: False].
-  --enum    Show row numbers [default: False].
+  --enum         Show row numbers [default: False].
   -t, --bytype             Show stats per file extension [default: False].
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
                            version and the child's to find where the lines
                            came from [default: False].
-  -M  Detect intra-file line moves and copies [default: False].
-  -C  Detect inter-file line moves and copies [default: False].
+  -M             Detect intra-file line moves and copies [default: False].
+  -C             Detect inter-file line moves and copies [default: False].
   --format=<format>        Table format
       [default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
       May require `git-fame[<format>]`, e.g. `pip install git-fame[yaml]`.
       Any `tabulate.tabulate_formats` is also accepted.
   --manpath=<path>         Directory in which to install git-fame man pages.
-  --log=<lvl>     FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
+  --log=<lvl>    FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 """
 from __future__ import division, print_function
 
@@ -377,7 +378,28 @@ def run(args):
 
   if isinstance(args.gitdir, string_types):
     args.gitdir = [args.gitdir]
+  # strip `/`, `.git`
   gitdirs = [i.rstrip(os.sep) for i in args.gitdir]
+  gitdirs = [path.join(*path.split(i)[:-1]) if path.split(i)[-1] == '.git' else i
+             for i in args.gitdir]
+  # remove duplicates
+  for i, d in reversed(list(enumerate(gitdirs))):
+    if d in gitdirs[:i]:
+      gitdirs.pop(i)
+  # recurse
+  if args.recurse:
+    nDirs = len(gitdirs)
+    i = 0
+    while i < nDirs:
+      if path.isdir(gitdirs[i]):
+        for root, dirs, fns in tqdm(os.walk(gitdirs[i]), desc="Recursing", unit="dir",
+                                    disable=args.silent_progress, leave=False):
+          if '.git' in fns + dirs:
+            if root not in gitdirs:
+              gitdirs.append(root)
+            if '.git' in dirs:
+              dirs.remove('.git')
+      i += 1
 
   exclude_files = None
   include_files = None
