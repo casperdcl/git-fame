@@ -1,30 +1,17 @@
 *.py[cod]
-
-# C extensions
 *.so
+__pycache__/
 
 # Packages
 /gitfame/_dist_ver.py
-/.eggs/
-/*.egg-info
+/*.egg*/
 /build/
 /dist/
 /git-fame_*_amd64.snap
 /.dockerignore
 
 # Unit test / coverage reports
-.tox/
-.coverage
-__pycache__/
+/.tox/
+/.coverage*
+/coverage.xml
 nosetests.xml
-
-# Translations
-*.mo
-
-# Mr Developer
-.mr.developer.cfg
-.project
-.pydevproject
-
-# PyCharm
-.idea
