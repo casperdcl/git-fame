@@ -217,6 +217,10 @@ Documentation
                                came from [default: False].
       -M             Detect intra-file line moves and copies [default: False].
       -C             Detect inter-file line moves and copies [default: False].
+      --ignore-rev=<rev>       Ignore changes made by the given revision
+                               (requires `--loc=surviving`).
+      --ignore-revs-file=<f>   Ignore revisions listed in the given file
+                               (requires `--loc=surviving`).
       --format=<format>        Table format
           [default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
           May require `git-fame[<format>]`, e.g. `pip install git-fame[yaml]`.
