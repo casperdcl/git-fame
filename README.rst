@@ -7,7 +7,7 @@ Pretty-print ``git`` repository collaborators sorted by contributions.
 
 |Build-Status| |Coverage-Status| |Branch-Coverage-Status| |Codacy-Grade| |Libraries-Rank| |PyPI-Downloads|
 
-|DOI-URI| |LICENCE| |OpenHub-Status| |Gift-Casper|
+|DOI-URI| |LICENCE| |OpenHub-Status| |Sponsor-Casper|
 
 .. code:: sh
 
@@ -321,7 +321,7 @@ Authors
 
 |OpenHub-Status|
 
-- Casper da Costa-Luis (`casperdcl <https://github.com/casperdcl>`__ |Gift-Casper|)
+- Casper da Costa-Luis (`casperdcl <https://github.com/casperdcl>`__ |Sponsor-Casper|)
 
 We are grateful for all |GitHub-Contributions|.
 
@@ -351,8 +351,8 @@ We are grateful for all |GitHub-Contributions|.
    :target: https://github.com/casperdcl/git-fame/graphs/contributors
 .. |GitHub-Updated| image:: https://img.shields.io/github/last-commit/casperdcl/git-fame?label=pushed&logo=github
    :target: https://github.com/casperdcl/git-fame/pulse
-.. |Gift-Casper| image:: https://img.shields.io/badge/gift-donate-dc10ff.svg?logo=Contactless%20Payment
-   :target: https://caspersci.uk.to/donate
+.. |Sponsor-Casper| image:: https://img.shields.io/badge/sponsor-FOSS-dc10ff.svg?logo=Contactless%20Payment
+   :target: https://cdcl.ml/sponsor
 .. |PyPI| image:: https://img.shields.io/pypi/v/git-fame.svg?logo=PyPI&logoColor=white
    :target: https://pypi.org/project/git-fame
 .. |PyPI-Downloads| image:: https://img.shields.io/pypi/dm/git-fame.svg?label=pypi%20downloads&logo=DocuSign
