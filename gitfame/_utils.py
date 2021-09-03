@@ -4,6 +4,7 @@ import logging
 import subprocess
 import sys
 from functools import partial
+from unicodedata import east_asian_width
 
 from tqdm import tqdm as tqdm_std
 from tqdm.utils import _screen_shape_wrapper
@@ -32,7 +33,8 @@ __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
 __date__ = "2016-2020"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm",
-           "tighten", "check_output", "print_unicode", "StringIO", "Str"]
+           "tighten", "check_output", "uniprint", "unilen",
+           "StringIO", "Str"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__  # weird foreign language
 
@@ -58,6 +60,10 @@ def check_output(*a, **k):
 
 def blank_col(rows, i, blanks):
   return all(r[i] in blanks for r in rows)
+
+
+def unilen(s):
+    return sum(2 if east_asian_width(ch) in 'FW' else 1 for ch in _str(s))
 
 
 def tighten(t, max_width=256, blanks=' -=', seps='|+'):
@@ -131,7 +137,7 @@ def Max(it, empty_default=0):
     raise  # pragma: no cover
 
 
-def print_unicode(msg, end='\n', err='?'):
+def uniprint(msg, end='\n', err='?'):
   """print `msg`, replacing unicode characters with `err` upon failure"""
   for c in msg:
     try:

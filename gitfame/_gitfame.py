@@ -73,9 +73,10 @@ from ._utils import (
     fext,
     int_cast_or_len,
     merge_stats,
-    print_unicode,
     string_types,
     tqdm,
+    unilen,
+    uniprint,
 )
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
@@ -212,7 +213,7 @@ def tabulate(
     if backend not in tabber.tabulate_formats:
       raise ValueError("Unknown backend:%s" % backend)
     log.debug("backend:tabulate:" + backend)
-    COL_LENS = [max(len(Str(i[j])) for i in [COL_NAMES] + tab)
+    COL_LENS = [max(unilen(Str(i[j])) for i in [COL_NAMES] + tab)
                 for j in range(len(COL_NAMES))]
     COL_LENS[0] = min(
         TERM_WIDTH - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4,
@@ -490,7 +491,7 @@ def run(args):
   #     extns.update([fext(i) for i in stats["files"]])
   # log.debug(extns)
 
-  print_unicode(tabulate(
+  uniprint(tabulate(
       auth_stats, stats_tot,
       args.sort, args.bytype, args.format, cost, args.enum))
 

@@ -60,4 +60,4 @@ def test_integer_stats():
 
 def test_print():
   """Test printing of unicode"""
-  _utils.print_unicode("\x81")
+  _utils.uniprint("\x81")
