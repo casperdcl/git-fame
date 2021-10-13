@@ -60,9 +60,9 @@ Branch or tag [default: HEAD] up to which to check.
 .RE
 .TP
 .B \-\-loc=\f[I]type\f[]
-[default: surviving]|ins(ertions)|del(etions) What \f[C]loc\f[]
-represents.
+surv(iving)|ins(ertions)|del(etions) What \f[C]loc\f[] represents.
 Use \[aq]ins,del\[aq] to count both.
+defaults to \[aq]surviving\[aq] unless \f[C]\-\-cost\f[] is specified.
 .RS
 .RE
 .TP
@@ -90,6 +90,13 @@ Include time cost in person\-months (COCOMO) or person\-hours (based on
 commit times).
 Methods: month(s)|cocomo|hour(s)|commit(s).
 May be multiple comma\-separated values.
+Alters \f[C]\-\-loc\f[] default to imply \[aq]ins\[aq] (COCOMO) or
+\[aq]ins,del\[aq] (hours).
+.RS
+.RE
+.TP
+.B \-R, \-\-recurse
+Recursively find repositories & submodules within .
 .RS
 .RE
 .TP
@@ -131,6 +138,18 @@ Ignore whitespace when comparing the parent\[aq]s version and the
 child\[aq]s to find where the lines came from [default: False].
 \-M Detect intra\-file line moves and copies [default: False].
 \-C Detect inter\-file line moves and copies [default: False].
+.RS
+.RE
+.TP
+.B \-\-ignore\-rev=\f[I]rev\f[]
+Ignore changes made by the given revision (requires
+\f[C]\-\-loc=surviving\f[]).
+.RS
+.RE
+.TP
+.B \-\-ignore\-revs\-file=\f[I]f\f[]
+Ignore revisions listed in the given file (requires
+\f[C]\-\-loc=surviving\f[]).
 .RS
 .RE
 .TP
