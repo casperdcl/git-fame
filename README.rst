@@ -175,7 +175,7 @@ Documentation
 .. code::
 
     Usage:
-      gitfame [--help | options] [<gitdir>...]
+      git-fame [--help | options] [<gitdir>...]
 
     Arguments:
       <gitdir>       Git directory [default: ./].
