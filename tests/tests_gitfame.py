@@ -12,7 +12,6 @@ from textwrap import dedent
 from nose.plugins.skip import SkipTest
 
 from gitfame import _gitfame, main
-
 # from io import IOBase  # to support unicode strings
 from gitfame._utils import StringIO
 

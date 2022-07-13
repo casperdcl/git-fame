@@ -59,24 +59,13 @@ import logging
 import os
 import re
 import subprocess
-
 # from __future__ import absolute_import
 from functools import partial
 from os import path
 
 from ._utils import (
-    TERM_WIDTH,
-    Str,
-    TqdmStream,
-    _str,
-    check_output,
-    fext,
-    int_cast_or_len,
-    merge_stats,
-    print_unicode,
-    string_types,
-    tqdm,
-)
+    TERM_WIDTH, Str, TqdmStream, _str, check_output, fext, int_cast_or_len, merge_stats,
+    print_unicode, string_types, tqdm)
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
 try:
