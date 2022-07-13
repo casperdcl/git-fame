@@ -59,24 +59,13 @@ import logging
 import os
 import re
 import subprocess
-
 # from __future__ import absolute_import
 from functools import partial
 from os import path
 
 from ._utils import (
-    TERM_WIDTH,
-    Str,
-    TqdmStream,
-    _str,
-    check_output,
-    fext,
-    int_cast_or_len,
-    merge_stats,
-    print_unicode,
-    string_types,
-    tqdm,
-)
+    TERM_WIDTH, Str, TqdmStream, _str, check_output, fext, int_cast_or_len, merge_stats,
+    print_unicode, string_types, tqdm)
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
 try:
@@ -327,7 +316,7 @@ def _get_auth_stats(
         try:
           inss, dels, fname = i.split('\t')
         except ValueError:
-            log.warn(i)
+            log.warning(i)
         else:
           fname = RE_RENAME.sub(r'\\2', fname)
           loc = (
@@ -377,7 +366,7 @@ def run(args):
   log.debug("parsing args")
 
   if args.sort not in "loc commits files hours months".split():
-    log.warn("--sort argument (%s) unrecognised\n%s" % (
+    log.warning("--sort argument (%s) unrecognised\n%s" % (
         args.sort, __doc__))
     raise KeyError(args.sort)
 
@@ -441,8 +430,8 @@ def run(args):
       churn = CHURN_SLOC
 
   if churn & (CHURN_INS | CHURN_DEL) and args.excl:
-      log.warn("--loc=ins,del includes historical files"
-               " which may need to be added to --excl")
+      log.warning("--loc=ins,del includes historical files"
+                  " which may need to be added to --excl")
 
   auth_stats = {}
   statter = partial(

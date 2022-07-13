@@ -8,7 +8,7 @@
 	all
 	flake8
 	test
-	testnose
+	pytest
 	testsetup
 	testcoverage
 	testtimer
@@ -17,7 +17,7 @@
 	prebuildclean
 	clean
 	toxclean
-	installdev
+	install_dev
 	install
 	build
 	buildupload
@@ -41,13 +41,13 @@ all:
 	@+make build
 
 flake8:
-	@+flake8 -j 8 --count --statistics --exit-zero .
+	@+pre-commit run -a flake8
 
 test:
 	tox --skip-missing-interpreters -p all
 
-testnose:
-	nosetests gitfame -d -v
+pytest:
+	pytest
 
 testsetup:
 	@make gitfame/git-fame.1
@@ -56,10 +56,10 @@ testsetup:
 
 testcoverage:
 	@make coverclean
-	nosetests gitfame --with-coverage --cover-package=gitfame --cover-erase --cover-min-percentage=80 -d -v
+	pytest --cov=gitfame --cov-report=xml --cov-report=term --cov-fail-under=80
 
 testtimer:
-	nosetests gitfame --with-timer -d -v
+	pytest
 
 gitfame/git-fame.1: .meta/.git-fame.1.md gitfame/_gitfame.py
 	python -c 'import gitfame; print(gitfame._gitfame.__doc__.rstrip())' |\
@@ -86,8 +86,9 @@ prebuildclean:
 	@+python -c "import os; os.remove('gitfame/_dist_ver.py') if os.path.exists('gitfame/_dist_ver.py') else None"
 coverclean:
 	@+python -c "import os; os.remove('.coverage') if os.path.exists('.coverage') else None"
-	@+python -c "import shutil; shutil.rmtree('gitfame/__pycache__', True)"
+	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('.coverage.*')]"
 	@+python -c "import shutil; shutil.rmtree('tests/__pycache__', True)"
+	@+python -c "import shutil; shutil.rmtree('gitfame/__pycache__', True)"
 clean:
 	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('*.py[co]')]"
 	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('gitfame/*.py[co]')]"
@@ -97,13 +98,13 @@ clean:
 toxclean:
 	@+python -c "import shutil; shutil.rmtree('.tox', True)"
 
-
-installdev:
-	python setup.py develop --uninstall
-	python setup.py develop
-
 install:
 	python setup.py install
+install_dev:
+	python setup.py develop --uninstall
+	python setup.py develop
+install_build:
+	python -m pip install -r .meta/requirements-build.txt
 
 build:
 	@make prebuildclean

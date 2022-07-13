@@ -1,7 +1,0 @@
-[run]
-branch = True
-omit =
-    tests/*
-relative_files = True
-[report]
-show_missing = True

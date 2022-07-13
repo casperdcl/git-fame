@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM python:3.9-alpine
 RUN apk update && apk add --no-cache git
 COPY dist/*.whl .
 RUN pip install -U $(ls *.whl)[full] && rm *.whl
