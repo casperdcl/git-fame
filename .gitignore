@@ -7,11 +7,11 @@ __pycache__/
 /*.egg*/
 /build/
 /dist/
-/git-fame_*_amd64.snap
+/git-fame_*.snap
 /.dockerignore
 
 # Unit test / coverage reports
 /.tox/
 /.coverage*
 /coverage.xml
-nosetests.xml
+/.pytest_cache/

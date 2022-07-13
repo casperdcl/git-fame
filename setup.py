@@ -23,4 +23,4 @@ if '--cython' in sys.argv:
     except ImportError:
         pass
 
-setup(use_scm_version=True, test_suite='nose.collector', ext_modules=ext_modules)
+setup(use_scm_version=True, ext_modules=ext_modules)

@@ -7,12 +7,9 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from textwrap import dedent
 
-# import re
-# from nose import with_setup
-from nose.plugins.skip import SkipTest
+from pytest import skip
 
 from gitfame import _gitfame, main
-# from io import IOBase  # to support unicode strings
 from gitfame._utils import StringIO
 
 # test data
@@ -110,8 +107,8 @@ def test_tabulate_yaml():
       total: {commits: 35, files: 14, loc: 613}""")]
   try:
     assert (_gitfame.tabulate(auth_stats, stats_tot, backend='yaml') in res)
-  except ImportError:
-    raise SkipTest
+  except ImportError as err:
+    raise skip(str(err))
 
 
 def test_tabulate_json():
@@ -144,8 +141,8 @@ def test_tabulate_tabulate():
       --------------------  -----  ------  ------  ---------------
       Casper da Costa-Luis    538      35      10  87.8/ 100/71.4
       Not Committed Yet        75       0       4  12.2/ 0.0/28.6"""))
-  except ImportError:
-    raise SkipTest
+  except ImportError as err:
+    raise skip(str(err))
 
 
 def test_tabulate_enum():
@@ -174,9 +171,12 @@ def test_main():
   from os.path import dirname as dn
 
   res = subprocess.Popen(
-      (sys.executable, '-c', 'import gitfame; import sys;\
-       sys.argv = ["", "--silent-progress", "%s"];\
-       gitfame.main()' % dn(dn(__file__))),
+      (sys.executable, '-c', dedent('''\
+      import gitfame
+      import sys
+      sys.argv = ["", "--silent-progress", "''' + dn(dn(__file__)) + '''"]
+      gitfame.main()
+      ''')),
       stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT).communicate()[0]
 

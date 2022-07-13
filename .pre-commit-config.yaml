@@ -25,15 +25,15 @@ repos:
     args: [-i]
     types: [text]
     exclude: ^(.pre-commit-config.yaml|.github/workflows/test.yml)$
-  - id: nose
+  - id: pytest
     name: Run tests
     language: python
-    entry: nosetests
-    args: ['-d', tests/]
+    entry: pytest
+    args: [-qq, --durations=1]
     types: [python]
     pass_filenames: false
     additional_dependencies:
-    - nose
+    - pytest-timeout
     - argopt
     - tabulate
     - tqdm
