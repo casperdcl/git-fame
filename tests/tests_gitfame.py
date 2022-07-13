@@ -174,7 +174,7 @@ def test_main():
       (sys.executable, '-c', dedent('''\
       import gitfame
       import sys
-      sys.argv = ["", "--silent-progress", "''' + dn(dn(__file__)) + '''"]
+      sys.argv = ["", "--silent-progress", r"''' + dn(dn(__file__)) + '''"]
       gitfame.main()
       ''')),
       stdout=subprocess.PIPE,
