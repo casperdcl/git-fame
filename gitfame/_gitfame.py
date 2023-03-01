@@ -199,8 +199,9 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         COL_LENS[0] = min(TERM_WIDTH - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4, COL_LENS[0])
         tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
         return totals + tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
-                   # from ._utils import tighten
-                   # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
+
+        # from ._utils import tighten
+        # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
 
 
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None,
@@ -279,9 +280,10 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
             loc_auth_times = RE_AUTHS_BLAME.findall(blame_out)
 
-            for loc, auth, tstamp in loc_auth_times:                                                # for each chunk
+            for loc, auth, tstamp in loc_auth_times: # for each chunk
                 loc = int(loc)
                 stats_append(fname, auth, loc, tstamp)
+
     else:
         with tqdm(total=1, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
                   unit="repo") as t:
@@ -318,16 +320,16 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     auth2em = {}
     for (ncom, auth, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
         auth = str(auth)
-        auth2em[auth] = em                           # TODO: count most used email?
+        auth2em[auth] = em # TODO: count most used email?
         try:
             auth_stats[auth]["commits"] += int(ncom)
         except KeyError:
             auth_stats[auth] = {"loc": 0, "files": set(), "commits": int(ncom), "ctimes": []}
-    if show_email:
-                                                     # replace author name with email
+    if show_email:         # replace author name with email
         log.debug(auth2em)
         old = auth_stats
         auth_stats = {}
+
         for auth, stats in getattr(old, 'iteritems', old.items)():
             i = auth_stats.setdefault(auth2em[auth],
                                       {"loc": 0, "files": set(), "commits": 0, "ctimes": []})
@@ -423,7 +425,7 @@ def run(args):
     # concurrent multi-repo processing
     if len(gitdirs) > 1:
         try:
-            from concurrent.futures import ThreadPoolExecutor  # NOQA
+            from concurrent.futures import ThreadPoolExecutor  # NOQA, yapf: disable
 
             from tqdm.contrib.concurrent import thread_map
             mapper = partial(thread_map, desc="Repos", unit="repo", miniters=1,

@@ -95,7 +95,6 @@ def test_tabulate_yaml():
         commits: 35
         files: 14
         loc: 613"""),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                              # pyyaml<5
         dedent("""\
       columns: [Author, loc, coms, fils, '%loc', '%coms', '%fils']
       data:
@@ -104,7 +103,7 @@ def test_tabulate_yaml():
       total: {commits: 35, files: 14, loc: 613}""")]
     try:
         assert (_gitfame.tabulate(auth_stats, stats_tot, backend='yaml') in res)
-    except ImportError as err:
+    except ImportError as err: # lacking pyyaml<5
         raise skip(str(err))
 
 
