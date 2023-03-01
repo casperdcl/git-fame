@@ -114,14 +114,14 @@ jobs:
       name: Collect assets
       run: |
         if [[ $GITHUB_REF == refs/tags/v* ]]; then
-          echo ::set-output name=docker_tags::latest,${GITHUB_REF/refs\/tags\/v/}
-          echo ::set-output name=snap_channel::stable,candidate,edge
+          echo docker_tags=latest,${GITHUB_REF/refs\/tags\/v/} >> $GITHUB_OUTPUT
+          echo snap_channel=stable,candidate,edge >> $GITHUB_OUTPUT
         elif [[ $GITHUB_REF == refs/heads/master ]]; then
-          echo ::set-output name=docker_tags::master
-          echo ::set-output name=snap_channel::candidate,edge
+          echo docker_tags=master >> $GITHUB_OUTPUT
+          echo snap_channel=candidate,edge >> $GITHUB_OUTPUT
         elif [[ $GITHUB_REF == refs/heads/devel ]]; then
-          echo ::set-output name=docker_tags::devel
-          echo ::set-output name=snap_channel::edge
+          echo docker_tags=devel >> $GITHUB_OUTPUT
+          echo snap_channel=edge >> $GITHUB_OUTPUT
         fi
     - if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
       name: Release
