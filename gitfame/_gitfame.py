@@ -63,8 +63,8 @@ import subprocess
 from functools import partial
 from os import path
 
-from ._utils import (TERM_WIDTH, Str, TqdmStream, _str, check_output, fext, int_cast_or_len,
-                     merge_stats, print_unicode, string_types, tqdm)
+from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats,
+                     print_unicode, tqdm)
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
 try:
@@ -243,7 +243,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     auth_stats = {}
 
     def stats_append(fname, auth, loc, tstamp):
-        auth = _str(auth)
+        auth = str(auth)
         tstamp = int(tstamp)
         try:
             auth_stats[auth]["loc"] += loc
@@ -317,7 +317,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
     auth2em = {}
     for (ncom, auth, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
-        auth = _str(auth)
+        auth = str(auth)
         auth2em[auth] = em                           # TODO: count most used email?
         try:
             auth_stats[auth]["commits"] += int(ncom)
@@ -351,7 +351,7 @@ def run(args):
     if not args.excl:
         args.excl = ""
 
-    if isinstance(args.gitdir, string_types):
+    if isinstance(args.gitdir, str):
         args.gitdir = [args.gitdir]
     # strip `/`, `.git`
     gitdirs = [i.rstrip(os.sep) for i in args.gitdir]

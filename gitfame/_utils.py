@@ -4,22 +4,11 @@ import logging
 import subprocess
 import sys
 from functools import partial
+from io import StringIO
 
 from tqdm import tqdm as tqdm_std
 from tqdm.utils import _screen_shape_wrapper
 
-try:
-    # python2
-    _str = unicode
-    _range = xrange
-    from StringIO import StringIO
-    string_types = (basestring,)
-except NameError:
-    # python3
-    _str = str
-    _range = range
-    from io import StringIO
-    string_types = (str,)
 try:
     from threading import RLock
 except ImportError:
@@ -29,10 +18,10 @@ else:
     tqdm = partial(tqdm_std, lock_args=(False,))
 
 __author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
-__date__ = "2016-2020"
+__date__ = "2016-2023"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = [
-    "TERM_WIDTH", "int_cast_or_len", "Max", "fext", "_str", "tqdm", "tighten", "check_output",
+    "TERM_WIDTH", "int_cast_or_len", "Max", "fext", "tqdm", "tighten", "check_output",
     "print_unicode", "StringIO", "Str"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__ # weird foreign language
@@ -78,7 +67,7 @@ def tighten(t, max_width=256, blanks=' -=', seps='|+'):
 
     if len_r > max_width:
         have_first_line = False
-        for i in _range(len_r):
+        for i in range(len_r):
             if blank_col(rows, i, seps):
                 if have_first_line:
                     if i > len_r - max_width:
@@ -142,11 +131,11 @@ def print_unicode(msg, end='\n', err='?'):
 
 
 def Str(i):
-    """return `'%g' % i` if possible, else `_str(i)`"""
+    """return `'%g' % i` if possible, else `str(i)`"""
     try:
         return '%g' % i
     except TypeError:
-        return _str(i)
+        return str(i)
 
 
 def merge_stats(left, right):
