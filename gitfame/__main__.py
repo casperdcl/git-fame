@@ -1,3 +1,3 @@
-from ._gitfame import main  # pragma: no cover
+from ._gitfame import main  # pragma: no cover, yapf: disable
 
-main()  # pragma: no cover
+main()        # pragma: no cover

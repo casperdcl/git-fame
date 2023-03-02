@@ -327,8 +327,8 @@ We are grateful for all |GitHub-Contributions|.
 
 |README-Hits|
 
-.. |Build-Status| image:: https://img.shields.io/github/workflow/status/casperdcl/git-fame/Test/master?logo=GitHub
-   :target: https://github.com/casperdcl/git-fame/actions?query=workflow%3ATest
+.. |Build-Status| image:: https://img.shields.io/github/actions/workflow/status/casperdcl/git-fame/test.yml?branch=master&label=git-fame&logo=GitHub
+   :target: https://github.com/casperdcl/git-fame/actions/workflows/test.yml
 .. |Coverage-Status| image:: https://img.shields.io/coveralls/github/casperdcl/git-fame/master?logo=coveralls
    :target: https://coveralls.io/github/casperdcl/git-fame
 .. |Branch-Coverage-Status| image:: https://codecov.io/gh/casperdcl/git-fame/branch/master/graph/badge.svg

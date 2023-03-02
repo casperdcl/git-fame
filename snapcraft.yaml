@@ -4,7 +4,7 @@ description: https://github.com/casperdcl/git-fame
 adopt-info: git-fame
 grade: stable
 confinement: strict
-base: core18
+base: core22
 license: MPL-2.0
 parts:
   git-fame:
@@ -16,14 +16,11 @@ parts:
     build-packages: [git]
     stage-packages: [git]
     override-build: |
-        snapcraftctl build
-        # prevent user site packages interfering with this snap - reference:
-        # https://github.com/snapcore/snapcraft/blob/19393ef36cd773a28131cec10cc0bfb3bf9c7e77/tools/snapcraft-override-build.sh#L18
-        sed -ri 's/^(ENABLE_USER_SITE = )None$/\1False/' $SNAPCRAFT_PART_INSTALL/usr/lib/python*/site.py
+        craftctl default
         cp $SNAPCRAFT_PART_BUILD/git-fame_completion.bash $SNAPCRAFT_PART_INSTALL/completion.sh
     override-stage: |
-        snapcraftctl stage
-        snapcraftctl set-version $(usr/bin/python3 -m gitfame --version)
+        craftctl default
+        craftctl set version=$(bin/python3 -m gitfame --version)
 apps:
   git-fame:
     command: bin/git-fame
