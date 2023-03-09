@@ -75,7 +75,7 @@ except ImportError:
         __version__ = get_version(root='..', relative_to=__file__)
     except (ImportError, LookupError):
         __version__ = "UNKNOWN"
-__author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
+__author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
 __date__ = "2016-2023"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]

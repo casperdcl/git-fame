@@ -17,7 +17,7 @@ else:
     tqdm_std.set_lock(RLock())
     tqdm = partial(tqdm_std, lock_args=(False,))
 
-__author__ = "Casper da Costa-Luis <casper@caspersci.uk.to>"
+__author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
 __date__ = "2016-2023"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = [
