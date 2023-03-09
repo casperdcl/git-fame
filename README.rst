@@ -65,7 +65,7 @@ Pull and install:
 
 .. code:: sh
 
-    pip install "git+https://github.com/casperdcl/git-fame.git@master#egg=git-fame"
+    pip install "git+https://github.com/casperdcl/git-fame.git@main#egg=git-fame"
 
 Latest Conda release
 ~~~~~~~~~~~~~~~~~~~~
@@ -117,7 +117,7 @@ Tab completion
 
 Optionally, systems with ``bash-completion`` can install tab completion
 support. The
-`git-fame_completion.bash <https://raw.githubusercontent.com/casperdcl/git-fame/master/git-fame_completion.bash>`__
+`git-fame_completion.bash <https://raw.githubusercontent.com/casperdcl/git-fame/main/git-fame_completion.bash>`__
 file needs to be copied to an appropriate folder.
 
 On Ubuntu, the procedure would be:
@@ -129,7 +129,7 @@ On Ubuntu, the procedure would be:
 
     $ # Install `git fame` completions
     $ sudo wget \
-        https://raw.githubusercontent.com/casperdcl/git-fame/master/git-fame_completion.bash \
+        https://raw.githubusercontent.com/casperdcl/git-fame/main/git-fame_completion.bash \
         -O /etc/bash_completion.d/git-fame_completion.bash
 
 followed by a terminal restart.
@@ -327,11 +327,11 @@ We are grateful for all |GitHub-Contributions|.
 
 |README-Hits|
 
-.. |Build-Status| image:: https://img.shields.io/github/actions/workflow/status/casperdcl/git-fame/test.yml?branch=master&label=git-fame&logo=GitHub
+.. |Build-Status| image:: https://img.shields.io/github/actions/workflow/status/casperdcl/git-fame/test.yml?branch=main&label=git-fame&logo=GitHub
    :target: https://github.com/casperdcl/git-fame/actions/workflows/test.yml
-.. |Coverage-Status| image:: https://img.shields.io/coveralls/github/casperdcl/git-fame/master?logo=coveralls
+.. |Coverage-Status| image:: https://img.shields.io/coveralls/github/casperdcl/git-fame/main?logo=coveralls
    :target: https://coveralls.io/github/casperdcl/git-fame
-.. |Branch-Coverage-Status| image:: https://codecov.io/gh/casperdcl/git-fame/branch/master/graph/badge.svg
+.. |Branch-Coverage-Status| image:: https://codecov.io/gh/casperdcl/git-fame/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/casperdcl/git-fame
 .. |Codacy-Grade| image:: https://api.codacy.com/project/badge/Grade/bde789ee0e57491eb2bb8609bd4190c3
    :target: https://www.codacy.com/app/casper-dcl/git-fame/dashboard
@@ -372,7 +372,7 @@ We are grateful for all |GitHub-Contributions|.
 .. |OpenHub-Status| image:: https://www.openhub.net/p/git-fame/widgets/project_thin_badge?format=gif
    :target: https://www.openhub.net/p/git-fame?ref=Thin+badge
 .. |LICENCE| image:: https://img.shields.io/pypi/l/git-fame.svg?color=purple&logo=SPDX
-   :target: https://raw.githubusercontent.com/casperdcl/git-fame/master/LICENCE
+   :target: https://raw.githubusercontent.com/casperdcl/git-fame/main/LICENCE
 .. |DOI-URI| image:: https://img.shields.io/badge/DOI-10.5281/zenodo.2544975-blue.svg?color=purple&logo=ORCID
    :target: https://doi.org/10.5281/zenodo.2544975
 .. |README-Hits| image:: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&style=social&r=https://github.com/casperdcl/git-fame
