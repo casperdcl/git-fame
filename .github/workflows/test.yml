@@ -116,8 +116,8 @@ jobs:
         if [[ $GITHUB_REF == refs/tags/v* ]]; then
           echo docker_tags=latest,${GITHUB_REF/refs\/tags\/v/} >> $GITHUB_OUTPUT
           echo snap_channel=stable,candidate,edge >> $GITHUB_OUTPUT
-        elif [[ $GITHUB_REF == refs/heads/master ]]; then
-          echo docker_tags=master >> $GITHUB_OUTPUT
+        elif [[ $GITHUB_REF == refs/heads/main ]]; then
+          echo docker_tags=main >> $GITHUB_OUTPUT
           echo snap_channel=candidate,edge >> $GITHUB_OUTPUT
         elif [[ $GITHUB_REF == refs/heads/devel ]]; then
           echo docker_tags=devel >> $GITHUB_OUTPUT
