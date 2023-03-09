@@ -264,7 +264,6 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     if churn & CHURN_SLOC:
         for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing",
                           disable=silent_progress, unit="file"):
-
             if prefix_gitdir:
                 fname = path.join(gitdir, fname)
             try:
@@ -274,12 +273,12 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                 continue
             log.log(logging.NOTSET, blame_out)
 
-            # Strip boundary messages,
-            # preventing user with nearest commit to boundary owning the LOC
-            blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
-            loc_auth_times = RE_AUTHS_BLAME.findall(blame_out)
+            if since:
+                # Strip boundary messages,
+                # preventing user with nearest commit to boundary owning the LOC
+                blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
 
-            for loc, auth, tstamp in loc_auth_times: # for each chunk
+            for loc, auth, tstamp in RE_AUTHS_BLAME.findall(blame_out): # for each chunk
                 loc = int(loc)
                 stats_append(fname, auth, loc, tstamp)
 
