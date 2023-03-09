@@ -88,30 +88,28 @@ def fext(fn):
 
 def int_cast_or_len(i):
     """
-  >>> int_cast_or_len(range(10))
-  10
-  >>> int_cast_or_len('90 foo')
-  6
-  >>> int_cast_or_len('90')
-  90
+    >>> int_cast_or_len(range(10))
+    10
+    >>> int_cast_or_len('90 foo')
+    6
+    >>> int_cast_or_len('90')
+    90
 
-  """
+    """
     try:
         return int(i)
-    except ValueError:
-        return len(i)
-    except TypeError:
+    except (ValueError, TypeError):
         return len(i)
 
 
 def Max(it, empty_default=0):
     """
-  >>> Max(range(10), -1)
-  9
-  >>> Max(range(0), -1)
-  -1
+    >>> Max(range(10), -1)
+    9
+    >>> Max(range(0), -1)
+    -1
 
-  """
+    """
     try:
         return max(it)
     except ValueError as e:

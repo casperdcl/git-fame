@@ -107,11 +107,11 @@ CHURN_DEL = {'del', 'deletion', 'deletions', 'delete', '-'}
 
 def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
     """
-  Convert list of commit times (in seconds) to an estimate of hours spent.
+    Convert list of commit times (in seconds) to an estimate of hours spent.
 
-  https://github.com/kimmobrunfeldt/git-hours/blob/\
+    https://github.com/kimmobrunfeldt/git-hours/blob/\
 8aaeee237cb9d9028e7a2592a25ad8468b1f45e4/index.js#L114-L143
-  """
+    """
     dates = sorted(dates)
     diffInSec = [i - j for (i, j) in zip(dates[1:], dates[:-1])]
     res = sum(filter(lambda i: i < maxCommitDiffInSec, diffInSec))
@@ -121,9 +121,9 @@ def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
 def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost=None,
              row_nums=False):
     """
-  backends  : [default: md]|yaml|json|csv|tsv|tabulate|
-    `in tabulate.tabulate_formats`
-  """
+    backends  : [default: md]|yaml|json|csv|tsv|tabulate|
+      `in tabulate.tabulate_formats`
+    """
     COL_NAMES = ['Author', 'loc', 'coms', 'fils', ' distribution']
     it_as = getattr(auth_stats, 'iteritems', auth_stats.items)
     # get ready
@@ -193,8 +193,8 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
     else:
         import tabulate as tabber
         if backend not in tabber.tabulate_formats:
-            raise ValueError("Unknown backend:%s" % backend)
-        log.debug("backend:tabulate:" + backend)
+            raise ValueError(f"Unknown backend:{backend}")
+        log.debug("backend:tabulate:%s", backend)
         COL_LENS = [max(len(Str(i[j])) for i in [COL_NAMES] + tab) for j in range(len(COL_NAMES))]
         COL_LENS[0] = min(TERM_WIDTH - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4, COL_LENS[0])
         tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
@@ -208,11 +208,10 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                     silent_progress=False, ignore_whitespace=False, M=False, C=False,
                     warn_binary=False, bytype=False, show_email=False, prefix_gitdir=False,
                     churn=None, ignore_rev="", ignore_revs_file=None):
-    """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int,
-                                 "ctimes": [int]}}"""
+    """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
     since = ["--since", since] if since else []
     git_cmd = ["git", "-C", gitdir]
-    log.debug("base command:" + ' '.join(git_cmd))
+    log.debug("base command:%s", ' '.join(git_cmd))
     file_list = check_output(git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
     if not hasattr(include_files, 'search'):
         file_list = [
@@ -222,7 +221,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         file_list = [
             i for i in file_list if include_files.search(i)
             if not (exclude_files and exclude_files.search(i))]
-    log.log(logging.NOTSET, "files:\n" + '\n'.join(file_list))
+    log.log(logging.NOTSET, "files:\n%s", '\n'.join(file_list))
     churn = churn or set()
 
     if churn & CHURN_SLOC:
@@ -312,7 +311,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                     stats_append(fname, auth, loc, tstamp)
 
     # quickly count commits (even if no surviving loc)
-    log.log(logging.NOTSET, "authors:" + '; '.join(auth_stats.keys()))
+    log.log(logging.NOTSET, "authors:%s", '; '.join(auth_stats.keys()))
     auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch] + since)
     for stats in auth_stats.values():
         stats.setdefault("commits", 0)
@@ -347,7 +346,7 @@ def run(args):
     log.debug("parsing args")
 
     if args.sort not in "loc commits files hours months".split():
-        log.warning("--sort argument (%s) unrecognised\n%s" % (args.sort, __doc__))
+        log.warning("--sort argument (%s) unrecognised\n%s", args.sort, __doc__)
         raise KeyError(args.sort)
 
     if not args.excl:
@@ -481,7 +480,7 @@ def main(args=None):
         fi = resource_filename(__name__, 'git-fame.1')
         fo = path.join(args.manpath, 'git-fame.1')
         copyfile(fi, fo)
-        log.info("written:" + fo)
+        log.info("written:%s", fo)
         sys.exit(0)
 
     run(args)
