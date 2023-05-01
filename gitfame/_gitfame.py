@@ -480,11 +480,14 @@ def main(args=None):
     log.debug(args)
     if args.manpath is not None:
         import sys
-        from os import path
+        from os import fspath, path
         from shutil import copyfile
 
-        from pkg_resources import resource_filename
-        fi = resource_filename(__name__, 'git-fame.1')
+        try:  # py<3.9
+            import importlib_resources as resources
+        except ImportError:
+            from importlib import resources
+        fi = fspath(resources.files('gitfame').resolve() / 'git-fame.1')
         fo = path.join(args.manpath, 'git-fame.1')
         copyfile(fi, fo)
         log.info("written:%s", fo)
