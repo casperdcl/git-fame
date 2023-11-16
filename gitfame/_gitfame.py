@@ -21,6 +21,8 @@ Options:
   --incl=<f>     Included files [default: .*]. See `--excl` for format.
   --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
                   or relative to now (eg: 3.weeks).
+  --until=<date>  Date to which to check. Can be absoulte (eg: 1970-01-31)
+                  or relative to now (eg: 3.weeks).
   --cost=<method>  Include time cost in person-months (COCOMO) or
                    person-hours (based on commit times).
                    Methods: month(s)|cocomo|hour(s)|commit(s).
@@ -207,8 +209,9 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None,
                     silent_progress=False, ignore_whitespace=False, M=False, C=False,
                     warn_binary=False, bytype=False, show_email=False, prefix_gitdir=False,
-                    churn=None, ignore_rev="", ignore_revs_file=None):
+                    churn=None, ignore_rev="", ignore_revs_file=None, until=None):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
+    until = ["--until", until] if until else []
     since = ["--since", since] if since else []
     git_cmd = ["git", "-C", gitdir]
     log.debug("base command:%s", ' '.join(git_cmd))
@@ -225,13 +228,13 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     churn = churn or set()
 
     if churn & CHURN_SLOC:
-        base_cmd = git_cmd + ["blame", "--line-porcelain"] + since
+        base_cmd = git_cmd + ["blame", "--line-porcelain"] + since + until
         if ignore_rev:
             base_cmd.extend(["--ignore-rev", ignore_rev])
         if ignore_revs_file:
             base_cmd.extend(["--ignore-revs-file", ignore_revs_file])
     else:
-        base_cmd = git_cmd + ["log", "--format=aN%aN ct%ct", "--numstat"] + since
+        base_cmd = git_cmd + ["log", "--format=aN%aN ct%ct", "--numstat"] + since + until
 
     if ignore_whitespace:
         base_cmd.append("-w")
@@ -278,6 +281,11 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                 # preventing user with nearest commit to boundary owning the LOC
                 blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
 
+            if until:
+                # Strip boundary messages,
+                # preventing user with nearest commit to boundary owning the LOC
+                blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
+
             for loc, auth, tstamp in RE_AUTHS_BLAME.findall(blame_out): # for each chunk
                 loc = int(loc)
                 stats_append(fname, auth, loc, tstamp)
@@ -311,7 +319,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
 
     # quickly count commits (even if no surviving loc)
     log.log(logging.NOTSET, "authors:%s", '; '.join(auth_stats.keys()))
-    auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch] + since)
+    auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch] + since + until)
     for stats in auth_stats.values():
         stats.setdefault("commits", 0)
     log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
@@ -412,7 +420,7 @@ def run(args):
                     " which may need to be added to --excl")
 
     auth_stats = {}
-    statter = partial(_get_auth_stats, branch=args.branch, since=args.since,
+    statter = partial(_get_auth_stats, branch=args.branch, since=args.since, until=args.until,
                       include_files=include_files, exclude_files=exclude_files,
                       silent_progress=args.silent_progress,
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
