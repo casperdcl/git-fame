@@ -216,6 +216,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     git_cmd = ["git", "-C", gitdir]
     log.debug("base command:%s", ' '.join(git_cmd))
     file_list = check_output(git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
+    text_file_list = re.sub(r"^" + re.escape(branch) + r":", "", check_output(git_cmd + ["grep", "-I", "--name-only", "-e", ".", branch, "--"]).strip(), flags=re.MULTILINE).split('\n')
     if not hasattr(include_files, 'search'):
         file_list = [
             i for i in file_list if (not include_files or (i in include_files))
@@ -224,6 +225,9 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         file_list = [
             i for i in file_list if include_files.search(i)
             if not (exclude_files and exclude_files.search(i))]
+    for fname in set(file_list).difference(set(text_file_list)):
+        getattr(log, "warn" if warn_binary else "debug")("binary:" + fname.strip())
+    file_list = [f for f in file_list if f in text_file_list] # preserve order
     log.log(logging.NOTSET, "files:\n%s", '\n'.join(file_list))
     churn = churn or set()
 
