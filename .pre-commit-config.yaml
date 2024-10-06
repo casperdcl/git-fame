@@ -35,6 +35,7 @@ repos:
     additional_dependencies:
     - pytest-timeout
     - argopt
+    - pyyaml
     - tabulate
     - tqdm
 - repo: https://github.com/PyCQA/flake8
