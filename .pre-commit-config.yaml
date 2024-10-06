@@ -48,6 +48,7 @@ repos:
     - flake8-comprehensions
     - flake8-debugger
     - flake8-isort
+    - flake8-pyproject
     - flake8-string-format
 - repo: https://github.com/google/yapf
   rev: v0.40.2
