@@ -214,8 +214,11 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
     git_cmd = ["git", "-C", gitdir]
-    log.debug("base command:%s", ' '.join(git_cmd))
+    log.debug("base command:%s", git_cmd)
     file_list = check_output(git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
+    text_file_list = check_output(git_cmd + ["grep", "-I", "--name-only", ".", branch]).strip()
+    text_file_list = set(
+        re.sub(f"^{re.escape(branch)}:", "", text_file_list, flags=re.M).split('\n'))
     if not hasattr(include_files, 'search'):
         file_list = [
             i for i in file_list if (not include_files or (i in include_files))
@@ -224,7 +227,10 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         file_list = [
             i for i in file_list if include_files.search(i)
             if not (exclude_files and exclude_files.search(i))]
-    log.log(logging.NOTSET, "files:\n%s", '\n'.join(file_list))
+    for fname in set(file_list) - text_file_list:
+        getattr(log, "warn" if warn_binary else "debug")("binary:%s", fname.strip())
+    file_list = [f for f in file_list if f in text_file_list] # preserve order
+    log.log(logging.NOTSET, "files:%s", file_list)
     churn = churn or set()
 
     if churn & CHURN_SLOC:
@@ -257,7 +263,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             auth_stats[auth]["ctimes"].append(tstamp)
 
         if bytype:
-            fext_key = ("." + fext(fname)) if fext(fname) else "._None_ext"
+            fext_key = f".{fext(fname) or '_None_ext'}"
             # auth_stats[auth].setdefault(fext_key, 0)
             try:
                 auth_stats[auth][fext_key] += loc
@@ -299,7 +305,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
 
         # Strip binary files
         for fname in set(RE_STAT_BINARY.findall(blame_out)):
-            getattr(log, "warn" if warn_binary else "debug")("binary:" + fname.strip())
+            getattr(log, "warn" if warn_binary else "debug")("binary:%s", fname.strip())
         blame_out = RE_STAT_BINARY.sub('', blame_out)
 
         blame_out = RE_AUTHS_LOG.split(blame_out)
@@ -318,7 +324,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                     stats_append(fname, auth, loc, tstamp)
 
     # quickly count commits (even if no surviving loc)
-    log.log(logging.NOTSET, "authors:%s", '; '.join(auth_stats.keys()))
+    log.log(logging.NOTSET, "authors:%s", list(auth_stats.keys()))
     auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch] + since + until)
     for stats in auth_stats.values():
         stats.setdefault("commits", 0)
