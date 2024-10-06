@@ -480,16 +480,15 @@ def main(args=None):
     log.debug(args)
     if args.manpath is not None:
         import sys
-        from os import fspath, path
-        from shutil import copyfile
+        from pathlib import Path
 
         try:  # py<3.9
             import importlib_resources as resources
         except ImportError:
             from importlib import resources
-        fi = fspath(resources.files('gitfame').resolve() / 'git-fame.1')
-        fo = path.join(args.manpath, 'git-fame.1')
-        copyfile(fi, fo)
+        fi = resources.files('gitfame') / 'git-fame.1'
+        fo = Path(args.manpath) / 'git-fame.1'
+        fo.write_bytes(fi.read_bytes())
         log.info("written:%s", fo)
         sys.exit(0)
 
