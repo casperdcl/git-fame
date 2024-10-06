@@ -113,7 +113,7 @@ def Max(it, empty_default=0):
     try:
         return max(it)
     except ValueError as e:
-        if 'empty sequence' in str(e):
+        if 'empty' in str(e):
             return empty_default
         raise      # pragma: no cover
 

@@ -1,4 +1,4 @@
-# IMPORTANT: for compatibility with `python setup.py make [alias]`, ensure:
+# IMPORTANT: for compatibility with `python -m pymake [alias]`, ensure:
 # 1. Every alias is preceded by @[+]make (eg: @make alias)
 # 2. A maximum of one @make alias or command per line
 # see: https://github.com/tqdm/py-make/issues/1
@@ -29,7 +29,7 @@
 	run
 
 help:
-	@python setup.py make -p
+	@python -m pymake -p
 
 alltests:
 	@+make testcoverage
@@ -51,8 +51,7 @@ pytest:
 
 testsetup:
 	@make gitfame/git-fame.1
-	python setup.py check --metadata --restructuredtext --strict
-	python setup.py make none
+	@make help
 
 testcoverage:
 	@make coverclean
@@ -91,29 +90,26 @@ coverclean:
 	@+python -c "import shutil; shutil.rmtree('gitfame/__pycache__', True)"
 clean:
 	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('*.py[co]')]"
-	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('gitfame/*.py[co]')]"
-	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('gitfame/*.c')]"
-	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('gitfame/*.so')]"
 	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('tests/*.py[co]')]"
+	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('gitfame/*.py[co]')]"
 toxclean:
 	@+python -c "import shutil; shutil.rmtree('.tox', True)"
 
 install:
-	python setup.py install
+	python -m pip install .
 install_dev:
-	python setup.py develop --uninstall
-	python setup.py develop
+	python -m pip install -e .
 install_build:
 	python -m pip install -r .meta/requirements-build.txt
 
 build:
 	@make prebuildclean
 	@make testsetup
-	python setup.py sdist bdist_wheel
-	# python setup.py bdist_wininst
+	python -m build
+	python -m twine check dist/*
 
 pypi:
-	twine upload dist/*
+	python -m twine upload dist/*
 
 buildupload:
 	@make build
