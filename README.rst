@@ -376,5 +376,5 @@ We are grateful for all |GitHub-Contributions|.
    :target: https://raw.githubusercontent.com/casperdcl/git-fame/main/LICENCE
 .. |DOI-URI| image:: https://img.shields.io/badge/DOI-10.5281/zenodo.2544975-blue.svg?color=purple&logo=ORCID
    :target: https://doi.org/10.5281/zenodo.2544975
-.. |README-Hits| image:: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&style=social&r=https://github.com/casperdcl/git-fame
-   :target: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&a=plot&r=https://github.com/casperdcl/git-fame&style=social
+.. |README-Hits| image:: https://cgi.cdcl.ml/hits?q=git-fame&style=social&r=https://github.com/casperdcl/git-fame
+   :target: https://cgi.cdcl.ml/hits?q=git-fame&a=plot&r=https://github.com/casperdcl/git-fame&style=social
