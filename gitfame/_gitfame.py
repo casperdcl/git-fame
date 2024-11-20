@@ -58,7 +58,9 @@ Options:
 from __future__ import division, print_function
 
 import logging
+import multiprocessing
 import os
+import queue
 import re
 import subprocess
 # from __future__ import absolute_import
@@ -206,10 +208,30 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
 
 
-def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None,
-                    silent_progress=False, ignore_whitespace=False, M=False, C=False,
-                    warn_binary=False, bytype=False, show_email=False, prefix_gitdir=False,
-                    churn=None, ignore_rev="", ignore_revs_file=None, until=None):
+def _get_blame_out(base_cmd: list[str], branch: str, fname: str, since, until):
+    blame_out = check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
+
+    log.log(logging.NOTSET, blame_out)
+
+    if since:
+        # Strip boundary messages,
+        # preventing user with nearest commit to boundary owning the LOC
+        blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
+
+    if until:
+        # Strip boundary messages,
+        # preventing user with nearest commit to boundary owning the LOC
+        blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
+
+    return blame_out
+
+
+def _get_auth_stats(
+    gitdir: str, branch: str = "HEAD", since=None, include_files=None, exclude_files=None,
+    silent_progress=False, ignore_whitespace=False, M=False, C=False,
+    warn_binary=False, bytype=False, show_email=False, prefix_gitdir=False,
+    churn=None, ignore_rev="", ignore_revs_file=None, until=None
+):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
@@ -271,30 +293,34 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                 auth_stats[auth][fext_key] = loc
 
     if churn & CHURN_SLOC:
-        for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing",
-                          disable=silent_progress, unit="file"):
-            if prefix_gitdir:
-                fname = path.join(gitdir, fname)
-            try:
-                blame_out = check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
-            except Exception as err:
-                getattr(log, "warn" if warn_binary else "debug")(fname + ':' + str(err))
-                continue
-            log.log(logging.NOTSET, blame_out)
+        completed = queue.Queue()
 
-            if since:
-                # Strip boundary messages,
-                # preventing user with nearest commit to boundary owning the LOC
-                blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
+        def process_blame_out(fname, blame_out):
+            for loc, auth, tstamp in RE_AUTHS_BLAME.findall(blame_out):  # for each chunk
+                stats_append(fname, auth, int(loc), tstamp)
 
-            if until:
-                # Strip boundary messages,
-                # preventing user with nearest commit to boundary owning the LOC
-                blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
+            completed.put(None)
 
-            for loc, auth, tstamp in RE_AUTHS_BLAME.findall(blame_out): # for each chunk
-                loc = int(loc)
-                stats_append(fname, auth, loc, tstamp)
+        def process_blame_out_error(fname, err):
+            getattr(log, "warn" if warn_binary else "debug")(fname + ':' + str(err))
+            completed.put(None)
+
+        with multiprocessing.Pool() as mp_pool:
+            for fname in file_list:
+                if prefix_gitdir:
+                    fname = path.join(gitdir, fname)
+
+                mp_pool.apply_async(
+                    _get_blame_out,
+                    args=(base_cmd, branch, fname, since, until),
+                    callback=partial(process_blame_out, fname),
+                    error_callback=partial(process_blame_out_error, fname)
+                )
+
+            for _ in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress, unit="file"):
+                completed.get()
+
+            mp_pool.join()
 
     else:
         with tqdm(total=1, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
@@ -368,7 +394,6 @@ def run(args):
     if isinstance(args.gitdir, str):
         args.gitdir = [args.gitdir]
     # strip `/`, `.git`
-    gitdirs = [i.rstrip(os.sep) for i in args.gitdir]
     gitdirs = [
         path.join(*path.split(i)[:-1]) if path.split(i)[-1] == '.git' else i for i in args.gitdir]
     # remove duplicates
@@ -390,8 +415,6 @@ def run(args):
                             dirs.remove('.git')
             i += 1
 
-    exclude_files = None
-    include_files = None
     if args.no_regex:
         exclude_files = set(RE_CSPILT.split(args.excl))
         include_files = set()
