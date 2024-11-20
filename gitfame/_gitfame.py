@@ -320,6 +320,7 @@ def _get_auth_stats(
             for _ in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress, unit="file"):
                 completed.get()
 
+            mp_pool.close()
             mp_pool.join()
 
     else:
