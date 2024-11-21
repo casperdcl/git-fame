@@ -218,6 +218,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 
 _RE_BLAME_START_LINE = re.compile(r'^(?P<commit_hash>[a-f0-9]+) (?P<original_file_line>\d+) (?P<final_file_line>\d+) ?(?P<lines_of_code>\d+)?$')
 
+
 class _CommitInfo:
     def __init__(self):
         self.file_locs = defaultdict(int)  # {file_name: [loc, ...
@@ -336,7 +337,7 @@ def _get_auth_stats(
 
     # we need to inspect if the binary_files are unicode
     for f in list(binary_file_list):
-        if detect_bom(f):
+        if detect_bom(path.join(gitdir, f)):
             binary_file_list.remove(f)
             text_file_list.append(f)
 
