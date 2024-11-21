@@ -103,7 +103,7 @@ RE_BLAME_BOUNDS = re.compile(
     r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
     flags=re.M | re.DOTALL)
 # processing `log --format="aN%aN ct%ct" --numstat`
-RE_AUTHS_LOG = re.compile(r"^aN(.+?) ct(\d+)\n\n", flags=re.M)
+RE_AUTHS_LOG = re.compile(r"^aN(.+?) aE(.+?) H([a-f0-9]+) ct(\d+)\n\n", flags=re.M)
 RE_STAT_BINARY = re.compile(r"^\s*?-\s*-.*?\n", flags=re.M)
 RE_RENAME = re.compile(r"\{.+? => (.+?)\}")
 # finds all non-escaped commas
@@ -139,15 +139,25 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
     COL_NAMES = ['Author', 'loc', 'coms', 'fils', ' distribution']
     it_as = getattr(auth_stats, 'iteritems', auth_stats.items)
     # get ready
-    tab = [[
-        auth, s['loc'],
-        s.get('commits', 0),
-        len(s.get('files', [])), '/'.join(
-            map('{0:4.1f}'.format,
-                (100 * s['loc'] / max(1, stats_tot['loc']),
-                 100 * s.get('commits', 0) / max(1, stats_tot['commits']),
-                 100 * len(s.get('files', [])) / max(1, stats_tot['files'])))).replace(
-                     '/100.0/', '/ 100/')] for (auth, s) in it_as()]
+    tab = [
+        [
+            auth,
+            s['loc'],
+            s.get('commits', 0),
+            len(s.get('files', [])),
+            '/'.join(
+                map(
+                    '{0:4.1f}'.format,
+                    (
+                        100 * s['loc'] / max(1, stats_tot['loc']),
+                        100 * s.get('commits', 0) / max(1, stats_tot['commits']),
+                        100 * len(s.get('files', [])) / max(1, stats_tot['files'])
+                    )
+                )
+            ).replace('/100.0/', '/ 100/')
+        ]
+        for (auth, s) in it_as()
+    ]
     if cost:
         stats_tot = dict(stats_tot)
         if cost & COST_MONTHS:
@@ -355,7 +365,7 @@ def _get_auth_stats(
         if ignore_revs_file:
             base_cmd.extend(["--ignore-revs-file", ignore_revs_file])
     else:
-        base_cmd = git_cmd + ["log", "--format=aN%aN ct%ct", "--numstat"] + since + until
+        base_cmd = git_cmd + ["log", "--format=aN%aN aE%aE H%H ct%ct", "--numstat"] + since + until
 
     if ignore_whitespace:
         base_cmd.append("-w")
@@ -364,38 +374,37 @@ def _get_auth_stats(
     if C:
         base_cmd.extend(["-C", "-C"]) # twice to include file creation
 
-    auth_stats = {}
+    auth_stats = defaultdict(lambda: {'loc': 0, 'files': set(), 'ctimes': list(), 'commits': set()})  # {author: {[loc,files,ctimes,exts]:
+    auth2em = defaultdict(set)
 
     author_canonicalizer = _get_user_canonicalization_function(author_mapping_file_path, author_email_mapping_file_path)
 
-    def stats_append(fname: str, auth: str, loc: int, tstamp: str, author_email: str):
-        auth = str(auth)
+    def stats_append(fname: str, auth: str, loc: int, tstamp: str, author_email: str, commit_id: str):
         auth = author_canonicalizer(auth, author_email)
         tstamp = int(tstamp)
 
-        try:
-            auth_stats[auth]["loc"] += loc
-        except KeyError:
-            auth_stats[auth] = {"loc": loc, "files": {fname}, "ctimes": []}
-        else:
-            auth_stats[auth]["files"].add(fname)
-            auth_stats[auth]["ctimes"].append(tstamp)
+        auth2em[auth].add(author_email)
+
+        i = auth_stats[auth]
+        i["loc"] += loc
+        i["files"].add(fname)
+        i["ctimes"].append(tstamp)
+        i['commits'].add(commit_id)
 
         if bytype:
             fext_key = f".{fext(fname) or '_None_ext'}"
-            # auth_stats[auth].setdefault(fext_key, 0)
             try:
-                auth_stats[auth][fext_key] += loc
+                i[fext_key] += loc
             except KeyError:
-                auth_stats[auth][fext_key] = loc
+                i[fext_key] = loc
 
     if churn & CHURN_SLOC:
         completed = queue.Queue()
 
         def process_blame_out(commit_infos: Dict[str, _CommitInfo]):
-            for cinfo in commit_infos.values():  # for each chunk
+            for commit_id, cinfo in commit_infos.items():  # for each chunk
                 for fname, loc in cinfo.file_locs.items():
-                    stats_append(fname, cinfo.info['author'], loc, cinfo.info['committer-time'], cinfo.info['author-mail'])
+                    stats_append(fname, cinfo.info['author'], loc, cinfo.info['committer-time'], cinfo.info['author-mail'], commit_id)
 
             completed.put(None)
 
@@ -420,10 +429,11 @@ def _get_auth_stats(
 
             mp_pool.close()
             mp_pool.join()
-
     else:
-        with tqdm(total=1, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
-                  unit="repo") as t:
+        with tqdm(
+            total=1, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
+            unit="repo"
+        ) as t:
             blame_out = check_output(base_cmd + [branch], stderr=subprocess.STDOUT)
             t.update()
         log.log(logging.NOTSET, blame_out)
@@ -434,8 +444,8 @@ def _get_auth_stats(
         blame_out = RE_STAT_BINARY.sub('', blame_out)
 
         blame_out = RE_AUTHS_LOG.split(blame_out)
-        blame_out = zip(blame_out[1::3], blame_out[2::3], blame_out[3::3])
-        for auth, tstamp, fnames in blame_out:
+        blame_out = zip(blame_out[1::5], blame_out[2::5], blame_out[3::5], blame_out[4::5], blame_out[5::5])
+        for auth, auth_email, commit_hash, tstamp, fnames in blame_out:
             fnames = fnames.split('\naN', 1)[0]
             for i in fnames.strip().split('\n'):
                 try:
@@ -446,30 +456,23 @@ def _get_auth_stats(
                     fname = RE_RENAME.sub(r'\\2', fname)
                     loc = (int(inss) if churn & CHURN_INS and inss else
                            0) + (int(dels) if churn & CHURN_DEL and dels else 0)
-                    stats_append(fname, auth, loc, tstamp)
+                    stats_append(fname, auth, int(loc), tstamp, auth_email, commit_hash)
+
+    # translate commit-ids to # of commits
+    for astat in auth_stats.values():
+        astat['commits'] = len(astat['commits'])
 
     # quickly count commits (even if no surviving loc)
     log.log(logging.NOTSET, "authors:%s", list(auth_stats.keys()))
-    auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch] + since + until)
-    for stats in auth_stats.values():
-        stats.setdefault("commits", 0)
-    log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
-    auth2em = {}
-    for (ncom, auth, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
-        auth = str(auth)
-        auth2em[auth] = em # TODO: count most used email?
-        try:
-            auth_stats[auth]["commits"] += int(ncom)
-        except KeyError:
-            auth_stats[auth] = {"loc": 0, "files": set(), "commits": int(ncom), "ctimes": []}
+
     if show_email:         # replace author name with email
         log.debug(auth2em)
         old = auth_stats
-        auth_stats = {}
+        auth_stats = defaultdict(lambda: {'loc': 0, 'files': set(), 'ctimes': list(), 'commits': 0})
 
         for auth, stats in getattr(old, 'iteritems', old.items)():
-            i = auth_stats.setdefault(auth2em[auth],
-                                      {"loc": 0, "files": set(), "commits": 0, "ctimes": []})
+            auth_email = list(auth2em[auth])[0]  # TODO: count most used email?
+            i = auth_stats[auth_email]
             i["loc"] += stats["loc"]
             i["files"].update(stats["files"])
             i["commits"] += stats["commits"]
