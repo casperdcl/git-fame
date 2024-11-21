@@ -55,8 +55,10 @@ Options:
   --manpath=<path>         Directory in which to install git-fame man pages.
   --log=<lvl>    FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
   --processes=<num>         int, Number of processes to use for parallelization [default: 1]
-  --author-mapping-file-path=<path>   Path to file containing dictionary mapping author name to normalized author name
-  --author-email-mapping-file-path=<path>   Path to file containing dictionary mapping author email address to normalized author name
+  --author-mapping-file-path=<path>   Path to file containing dictionary mapping author name
+                                      to normalized author name
+  --author-email-mapping-file-path=<path>   Path to file containing dictionary mapping author
+                                            email address to normalized author name
 """
 from __future__ import division, print_function
 
@@ -226,7 +228,10 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
 
 
-_RE_BLAME_START_LINE = re.compile(r'^(?P<commit_hash>[a-f0-9]+) (?P<original_file_line>\d+) (?P<final_file_line>\d+) ?(?P<lines_of_code>\d+)?$')
+_RE_BLAME_START_LINE = re.compile(
+    r'^(?P<commit_hash>[a-f0-9]+) (?P<original_file_line>\d+) '
+    r'(?P<final_file_line>\d+) ?(?P<lines_of_code>\d+)?$'
+)
 
 
 class _CommitInfo:
@@ -235,7 +240,9 @@ class _CommitInfo:
         self.info = dict()
 
 
-def _get_blame_out(base_cmd: list[str], branch: str, fname: str, since, until) -> Dict[str, _CommitInfo]:
+def _get_blame_out(
+    base_cmd: list[str], branch: str, fname: str, since, until
+) -> Dict[str, _CommitInfo]:
     blame_out = check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
 
     commit_infos = defaultdict(_CommitInfo)  # {commit: {file: commit_info
@@ -277,7 +284,9 @@ def _get_blame_out(base_cmd: list[str], branch: str, fname: str, since, until) -
     return dict(commit_infos)
 
 
-def _get_user_canonicalization_function(author_mapping_file_path: str = None, author_email_mapping_file_path: str = None):
+def _get_user_canonicalization_function(
+    author_mapping_file_path: str = None, author_email_mapping_file_path: str = None
+):
     user_mappings = dict()
     if author_mapping_file_path:
         with Path(author_mapping_file_path).expanduser().open('rt') as f:
@@ -296,7 +305,9 @@ def _get_user_canonicalization_function(author_mapping_file_path: str = None, au
     return canonicalize
 
 
-_RE_EOL_LINE = re.compile(r'^(?P<eol_index>[^ \t]+)+\s+(?P<eol_worktree>[^ \t]+)\s+(?P<attr>[^ \t]+)\s+(?P<fpath>.*)$')
+_RE_EOL_LINE = re.compile(
+    r'^(?P<eol_index>[^ \t]+)+\s+(?P<eol_worktree>[^ \t]+)\s+(?P<attr>[^ \t]+)\s+(?P<fpath>.*)$'
+)
 
 
 def detect_bom(path: str, default = None):
@@ -327,7 +338,9 @@ def _get_auth_stats(
     git_cmd = ["git", "-C", gitdir]
     log.debug("base command:%s", git_cmd)
 
-    file_list = check_output(git_cmd + ["ls-files", "--eol", "--with-tree", branch]).strip().splitlines()
+    file_list = check_output(
+        git_cmd + ["ls-files", "--eol", "--with-tree", branch]
+    ).strip().splitlines()
     binary_file_list = []
     text_file_list = []
     for f in file_list:
@@ -374,12 +387,18 @@ def _get_auth_stats(
     if C:
         base_cmd.extend(["-C", "-C"]) # twice to include file creation
 
-    auth_stats = defaultdict(lambda: {'loc': 0, 'files': set(), 'ctimes': list(), 'commits': set()})  # {author: {[loc,files,ctimes,exts]:
+    auth_stats = defaultdict(
+        lambda: {'loc': 0, 'files': set(), 'ctimes': list(), 'commits': set()}
+    )  # {author: {[loc,files,ctimes,exts]:
     auth2em = defaultdict(set)
 
-    author_canonicalizer = _get_user_canonicalization_function(author_mapping_file_path, author_email_mapping_file_path)
+    author_canonicalizer = _get_user_canonicalization_function(
+        author_mapping_file_path, author_email_mapping_file_path
+    )
 
-    def stats_append(fname: str, auth: str, loc: int, tstamp: str, author_email: str, commit_id: str):
+    def stats_append(
+        fname: str, auth: str, loc: int, tstamp: str, author_email: str, commit_id: str
+    ):
         auth = author_canonicalizer(auth, author_email)
         tstamp = int(tstamp)
 
@@ -404,7 +423,14 @@ def _get_auth_stats(
         def process_blame_out(commit_infos: Dict[str, _CommitInfo]):
             for commit_id, cinfo in commit_infos.items():  # for each chunk
                 for fname, loc in cinfo.file_locs.items():
-                    stats_append(fname, cinfo.info['author'], loc, cinfo.info['committer-time'], cinfo.info['author-mail'], commit_id)
+                    stats_append(
+                        fname,
+                        cinfo.info['author'],
+                        loc,
+                        cinfo.info['committer-time'],
+                        cinfo.info['author-mail'],
+                        commit_id
+                    )
 
             completed.put(None)
 
@@ -424,7 +450,10 @@ def _get_auth_stats(
                     error_callback=partial(process_blame_out_error, fname)
                 )
 
-            for _ in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress, unit="file"):
+            for _ in tqdm(
+                file_list, desc=gitdir if prefix_gitdir else "Processing",
+                disable=silent_progress, unit="file"
+            ):
                 completed.get()
 
             mp_pool.close()
@@ -444,7 +473,9 @@ def _get_auth_stats(
         blame_out = RE_STAT_BINARY.sub('', blame_out)
 
         blame_out = RE_AUTHS_LOG.split(blame_out)
-        blame_out = zip(blame_out[1::5], blame_out[2::5], blame_out[3::5], blame_out[4::5], blame_out[5::5])
+        blame_out = zip(
+            blame_out[1::5], blame_out[2::5], blame_out[3::5], blame_out[4::5], blame_out[5::5]
+        )
         for auth, auth_email, commit_hash, tstamp, fnames in blame_out:
             fnames = fnames.split('\naN', 1)[0]
             for i in fnames.strip().split('\n'):
@@ -468,7 +499,9 @@ def _get_auth_stats(
     if show_email:         # replace author name with email
         log.debug(auth2em)
         old = auth_stats
-        auth_stats = defaultdict(lambda: {'loc': 0, 'files': set(), 'ctimes': list(), 'commits': 0})
+        auth_stats = defaultdict(
+            lambda: {'loc': 0, 'files': set(), 'ctimes': list(), 'commits': 0}
+        )
 
         for auth, stats in getattr(old, 'iteritems', old.items)():
             auth_email = list(auth2em[auth])[0]  # TODO: count most used email?
