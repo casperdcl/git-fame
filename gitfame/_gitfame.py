@@ -54,7 +54,7 @@ Options:
       Any `tabulate.tabulate_formats` is also accepted.
   --manpath=<path>         Directory in which to install git-fame man pages.
   --log=<lvl>    FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
-  --processes=<num>         [default: 1]Number of processes to use for parallelization
+  --processes=<num>         int, Number of processes to use for parallelization [default: 1]
 """
 from __future__ import division, print_function
 
@@ -457,7 +457,7 @@ def run(args):
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
                       warn_binary=args.warn_binary, bytype=args.bytype, show_email=args.show_email,
                       prefix_gitdir=len(gitdirs) > 1, churn=churn, ignore_rev=args.ignore_rev,
-                      ignore_revs_file=args.ignore_revs_file, processes=args.processes)
+                      ignore_revs_file=args.ignore_revs_file, processes=int(args.processes))
 
     # concurrent multi-repo processing
     if len(gitdirs) > 1:
