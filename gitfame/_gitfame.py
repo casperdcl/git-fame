@@ -55,9 +55,12 @@ Options:
   --manpath=<path>         Directory in which to install git-fame man pages.
   --log=<lvl>    FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
   --processes=<num>         int, Number of processes to use for parallelization [default: 1]
+  --author-mapping-file-path=<path>   Path to file containing dictionary mapping author name to normalized author name
+  --author-email-mapping-file-path=<path>   Path to file containing dictionary mapping author email address to normalized author name
 """
 from __future__ import division, print_function
 
+import ast
 import logging
 import multiprocessing
 import os
@@ -67,6 +70,7 @@ import subprocess
 # from __future__ import absolute_import
 from functools import partial
 from os import path
+from pathlib import Path
 
 from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats,
                      print_unicode, tqdm)
@@ -209,29 +213,70 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
 
 
+_RE_BLAME_START_LINE = re.compile(r'^(?P<commit_hash>[a-f0-9]+) (?P<original_file_line>\d+) (?P<final_file_line>\d+) ?(?P<lines_of_code>\d+)?$')
+
 def _get_blame_out(base_cmd: list[str], branch: str, fname: str, since, until):
     blame_out = check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
 
+    commit_info = dict()
+    commit_infos = []
+    for line in blame_out.splitlines():
+        if match := _RE_BLAME_START_LINE.match(line):
+            if commit_info:
+                commit_infos.append(commit_info)
+            commit_info = {'loc': match['lines_of_code']}
+        elif line.startswith('\t'):
+            continue
+        else:
+            key, value = line.split(' ', 1)
+            commit_info[key] = value
+
+    if commit_info:
+        commit_infos.append(commit_info)
+
     log.log(logging.NOTSET, blame_out)
 
-    if since:
-        # Strip boundary messages,
-        # preventing user with nearest commit to boundary owning the LOC
-        blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
+    # TODO
+    assert not since and not until
 
-    if until:
-        # Strip boundary messages,
-        # preventing user with nearest commit to boundary owning the LOC
-        blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
+    # if since:
+    #     # Strip boundary messages,
+    #     # preventing user with nearest commit to boundary owning the LOC
+    #     blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
+    #
+    # if until:
+    #     # Strip boundary messages,
+    #     # preventing user with nearest commit to boundary owning the LOC
+    #     blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
 
-    return blame_out
+    return commit_infos
+
+
+def _get_user_canonicalization_function(author_mapping_file_path: str = None, author_email_mapping_file_path: str = None):
+    user_mappings = dict()
+    if author_mapping_file_path:
+        with Path(author_mapping_file_path).expanduser().open('rt') as f:
+            user_mappings = ast.literal_eval(f.read())
+
+    email_mappings = dict()
+    if author_email_mapping_file_path:
+        with Path(author_email_mapping_file_path).expanduser().open('rt') as f:
+            email_mappings = ast.literal_eval(f.read())
+
+    def canonicalize(author: str, author_email: str):
+        author = user_mappings.get(author, author)
+        author = email_mappings.get(author_email, author)
+        return author
+
+    return canonicalize
 
 
 def _get_auth_stats(
     gitdir: str, branch: str = "HEAD", since=None, include_files=None, exclude_files=None,
     silent_progress=False, ignore_whitespace=False, M=False, C=False,
     warn_binary=False, bytype=False, show_email=False, prefix_gitdir=False,
-    churn=None, ignore_rev="", ignore_revs_file=None, until=None, processes=1
+    churn=None, ignore_rev="", ignore_revs_file=None, until=None, processes: int = 1,
+    author_mapping_file_path: str = None, author_email_mapping_file_path: str = None,
 ):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
     until = ["--until", until] if until else []
@@ -274,9 +319,13 @@ def _get_auth_stats(
 
     auth_stats = {}
 
-    def stats_append(fname, auth, loc, tstamp):
+    author_canonicalizer = _get_user_canonicalization_function(author_mapping_file_path, author_email_mapping_file_path)
+
+    def stats_append(fname: str, auth: str, loc: int, tstamp: str, author_email: str):
         auth = str(auth)
+        auth = author_canonicalizer(auth, author_email)
         tstamp = int(tstamp)
+
         try:
             auth_stats[auth]["loc"] += loc
         except KeyError:
@@ -296,9 +345,10 @@ def _get_auth_stats(
     if churn & CHURN_SLOC:
         completed = queue.Queue()
 
-        def process_blame_out(fname, blame_out):
-            for loc, auth, tstamp in RE_AUTHS_BLAME.findall(blame_out):  # for each chunk
-                stats_append(fname, auth, int(loc), tstamp)
+        def process_blame_out(blame_out):
+            for info in blame_out:  # for each chunk
+                if info['loc']:
+                    stats_append(info['filename'], info['author'], int(info['loc']), info['committer-time'], info['author-mail'])
 
             completed.put(None)
 
@@ -314,7 +364,7 @@ def _get_auth_stats(
                 mp_pool.apply_async(
                     _get_blame_out,
                     args=(base_cmd, branch, fname, since, until),
-                    callback=partial(process_blame_out, fname),
+                    callback=process_blame_out,
                     error_callback=partial(process_blame_out_error, fname)
                 )
 
@@ -457,7 +507,9 @@ def run(args):
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
                       warn_binary=args.warn_binary, bytype=args.bytype, show_email=args.show_email,
                       prefix_gitdir=len(gitdirs) > 1, churn=churn, ignore_rev=args.ignore_rev,
-                      ignore_revs_file=args.ignore_revs_file, processes=int(args.processes))
+                      ignore_revs_file=args.ignore_revs_file, processes=int(args.processes),
+                      author_mapping_file_path=args.author_mapping_file_path,
+                      author_email_mapping_file_path=args.author_email_mapping_file_path)
 
     # concurrent multi-repo processing
     if len(gitdirs) > 1:
