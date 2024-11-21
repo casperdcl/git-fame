@@ -54,6 +54,7 @@ Options:
       Any `tabulate.tabulate_formats` is also accepted.
   --manpath=<path>         Directory in which to install git-fame man pages.
   --log=<lvl>    FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
+  --processes=<num>         [default: 1]Number of processes to use for parallelization
 """
 from __future__ import division, print_function
 
@@ -230,7 +231,7 @@ def _get_auth_stats(
     gitdir: str, branch: str = "HEAD", since=None, include_files=None, exclude_files=None,
     silent_progress=False, ignore_whitespace=False, M=False, C=False,
     warn_binary=False, bytype=False, show_email=False, prefix_gitdir=False,
-    churn=None, ignore_rev="", ignore_revs_file=None, until=None
+    churn=None, ignore_rev="", ignore_revs_file=None, until=None, processes=1
 ):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
     until = ["--until", until] if until else []
@@ -305,7 +306,7 @@ def _get_auth_stats(
             getattr(log, "warn" if warn_binary else "debug")(fname + ':' + str(err))
             completed.put(None)
 
-        with multiprocessing.Pool() as mp_pool:
+        with multiprocessing.Pool(processes) as mp_pool:
             for fname in file_list:
                 if prefix_gitdir:
                     fname = path.join(gitdir, fname)
@@ -456,7 +457,7 @@ def run(args):
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
                       warn_binary=args.warn_binary, bytype=args.bytype, show_email=args.show_email,
                       prefix_gitdir=len(gitdirs) > 1, churn=churn, ignore_rev=args.ignore_rev,
-                      ignore_revs_file=args.ignore_revs_file)
+                      ignore_revs_file=args.ignore_revs_file, processes=args.processes)
 
     # concurrent multi-repo processing
     if len(gitdirs) > 1:
