@@ -61,16 +61,19 @@ Options:
 from __future__ import division, print_function
 
 import ast
+import codecs
 import logging
 import multiprocessing
 import os
 import queue
 import re
 import subprocess
+from collections import defaultdict
 # from __future__ import absolute_import
 from functools import partial
 from os import path
 from pathlib import Path
+from typing import Dict
 
 from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats,
                      print_unicode, tqdm)
@@ -215,26 +218,34 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 
 _RE_BLAME_START_LINE = re.compile(r'^(?P<commit_hash>[a-f0-9]+) (?P<original_file_line>\d+) (?P<final_file_line>\d+) ?(?P<lines_of_code>\d+)?$')
 
-def _get_blame_out(base_cmd: list[str], branch: str, fname: str, since, until):
+class _CommitInfo:
+    def __init__(self):
+        self.file_locs = defaultdict(int)  # {file_name: [loc, ...
+        self.info = dict()
+
+
+def _get_blame_out(base_cmd: list[str], branch: str, fname: str, since, until) -> Dict[str, _CommitInfo]:
     blame_out = check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
 
-    commit_info = dict()
-    commit_infos = []
+    commit_infos = defaultdict(_CommitInfo)  # {commit: {file: commit_info
+    commit = None
+    loc = None
+
     for line in blame_out.splitlines():
         if match := _RE_BLAME_START_LINE.match(line):
-            if commit_info:
-                commit_infos.append(commit_info)
-            commit_info = {'loc': match['lines_of_code']}
+            commit = match['commit_hash']
+            loc = int(match['lines_of_code'])  # needs to be applied to each file of the commit
         elif line.startswith('\t'):
+            continue
+        elif line == 'boundary':
             continue
         else:
             key, value = line.split(' ', 1)
-            commit_info[key] = value
 
-    if commit_info:
-        commit_infos.append(commit_info)
-
-    log.log(logging.NOTSET, blame_out)
+            if key == 'filename':
+                commit_infos[commit].file_locs[value] += loc
+            else:
+                commit_infos[commit].info[key] = value
 
     # TODO
     assert not since and not until
@@ -249,7 +260,10 @@ def _get_blame_out(base_cmd: list[str], branch: str, fname: str, since, until):
     #     # preventing user with nearest commit to boundary owning the LOC
     #     blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
 
-    return commit_infos
+    for cinfo in commit_infos.values():
+        cinfo.file_locs = dict(cinfo.file_locs)
+
+    return dict(commit_infos)
 
 
 def _get_user_canonicalization_function(author_mapping_file_path: str = None, author_email_mapping_file_path: str = None):
@@ -271,6 +285,24 @@ def _get_user_canonicalization_function(author_mapping_file_path: str = None, au
     return canonicalize
 
 
+_RE_EOL_LINE = re.compile(r'^(?P<eol_index>[^ \t]+)+\s+(?P<eol_worktree>[^ \t]+)\s+(?P<attr>[^ \t]+)\s+(?P<fpath>.*)$')
+
+
+def detect_bom(path: str, default = None):
+    with open(path, 'rb') as f:
+        raw = f.read(4)    # will read less if the file is smaller
+
+    # BOM_UTF32_LE's start is equal to BOM_UTF16_LE so need to try the former first
+    for enc, boms in (
+        ('utf-8-sig', (codecs.BOM_UTF8,)),
+        ('utf-32', (codecs.BOM_UTF32_LE, codecs.BOM_UTF32_BE)),
+        ('utf-16', (codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE))
+    ):
+        if any(raw.startswith(bom) for bom in boms):
+            return enc
+
+    return default
+
 def _get_auth_stats(
     gitdir: str, branch: str = "HEAD", since=None, include_files=None, exclude_files=None,
     silent_progress=False, ignore_whitespace=False, M=False, C=False,
@@ -283,26 +315,40 @@ def _get_auth_stats(
     since = ["--since", since] if since else []
     git_cmd = ["git", "-C", gitdir]
     log.debug("base command:%s", git_cmd)
-    file_list = check_output(git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
-    text_file_list = check_output(git_cmd + ["grep", "-I", "--name-only", ".", branch]).strip()
-    text_file_list = set(
-        re.sub(f"^{re.escape(branch)}:", "", text_file_list, flags=re.M).split('\n'))
-    if not hasattr(include_files, 'search'):
-        file_list = [
-            i for i in file_list if (not include_files or (i in include_files))
-            if i not in exclude_files]
-    else:
-        file_list = [
-            i for i in file_list if include_files.search(i)
-            if not (exclude_files and exclude_files.search(i))]
-    for fname in set(file_list) - text_file_list:
+
+    file_list = check_output(git_cmd + ["ls-files", "--eol", "--with-tree", branch]).strip().splitlines()
+    binary_file_list = []
+    text_file_list = []
+    for f in file_list:
+        m = _RE_EOL_LINE.match(f)
+        fpath = m['fpath']
+
+        if not hasattr(include_files, 'search'):
+            if (include_files and fpath not in include_files) or fpath in exclude_files:
+                continue
+        elif (not include_files.search(fpath)) or (exclude_files and exclude_files.search(fpath)):
+            continue
+
+        if m['eol_worktree'] == 'w/-text':
+            binary_file_list.append(fpath)
+        else:
+            text_file_list.append(fpath)
+
+    # we need to inspect if the binary_files are unicode
+    for f in list(binary_file_list):
+        if detect_bom(f):
+            binary_file_list.remove(f)
+            text_file_list.append(f)
+
+    for fname in binary_file_list:
         getattr(log, "warn" if warn_binary else "debug")("binary:%s", fname.strip())
-    file_list = [f for f in file_list if f in text_file_list] # preserve order
+
+    file_list = text_file_list # preserve order
     log.log(logging.NOTSET, "files:%s", file_list)
     churn = churn or set()
 
     if churn & CHURN_SLOC:
-        base_cmd = git_cmd + ["blame", "--line-porcelain"] + since + until
+        base_cmd = git_cmd + ["blame", "--line-porcelain", "--incremental"] + since + until
         if ignore_rev:
             base_cmd.extend(["--ignore-rev", ignore_rev])
         if ignore_revs_file:
@@ -345,10 +391,10 @@ def _get_auth_stats(
     if churn & CHURN_SLOC:
         completed = queue.Queue()
 
-        def process_blame_out(blame_out):
-            for info in blame_out:  # for each chunk
-                if info['loc']:
-                    stats_append(info['filename'], info['author'], int(info['loc']), info['committer-time'], info['author-mail'])
+        def process_blame_out(commit_infos: Dict[str, _CommitInfo]):
+            for cinfo in commit_infos.values():  # for each chunk
+                for fname, loc in cinfo.file_locs.items():
+                    stats_append(fname, cinfo.info['author'], loc, cinfo.info['committer-time'], cinfo.info['author-mail'])
 
             completed.put(None)
 
