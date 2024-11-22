@@ -298,10 +298,6 @@ def _get_user_canonicalization_function(author_mapping_file_path: str = None,
     return canonicalize
 
 
-_RE_EOL_LINE = re.compile(
-    r'^(?P<eol_index>[^ \t]+)+\s+(?P<eol_worktree>[^ \t]+)\s+(?P<attr>[^ \t]+)\s+(?P<fpath>.*)$')
-
-
 def detect_bom(path: str, default=None):
     with open(path, 'rb') as f:
         raw = f.read(4) # will read less if the file is smaller
@@ -351,12 +347,11 @@ def _get_auth_stats(
     log.debug("base command:%s", git_cmd)
 
     file_list = check_output(git_cmd +
-                             ["ls-files", "--eol", "--with-tree", branch]).strip().splitlines()
+                             ["ls-files", "--format=%(eolinfo:index)|%(eolinfo:worktree)|%(eolattr)|%(path)", "--with-tree", branch]).strip().splitlines()
     binary_file_list = []
     text_file_list = []
     for f in file_list:
-        m = _RE_EOL_LINE.match(f)
-        fpath = m['fpath']
+        _, eol_worktree, _, fpath = f.split('|', 3)
 
         if not hasattr(include_files, 'search'):
             if (include_files and fpath not in include_files) or fpath in exclude_files:
@@ -364,7 +359,7 @@ def _get_auth_stats(
         elif (not include_files.search(fpath)) or (exclude_files and exclude_files.search(fpath)):
             continue
 
-        if m['eol_worktree'] == 'w/-text':
+        if eol_worktree == '-text':
             binary_file_list.append(fpath)
         else:
             text_file_list.append(fpath)
