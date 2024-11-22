@@ -385,8 +385,7 @@ def _get_auth_stats(
     if C:
         base_cmd.extend(["-C", "-C"]) # twice to include file creation
 
-    auth_stats = defaultdict(lambda: {'loc': 0, 'files': set(), 'ctimes': [], 'commits': set()}
-                             )                                                                  # {author: {[loc,files,ctimes,exts]:
+    auth_stats = defaultdict(lambda: {'loc': 0, 'files': set(), 'ctimes': [], 'commits': set()})
     auth2em = defaultdict(set)
 
     author_canonicalizer = _get_user_canonicalization_function(author_mapping_file_path,
@@ -416,7 +415,7 @@ def _get_auth_stats(
         completed = queue.Queue()
 
         def process_blame_out(commit_infos: Dict[str, _CommitInfo]):
-            for commit_id, cinfo in commit_infos.items():                                        # for each chunk
+            for commit_id, cinfo in commit_infos.items():
                 for fname, loc in cinfo.file_locs.items():
                     stats_append(fname, cinfo.info['author'], loc, cinfo.info['committer-time'],
                                  cinfo.info['author-mail'], commit_id)
