@@ -75,7 +75,7 @@ from collections import defaultdict
 from functools import partial
 from os import path
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats,
                      print_unicode, tqdm)
@@ -105,7 +105,6 @@ RE_BLAME_BOUNDS = re.compile(
     r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
     flags=re.M | re.DOTALL)
 # processing `log --format="aN%aN ct%ct" --numstat`
-RE_AUTHS_LOG = re.compile(r"^aN(.+?) aE(.+?) H([a-f0-9]+) ct(\d+)\n\n", flags=re.M)
 RE_STAT_BINARY = re.compile(r"^\s*?-\s*-.*?\n", flags=re.M)
 RE_RENAME = re.compile(r"\{.+? => (.+?)\}")
 # finds all non-escaped commas
@@ -224,7 +223,7 @@ _RE_BLAME_START_LINE = re.compile(r'^(?P<commit_hash>[a-f0-9]+) (?P<original_fil
 
 class _CommitInfo:
     def __init__(self):
-        self.file_locs = defaultdict(int) # {file_name: [loc, ...
+        self.file_locs = defaultdict(int) # {file_name: loc}
         self.info = {}
 
 
@@ -232,25 +231,32 @@ def _get_blame_out(base_cmd: list[str], branch: str, fname: str, since,
                    until) -> Dict[str, _CommitInfo]:
     blame_out = check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
 
-    commit_infos = defaultdict(_CommitInfo) # {commit: {file: commit_info
-    commit = None
-    loc = None
+    # Coalesces info by commit
+    commit_infos = defaultdict(_CommitInfo)
+    commit_info = loc = None
 
     for line in blame_out.splitlines():
         if match := _RE_BLAME_START_LINE.match(line):
             commit = match['commit_hash']
-            loc = int(match['lines_of_code']) # needs to be applied to each file of the commit
-        elif line.startswith('\t'):
-            continue
+            loc = int(match['lines_of_code'])
+            commit_info = commit_infos[commit]
         elif line == 'boundary':
-            continue
+            continue # TODO: is this ok?
         else:
             key, value = line.split(' ', 1)
+            if key in ('previous', 'summary'):
+                continue
 
             if key == 'filename':
-                commit_infos[commit].file_locs[value] += loc
-            else:
-                commit_infos[commit].info[key] = value
+                commit_info.file_locs[value] += loc
+                continue
+
+            assert not line.startswith('\t')
+            if key == 'filename':
+                commit_info.file_locs[value] += loc
+
+            assert key not in commit_info.info
+            commit_info.info[key] = value
 
     # TODO
     assert not since and not until
@@ -271,6 +277,7 @@ def _get_blame_out(base_cmd: list[str], branch: str, fname: str, since,
     return dict(commit_infos)
 
 
+# TODO: probably should be swapped to mailmap
 def _get_user_canonicalization_function(author_mapping_file_path: str = None,
                                         author_email_mapping_file_path: str = None):
     user_mappings = {}
@@ -309,6 +316,12 @@ def detect_bom(path: str, default=None):
     return default
 
 
+GIT_BLAME_FORMAT = "ct%ct H%H aE%aE aN%aN"
+RE_AUTHS_LOG_COMMIT = re.compile(
+    r"^ct(?P<timestamp>\d*) H(?P<commit>[a-f0-9]*) aE(?P<auth_email>[^ ]*) aN(?P<author>.+?)$")
+RE_AUTHS_LOG_FILE = re.compile(r"^(?P<inserts>\d+)\s+(?P<deletes>\d+)\s+(?P<fname>.+?)$")
+
+
 def _get_auth_stats(
     gitdir: str,
     branch: str = "HEAD",
@@ -317,12 +330,12 @@ def _get_auth_stats(
     exclude_files=None,
     silent_progress=False,
     ignore_whitespace=False,
-    M=False,
-    C=False,
-    warn_binary=False,
-    bytype=False,
-    show_email=False,
-    prefix_gitdir=False,
+    M: bool = False,
+    C: bool = False,
+    warn_binary: bool = False,
+    bytype: bool = False,
+    show_email: bool = False,
+    prefix_gitdir: bool = False,
     churn=None,
     ignore_rev="",
     ignore_revs_file=None,
@@ -376,7 +389,7 @@ def _get_auth_stats(
         if ignore_revs_file:
             base_cmd.extend(["--ignore-revs-file", ignore_revs_file])
     else:
-        base_cmd = git_cmd + ["log", "--format=aN%aN aE%aE H%H ct%ct", "--numstat"] + since + until
+        base_cmd = git_cmd + ["log", f"--format={GIT_BLAME_FORMAT}", "--numstat"] + since + until
 
     if ignore_whitespace:
         base_cmd.append("-w")
@@ -385,14 +398,13 @@ def _get_auth_stats(
     if C:
         base_cmd.extend(["-C", "-C"]) # twice to include file creation
 
-    auth_stats = defaultdict(lambda: {'loc': 0, 'files': set(), 'ctimes': [], 'commits': set()})
+    auth_stats = defaultdict(lambda: {'loc': 0, 'files': set(), 'ctimes': [], 'commits': 0})
     auth2em = defaultdict(set)
 
     author_canonicalizer = _get_user_canonicalization_function(author_mapping_file_path,
                                                                author_email_mapping_file_path)
 
-    def stats_append(fname: str, auth: str, loc: int, tstamp: str, author_email: str,
-                     commit_id: str):
+    def stats_append(fname: str, auth: str, loc: int, tstamp: str, author_email: str):
         auth = author_canonicalizer(auth, author_email)
         tstamp = int(tstamp)
 
@@ -402,7 +414,8 @@ def _get_auth_stats(
         i["loc"] += loc
         i["files"].add(fname)
         i["ctimes"].append(tstamp)
-        i['commits'].add(commit_id)
+        # NOTE: we could add all the commits here, that would equate to how many commits
+        #   the author has that contain code still visible in the working branch
 
         if bytype:
             fext_key = f".{fext(fname) or '_None_ext'}"
@@ -415,10 +428,10 @@ def _get_auth_stats(
         completed = queue.Queue()
 
         def process_blame_out(commit_infos: Dict[str, _CommitInfo]):
-            for commit_id, cinfo in commit_infos.items():
+            for cinfo in commit_infos.values():
                 for fname, loc in cinfo.file_locs.items():
                     stats_append(fname, cinfo.info['author'], loc, cinfo.info['committer-time'],
-                                 cinfo.info['author-mail'], commit_id)
+                                 cinfo.info['author-mail'])
 
             completed.put(None)
 
@@ -451,30 +464,43 @@ def _get_auth_stats(
         # Strip binary files
         for fname in set(RE_STAT_BINARY.findall(blame_out)):
             getattr(log, "warn" if warn_binary else "debug")("binary:%s", fname.strip())
-        blame_out = RE_STAT_BINARY.sub('', blame_out)
+        lines = RE_STAT_BINARY.sub('', blame_out).splitlines()
 
-        blame_out = RE_AUTHS_LOG.split(blame_out)
-        blame_out = zip(blame_out[1::5], blame_out[2::5], blame_out[3::5], blame_out[4::5],
-                        blame_out[5::5])
-        for auth, auth_email, commit_hash, tstamp, fnames in blame_out:
-            fnames = fnames.split('\naN', 1)[0]
-            for i in fnames.strip().split('\n'):
-                try:
-                    inss, dels, fname = i.split('\t')
-                except ValueError:
-                    log.warning(i)
-                else:
-                    fname = RE_RENAME.sub(r'\\2', fname)
-                    loc = (int(inss) if churn & CHURN_INS and inss else
-                           0) + (int(dels) if churn & CHURN_DEL and dels else 0)
-                    stats_append(fname, auth, int(loc), tstamp, auth_email, commit_hash)
+        commit_infos = defaultdict(_CommitInfo)
+        commit_info: Optional[_CommitInfo] = None
+        for line_num, line in enumerate(lines):
+            if not line:
+                continue
 
-    # translate commit-ids to # of commits
-    for astat in auth_stats.values():
-        astat['commits'] = len(astat['commits'])
+            if m := RE_AUTHS_LOG_COMMIT.match(line):
+                commit = m['commit']
+                commit_info = commit_infos[commit]
+                commit_info.info.update({
+                    'author': m['author'],
+                    'author-mail': m['auth_email'],
+                    'committer-time': m['timestamp'],})
+            elif m := RE_AUTHS_LOG_FILE.match(line):
+                fname = RE_RENAME.sub(r'\\2', m['fname'])
+                inss, dels = m['inserts'], m['deletes']
+                loc = (int(inss) if churn & CHURN_INS and inss else
+                       0) + (int(dels) if churn & CHURN_DEL and dels else 0)
+
+                commit_info.file_locs[fname] += loc
+            else:
+                assert False, f'error parsing blame line ({line_num}): {line}'
+
+        for cinfo in commit_infos.values():
+            for fname, loc in cinfo.file_locs.items():
+                stats_append(fname, cinfo.info['author'], loc, cinfo.info['committer-time'],
+                             cinfo.info['author-mail'])
 
     # quickly count commits (even if no surviving loc)
     log.log(logging.NOTSET, "authors:%s", list(auth_stats.keys()))
+    auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch] + since + until)
+    for (ncom, auth, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
+        auth = author_canonicalizer(auth, em)
+        auth_stats[auth]['commits'] += int(ncom)
+        auth2em[auth].add(em)
 
     if show_email: # replace author name with email
         log.debug(auth2em)
