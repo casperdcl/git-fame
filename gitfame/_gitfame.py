@@ -346,8 +346,10 @@ def _get_auth_stats(
     git_cmd = ["git", "-C", gitdir]
     log.debug("base command:%s", git_cmd)
 
-    file_list = check_output(git_cmd +
-                             ["ls-files", "--format=%(eolinfo:index)|%(eolinfo:worktree)|%(eolattr)|%(path)", "--with-tree", branch]).strip().splitlines()
+    file_list = check_output(git_cmd + [
+        "ls-files", "--format=%(eolinfo:index)|%(eolinfo:worktree)|%(eolattr)|%(path)",
+        "--with-tree", branch]).strip().splitlines()
+
     binary_file_list = []
     text_file_list = []
     for f in file_list:
@@ -471,9 +473,8 @@ def _get_auth_stats(
                 commit = m['commit']
                 commit_info = commit_infos[commit]
                 commit_info.info.update({
-                    'author': m['author'],
-                    'author-mail': m['auth_email'],
-                    'committer-time': m['timestamp'],})
+                    'author': m['author'], 'author-mail': m['auth_email'],
+                    'committer-time': m['timestamp']})
             elif m := RE_AUTHS_LOG_FILE.match(line):
                 fname = RE_RENAME.sub(r'\\2', m['fname'])
                 inss, dels = m['inserts'], m['deletes']
@@ -482,7 +483,7 @@ def _get_auth_stats(
 
                 commit_info.file_locs[fname] += loc
             else:
-                assert False, f'error parsing blame line ({line_num}): {line}'
+                raise AssertionError(f'error parsing blame line ({line_num}): {line}')
 
         for cinfo in commit_infos.values():
             for fname, loc in cinfo.file_locs.items():
