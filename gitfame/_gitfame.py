@@ -237,7 +237,7 @@ _RE_BLAME_START_LINE = re.compile(
 class _CommitInfo:
     def __init__(self):
         self.file_locs = defaultdict(int)  # {file_name: [loc, ...
-        self.info = dict()
+        self.info = {}
 
 
 def _get_blame_out(
@@ -287,12 +287,12 @@ def _get_blame_out(
 def _get_user_canonicalization_function(
     author_mapping_file_path: str = None, author_email_mapping_file_path: str = None
 ):
-    user_mappings = dict()
+    user_mappings = {}
     if author_mapping_file_path:
         with Path(author_mapping_file_path).expanduser().open('rt') as f:
             user_mappings = ast.literal_eval(f.read())
 
-    email_mappings = dict()
+    email_mappings = {}
     if author_email_mapping_file_path:
         with Path(author_email_mapping_file_path).expanduser().open('rt') as f:
             email_mappings = ast.literal_eval(f.read())
@@ -310,7 +310,7 @@ _RE_EOL_LINE = re.compile(
 )
 
 
-def detect_bom(path: str, default = None):
+def detect_bom(path: str, default=None):
     with open(path, 'rb') as f:
         raw = f.read(4)    # will read less if the file is smaller
 
@@ -324,6 +324,7 @@ def detect_bom(path: str, default = None):
             return enc
 
     return default
+
 
 def _get_auth_stats(
     gitdir: str, branch: str = "HEAD", since=None, include_files=None, exclude_files=None,
@@ -388,7 +389,7 @@ def _get_auth_stats(
         base_cmd.extend(["-C", "-C"]) # twice to include file creation
 
     auth_stats = defaultdict(
-        lambda: {'loc': 0, 'files': set(), 'ctimes': list(), 'commits': set()}
+        lambda: {'loc': 0, 'files': set(), 'ctimes': [], 'commits': set()}
     )  # {author: {[loc,files,ctimes,exts]:
     auth2em = defaultdict(set)
 
@@ -500,7 +501,7 @@ def _get_auth_stats(
         log.debug(auth2em)
         old = auth_stats
         auth_stats = defaultdict(
-            lambda: {'loc': 0, 'files': set(), 'ctimes': list(), 'commits': 0}
+            lambda: {'loc': 0, 'files': set(), 'ctimes': [], 'commits': 0}
         )
 
         for auth, stats in getattr(old, 'iteritems', old.items)():
