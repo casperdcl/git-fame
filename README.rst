@@ -94,7 +94,7 @@ Latest Docker release
 
     docker pull casperdcl/git-fame
     docker run --rm casperdcl/git-fame --help
-    docker run --rm -v </local/path/to/repository>:/repo casperdcl/git-fame
+    docker run --rm -v </local/path/to/repository>:/repo --user "$(id --user)" casperdcl/git-fame
 
 Register alias with git
 ~~~~~~~~~~~~~~~~~~~~~~~
