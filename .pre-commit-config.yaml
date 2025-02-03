@@ -52,12 +52,12 @@ repos:
     - flake8-pyproject
     - flake8-string-format
 - repo: https://github.com/google/yapf
-  rev: v0.40.2
+  rev: v0.43.0
   hooks:
   - id: yapf
     args: [-i]
     additional_dependencies: [toml]
 - repo: https://github.com/PyCQA/isort
-  rev: 5.13.2
+  rev: 6.0.0
   hooks:
   - id: isort
