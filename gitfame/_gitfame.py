@@ -19,10 +19,9 @@ Options:
                  In no-regex mode, may be a comma-separated list.
                  Escape (\,) for a literal comma (may require \\, in shell).
   --incl=<f>     Included files [default: .*]. See `--excl` for format.
-  --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
+  --since=<date>  Date from which to check. Can be absolute (eg: 1970-01-31)
                   or relative to now (eg: 3.weeks).
-  --until=<date>  Date to which to check. Can be absoulte (eg: 1970-01-31)
-                  or relative to now (eg: 3.weeks).
+  --until=<date>  Date to which to check. See `--since` for format.
   --cost=<method>  Include time cost in person-months (COCOMO) or
                    person-hours (based on commit times).
                    Methods: month(s)|cocomo|hour(s)|commit(s).

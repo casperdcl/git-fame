@@ -194,8 +194,9 @@ Documentation
                      In no-regex mode, may be a comma-separated list.
                      Escape (\,) for a literal comma (may require \\, in shell).
       --incl=<f>     Included files [default: .*]. See `--excl` for format.
-      --since=<date>  Date from which to check. Can be absoulte (eg: 1970-01-31)
+      --since=<date>  Date from which to check. Can be absolute (eg: 1970-01-31)
                       or relative to now (eg: 3.weeks).
+      --until=<date>  Date to which to check. See `--since` for format.
       --cost=<method>  Include time cost in person-months (COCOMO) or
                        person-hours (based on commit times).
                        Methods: month(s)|cocomo|hour(s)|commit(s).
@@ -375,5 +376,5 @@ We are grateful for all |GitHub-Contributions|.
    :target: https://raw.githubusercontent.com/casperdcl/git-fame/main/LICENCE
 .. |DOI-URI| image:: https://img.shields.io/badge/DOI-10.5281/zenodo.2544975-blue.svg?color=purple&logo=ORCID
    :target: https://doi.org/10.5281/zenodo.2544975
-.. |README-Hits| image:: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&style=social&r=https://github.com/casperdcl/git-fame
-   :target: https://caspersci.uk.to/cgi-bin/hits.cgi?q=git-fame&a=plot&r=https://github.com/casperdcl/git-fame&style=social
+.. |README-Hits| image:: https://cgi.cdcl.ml/hits?q=git-fame&style=social&r=https://github.com/casperdcl/git-fame
+   :target: https://cgi.cdcl.ml/hits?q=git-fame&a=plot&r=https://github.com/casperdcl/git-fame&style=social
