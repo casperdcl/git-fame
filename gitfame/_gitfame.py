@@ -53,16 +53,28 @@ Options:
       Any `tabulate.tabulate_formats` is also accepted.
   --manpath=<path>         Directory in which to install git-fame man pages.
   --log=<lvl>    FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
+  --processes=<num>         int, Number of processes to use for parallelization [default: 1]
+  --author-mapping-file-path=<path>   Path to file containing dictionary mapping author name
+                                      to normalized author name
+  --author-email-mapping-file-path=<path>   Path to file containing dictionary mapping author
+                                            email address to normalized author name
 """
 from __future__ import division, print_function
 
+import ast
+import codecs
 import logging
+import multiprocessing
 import os
+import queue
 import re
 import subprocess
+from collections import defaultdict
 # from __future__ import absolute_import
 from functools import partial
 from os import path
+from pathlib import Path
+from typing import Dict, Optional
 
 from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats,
                      print_unicode, tqdm)
@@ -92,7 +104,6 @@ RE_BLAME_BOUNDS = re.compile(
     r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
     flags=re.M | re.DOTALL)
 # processing `log --format="aN%aN ct%ct" --numstat`
-RE_AUTHS_LOG = re.compile(r"^aN(.+?) ct(\d+)\n\n", flags=re.M)
 RE_STAT_BINARY = re.compile(r"^\s*?-\s*-.*?\n", flags=re.M)
 RE_RENAME = re.compile(r"\{.+? => (.+?)\}")
 # finds all non-escaped commas
@@ -205,41 +216,176 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
 
 
-def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None,
-                    silent_progress=False, ignore_whitespace=False, M=False, C=False,
-                    warn_binary=False, bytype=False, show_email=False, prefix_gitdir=False,
-                    churn=None, ignore_rev="", ignore_revs_file=None, until=None):
+_RE_BLAME_START_LINE = re.compile(r'^(?P<commit_hash>[a-f0-9]+) (?P<original_file_line>\d+) '
+                                  r'(?P<final_file_line>\d+) ?(?P<lines_of_code>\d+)?$')
+
+
+class _CommitInfo:
+    def __init__(self):
+        self.file_locs = defaultdict(int) # {file_name: loc}
+        self.info = {}
+
+
+def _get_blame_out(base_cmd: list[str], branch: str, fname: str, since,
+                   until) -> Dict[str, _CommitInfo]:
+    blame_out = check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
+
+    # Coalesces info by commit
+    commit_infos = defaultdict(_CommitInfo)
+    commit_info = loc = None
+
+    for line in blame_out.splitlines():
+        if match := _RE_BLAME_START_LINE.match(line):
+            commit = match['commit_hash']
+            loc = int(match['lines_of_code'])
+            commit_info = commit_infos[commit]
+        elif line == 'boundary':
+            continue # TODO: is this ok?
+        else:
+            key, value = line.split(' ', 1)
+            if key in ('previous', 'summary'):
+                continue
+
+            if key == 'filename':
+                commit_info.file_locs[value] += loc
+                continue
+
+            assert not line.startswith('\t')
+            if key == 'filename':
+                commit_info.file_locs[value] += loc
+
+            assert key not in commit_info.info
+            commit_info.info[key] = value
+
+    # TODO
+    assert not since and not until
+
+    # if since:
+    #     # Strip boundary messages,
+    #     # preventing user with nearest commit to boundary owning the LOC
+    #     blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
+    #
+    # if until:
+    #     # Strip boundary messages,
+    #     # preventing user with nearest commit to boundary owning the LOC
+    #     blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
+
+    for cinfo in commit_infos.values():
+        cinfo.file_locs = dict(cinfo.file_locs)
+
+    return dict(commit_infos)
+
+
+# TODO: probably should be swapped to mailmap
+def _get_user_canonicalization_function(author_mapping_file_path: str = None,
+                                        author_email_mapping_file_path: str = None):
+    user_mappings = {}
+    if author_mapping_file_path:
+        with Path(author_mapping_file_path).expanduser().open('rt') as f:
+            user_mappings = ast.literal_eval(f.read())
+
+    email_mappings = {}
+    if author_email_mapping_file_path:
+        with Path(author_email_mapping_file_path).expanduser().open('rt') as f:
+            email_mappings = ast.literal_eval(f.read())
+
+    def canonicalize(author: str, author_email: str):
+        author = user_mappings.get(author, author)
+        author = email_mappings.get(author_email, author)
+        return author
+
+    return canonicalize
+
+
+def detect_bom(path: str, default=None):
+    with open(path, 'rb') as f:
+        raw = f.read(4) # will read less if the file is smaller
+
+    # BOM_UTF32_LE's start is equal to BOM_UTF16_LE so need to try the former first
+    for enc, boms in (('utf-8-sig', (codecs.BOM_UTF8,)), ('utf-32', (codecs.BOM_UTF32_LE,
+                                                                     codecs.BOM_UTF32_BE)),
+                      ('utf-16', (codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE))):
+        if any(raw.startswith(bom) for bom in boms):
+            return enc
+
+    return default
+
+
+GIT_BLAME_FORMAT = "ct%ct H%H aE%aE aN%aN"
+RE_AUTHS_LOG_COMMIT = re.compile(
+    r"^ct(?P<timestamp>\d*) H(?P<commit>[a-f0-9]*) aE(?P<auth_email>[^ ]*) aN(?P<author>.+?)$")
+RE_AUTHS_LOG_FILE = re.compile(r"^(?P<inserts>\d+)\s+(?P<deletes>\d+)\s+(?P<fname>.+?)$")
+
+
+def _get_auth_stats(
+    gitdir: str,
+    branch: str = "HEAD",
+    since=None,
+    include_files=None,
+    exclude_files=None,
+    silent_progress=False,
+    ignore_whitespace=False,
+    M: bool = False,
+    C: bool = False,
+    warn_binary: bool = False,
+    bytype: bool = False,
+    show_email: bool = False,
+    prefix_gitdir: bool = False,
+    churn=None,
+    ignore_rev="",
+    ignore_revs_file=None,
+    until=None,
+    processes: int = 1,
+    author_mapping_file_path: str = None,
+    author_email_mapping_file_path: str = None,
+):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
     git_cmd = ["git", "-C", gitdir]
     log.debug("base command:%s", git_cmd)
-    file_list = check_output(git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
-    text_file_list = check_output(git_cmd + ["grep", "-I", "--name-only", ".", branch]).strip()
-    text_file_list = set(
-        re.sub(f"^{re.escape(branch)}:", "", text_file_list, flags=re.M).split('\n'))
-    if not hasattr(include_files, 'search'):
-        file_list = [
-            i for i in file_list if (not include_files or (i in include_files))
-            if i not in exclude_files]
-    else:
-        file_list = [
-            i for i in file_list if include_files.search(i)
-            if not (exclude_files and exclude_files.search(i))]
-    for fname in set(file_list) - text_file_list:
+
+    file_list = check_output(git_cmd + [
+        "ls-files", "--format=%(eolinfo:index)|%(eolinfo:worktree)|%(eolattr)|%(path)",
+        "--with-tree", branch]).strip().splitlines()
+
+    binary_file_list = []
+    text_file_list = []
+    for f in file_list:
+        _, eol_worktree, _, fpath = f.split('|', 3)
+
+        if not hasattr(include_files, 'search'):
+            if (include_files and fpath not in include_files) or fpath in exclude_files:
+                continue
+        elif (not include_files.search(fpath)) or (exclude_files and exclude_files.search(fpath)):
+            continue
+
+        if eol_worktree == '-text':
+            binary_file_list.append(fpath)
+        else:
+            text_file_list.append(fpath)
+
+    # we need to inspect if the binary_files are unicode
+    for f in list(binary_file_list):
+        if detect_bom(path.join(gitdir, f)):
+            binary_file_list.remove(f)
+            text_file_list.append(f)
+
+    for fname in binary_file_list:
         getattr(log, "warn" if warn_binary else "debug")("binary:%s", fname.strip())
-    file_list = [f for f in file_list if f in text_file_list] # preserve order
+
+    file_list = text_file_list # preserve order
     log.log(logging.NOTSET, "files:%s", file_list)
     churn = churn or set()
 
     if churn & CHURN_SLOC:
-        base_cmd = git_cmd + ["blame", "--line-porcelain"] + since + until
+        base_cmd = git_cmd + ["blame", "--line-porcelain", "--incremental"] + since + until
         if ignore_rev:
             base_cmd.extend(["--ignore-rev", ignore_rev])
         if ignore_revs_file:
             base_cmd.extend(["--ignore-revs-file", ignore_revs_file])
     else:
-        base_cmd = git_cmd + ["log", "--format=aN%aN ct%ct", "--numstat"] + since + until
+        base_cmd = git_cmd + ["log", f"--format={GIT_BLAME_FORMAT}", "--numstat"] + since + until
 
     if ignore_whitespace:
         base_cmd.append("-w")
@@ -248,53 +394,62 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     if C:
         base_cmd.extend(["-C", "-C"]) # twice to include file creation
 
-    auth_stats = {}
+    auth_stats = defaultdict(lambda: {'loc': 0, 'files': set(), 'ctimes': [], 'commits': 0})
+    auth2em = defaultdict(set)
 
-    def stats_append(fname, auth, loc, tstamp):
-        auth = str(auth)
+    author_canonicalizer = _get_user_canonicalization_function(author_mapping_file_path,
+                                                               author_email_mapping_file_path)
+
+    def stats_append(fname: str, auth: str, loc: int, tstamp: str, author_email: str):
+        auth = author_canonicalizer(auth, author_email)
         tstamp = int(tstamp)
-        try:
-            auth_stats[auth]["loc"] += loc
-        except KeyError:
-            auth_stats[auth] = {"loc": loc, "files": {fname}, "ctimes": []}
-        else:
-            auth_stats[auth]["files"].add(fname)
-            auth_stats[auth]["ctimes"].append(tstamp)
+
+        auth2em[auth].add(author_email)
+
+        i = auth_stats[auth]
+        i["loc"] += loc
+        i["files"].add(fname)
+        i["ctimes"].append(tstamp)
+        # NOTE: we could add all the commits here, that would equate to how many commits
+        #   the author has that contain code still visible in the working branch
 
         if bytype:
             fext_key = f".{fext(fname) or '_None_ext'}"
-            # auth_stats[auth].setdefault(fext_key, 0)
             try:
-                auth_stats[auth][fext_key] += loc
+                i[fext_key] += loc
             except KeyError:
-                auth_stats[auth][fext_key] = loc
+                i[fext_key] = loc
 
     if churn & CHURN_SLOC:
-        for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing",
+        completed = queue.Queue()
+
+        def process_blame_out(commit_infos: Dict[str, _CommitInfo]):
+            for cinfo in commit_infos.values():
+                for fname, loc in cinfo.file_locs.items():
+                    stats_append(fname, cinfo.info['author'], loc, cinfo.info['committer-time'],
+                                 cinfo.info['author-mail'])
+
+            completed.put(None)
+
+        def process_blame_out_error(fname, err):
+            getattr(log, "warn" if warn_binary else "debug")(fname + ':' + str(err))
+            completed.put(None)
+
+        with multiprocessing.Pool(processes) as mp_pool:
+            for fname in file_list:
+                if prefix_gitdir:
+                    fname = path.join(gitdir, fname)
+
+                mp_pool.apply_async(_get_blame_out, args=(base_cmd, branch, fname, since, until),
+                                    callback=process_blame_out,
+                                    error_callback=partial(process_blame_out_error, fname))
+
+            for _ in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing",
                           disable=silent_progress, unit="file"):
-            if prefix_gitdir:
-                fname = path.join(gitdir, fname)
-            try:
-                blame_out = check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
-            except Exception as err:
-                getattr(log, "warn" if warn_binary else "debug")(fname + ':' + str(err))
-                continue
-            log.log(logging.NOTSET, blame_out)
+                completed.get()
 
-            if since:
-                # Strip boundary messages,
-                # preventing user with nearest commit to boundary owning the LOC
-                blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
-
-            if until:
-                # Strip boundary messages,
-                # preventing user with nearest commit to boundary owning the LOC
-                blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
-
-            for loc, auth, tstamp in RE_AUTHS_BLAME.findall(blame_out): # for each chunk
-                loc = int(loc)
-                stats_append(fname, auth, loc, tstamp)
-
+            mp_pool.close()
+            mp_pool.join()
     else:
         with tqdm(total=1, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
                   unit="repo") as t:
@@ -305,45 +460,51 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         # Strip binary files
         for fname in set(RE_STAT_BINARY.findall(blame_out)):
             getattr(log, "warn" if warn_binary else "debug")("binary:%s", fname.strip())
-        blame_out = RE_STAT_BINARY.sub('', blame_out)
+        lines = RE_STAT_BINARY.sub('', blame_out).splitlines()
 
-        blame_out = RE_AUTHS_LOG.split(blame_out)
-        blame_out = zip(blame_out[1::3], blame_out[2::3], blame_out[3::3])
-        for auth, tstamp, fnames in blame_out:
-            fnames = fnames.split('\naN', 1)[0]
-            for i in fnames.strip().split('\n'):
-                try:
-                    inss, dels, fname = i.split('\t')
-                except ValueError:
-                    log.warning(i)
-                else:
-                    fname = RE_RENAME.sub(r'\\2', fname)
-                    loc = (int(inss) if churn & CHURN_INS and inss else
-                           0) + (int(dels) if churn & CHURN_DEL and dels else 0)
-                    stats_append(fname, auth, loc, tstamp)
+        commit_infos = defaultdict(_CommitInfo)
+        commit_info: Optional[_CommitInfo] = None
+        for line_num, line in enumerate(lines):
+            if not line:
+                continue
+
+            if m := RE_AUTHS_LOG_COMMIT.match(line):
+                commit = m['commit']
+                commit_info = commit_infos[commit]
+                commit_info.info.update({
+                    'author': m['author'], 'author-mail': m['auth_email'],
+                    'committer-time': m['timestamp']})
+            elif m := RE_AUTHS_LOG_FILE.match(line):
+                fname = RE_RENAME.sub(r'\\2', m['fname'])
+                inss, dels = m['inserts'], m['deletes']
+                loc = (int(inss) if churn & CHURN_INS and inss else
+                       0) + (int(dels) if churn & CHURN_DEL and dels else 0)
+
+                commit_info.file_locs[fname] += loc
+            else:
+                raise AssertionError(f'error parsing blame line ({line_num}): {line}')
+
+        for cinfo in commit_infos.values():
+            for fname, loc in cinfo.file_locs.items():
+                stats_append(fname, cinfo.info['author'], loc, cinfo.info['committer-time'],
+                             cinfo.info['author-mail'])
 
     # quickly count commits (even if no surviving loc)
     log.log(logging.NOTSET, "authors:%s", list(auth_stats.keys()))
     auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch] + since + until)
-    for stats in auth_stats.values():
-        stats.setdefault("commits", 0)
-    log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
-    auth2em = {}
     for (ncom, auth, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
-        auth = str(auth)
-        auth2em[auth] = em # TODO: count most used email?
-        try:
-            auth_stats[auth]["commits"] += int(ncom)
-        except KeyError:
-            auth_stats[auth] = {"loc": 0, "files": set(), "commits": int(ncom), "ctimes": []}
-    if show_email:         # replace author name with email
+        auth = author_canonicalizer(auth, em)
+        auth_stats[auth]['commits'] += int(ncom)
+        auth2em[auth].add(em)
+
+    if show_email: # replace author name with email
         log.debug(auth2em)
         old = auth_stats
-        auth_stats = {}
+        auth_stats = defaultdict(lambda: {'loc': 0, 'files': set(), 'ctimes': [], 'commits': 0})
 
         for auth, stats in getattr(old, 'iteritems', old.items)():
-            i = auth_stats.setdefault(auth2em[auth],
-                                      {"loc": 0, "files": set(), "commits": 0, "ctimes": []})
+            auth_email = list(auth2em[auth])[0] # TODO: count most used email?
+            i = auth_stats[auth_email]
             i["loc"] += stats["loc"]
             i["files"].update(stats["files"])
             i["commits"] += stats["commits"]
@@ -367,7 +528,6 @@ def run(args):
     if isinstance(args.gitdir, str):
         args.gitdir = [args.gitdir]
     # strip `/`, `.git`
-    gitdirs = [i.rstrip(os.sep) for i in args.gitdir]
     gitdirs = [
         path.join(*path.split(i)[:-1]) if path.split(i)[-1] == '.git' else i for i in args.gitdir]
     # remove duplicates
@@ -389,8 +549,6 @@ def run(args):
                             dirs.remove('.git')
             i += 1
 
-    exclude_files = None
-    include_files = None
     if args.no_regex:
         exclude_files = set(RE_CSPILT.split(args.excl))
         include_files = set()
@@ -431,7 +589,9 @@ def run(args):
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
                       warn_binary=args.warn_binary, bytype=args.bytype, show_email=args.show_email,
                       prefix_gitdir=len(gitdirs) > 1, churn=churn, ignore_rev=args.ignore_rev,
-                      ignore_revs_file=args.ignore_revs_file)
+                      ignore_revs_file=args.ignore_revs_file, processes=int(args.processes),
+                      author_mapping_file_path=args.author_mapping_file_path,
+                      author_email_mapping_file_path=args.author_email_mapping_file_path)
 
     # concurrent multi-repo processing
     if len(gitdirs) > 1:
