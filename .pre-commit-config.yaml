@@ -39,7 +39,7 @@ repos:
     - tabulate
     - tqdm
 - repo: https://github.com/PyCQA/flake8
-  rev: 7.1.1
+  rev: 7.2.0
   hooks:
   - id: flake8
     args: [-j8]
@@ -58,6 +58,6 @@ repos:
     args: [-i]
     additional_dependencies: [toml]
 - repo: https://github.com/PyCQA/isort
-  rev: 6.0.0
+  rev: 6.0.1
   hooks:
   - id: isort
