@@ -36,6 +36,7 @@ Options:
   --warn-binary  Don't silently skip files which appear to be binary data
                  [default: False].
   -e, --show-email  Show author email instead of name [default: False].
+  --show-name-and-email  Show author name and email [default: False].
   --enum         Show row numbers [default: False].
   -t, --bytype             Show stats per file extension [default: False].
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
@@ -85,14 +86,15 @@ __license__ = __licence__ # weird foreign language
 log = logging.getLogger(__name__)
 
 # processing `blame --line-porcelain`
-RE_AUTHS_BLAME = re.compile(r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)$.*?\ncommitter-time (\d+)',
-                            flags=re.M | re.DOTALL)
+RE_AUTHS_BLAME = re.compile(
+    r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)\nauthor-mail <(.+?)>$.*?\ncommitter-time (\d+)',
+    flags=re.M | re.DOTALL)
 RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
 RE_BLAME_BOUNDS = re.compile(
     r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
     flags=re.M | re.DOTALL)
-# processing `log --format="aN%aN ct%ct" --numstat`
-RE_AUTHS_LOG = re.compile(r"^aN(.+?) ct(\d+)\n\n", flags=re.M)
+# processing `log --format="aN%aN ae%ae ct%ct" --numstat`
+RE_AUTHS_LOG = re.compile(r"^aN(.+?) ae(.+?) ct(\d+)\n\n", flags=re.M)
 RE_STAT_BINARY = re.compile(r"^\s*?-\s*-.*?\n", flags=re.M)
 RE_RENAME = re.compile(r"\{.+? => (.+?)\}")
 # finds all non-escaped commas
@@ -208,7 +210,8 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None,
                     silent_progress=False, ignore_whitespace=False, M=False, C=False,
                     warn_binary=False, bytype=False, show_email=False, prefix_gitdir=False,
-                    churn=None, ignore_rev="", ignore_revs_file=None, until=None):
+                    churn=None, ignore_rev="", ignore_revs_file=None, until=None,
+                    show_name_and_email=False):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
@@ -239,7 +242,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         if ignore_revs_file:
             base_cmd.extend(["--ignore-revs-file", ignore_revs_file])
     else:
-        base_cmd = git_cmd + ["log", "--format=aN%aN ct%ct", "--numstat"] + since + until
+        base_cmd = git_cmd + ["log", "--format=aN%aN ae%ae ct%ct", "--numstat"] + since + until
 
     if ignore_whitespace:
         base_cmd.append("-w")
@@ -291,8 +294,9 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                 # preventing user with nearest commit to boundary owning the LOC
                 blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
 
-            for loc, auth, tstamp in RE_AUTHS_BLAME.findall(blame_out): # for each chunk
+            for loc, name, email, tstamp in RE_AUTHS_BLAME.findall(blame_out): # for each chunk
                 loc = int(loc)
+                auth = f'{name} <{email}>'
                 stats_append(fname, auth, loc, tstamp)
 
     else:
@@ -308,8 +312,9 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         blame_out = RE_STAT_BINARY.sub('', blame_out)
 
         blame_out = RE_AUTHS_LOG.split(blame_out)
-        blame_out = zip(blame_out[1::3], blame_out[2::3], blame_out[3::3])
-        for auth, tstamp, fnames in blame_out:
+        blame_out = zip(blame_out[1::4], blame_out[2::4], blame_out[3::4], blame_out[4::4])
+        for name, email, tstamp, fnames in blame_out:
+            auth = f'{name} <{email}>'
             fnames = fnames.split('\naN', 1)[0]
             for i in fnames.strip().split('\n'):
                 try:
@@ -329,20 +334,35 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         stats.setdefault("commits", 0)
     log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
     auth2em = {}
-    for (ncom, auth, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
-        auth = str(auth)
+    auth2name = {}
+    for (ncom, name, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
+        auth = f'{name} <{em}>'
         auth2em[auth] = em # TODO: count most used email?
+        auth2name[auth] = name
         try:
             auth_stats[auth]["commits"] += int(ncom)
         except KeyError:
             auth_stats[auth] = {"loc": 0, "files": set(), "commits": int(ncom), "ctimes": []}
-    if show_email:         # replace author name with email
+    if show_email:         # replace author with email
         log.debug(auth2em)
         old = auth_stats
         auth_stats = {}
 
         for auth, stats in getattr(old, 'iteritems', old.items)():
             i = auth_stats.setdefault(auth2em[auth],
+                                      {"loc": 0, "files": set(), "commits": 0, "ctimes": []})
+            i["loc"] += stats["loc"]
+            i["files"].update(stats["files"])
+            i["commits"] += stats["commits"]
+            i["ctimes"] += stats["ctimes"]
+        del old
+    if not show_email and not show_name_and_email: # replace author with name
+        log.debug(auth2name)
+        old = auth_stats
+        auth_stats = {}
+
+        for auth, stats in getattr(old, 'iteritems', old.items)():
+            i = auth_stats.setdefault(auth2name[auth],
                                       {"loc": 0, "files": set(), "commits": 0, "ctimes": []})
             i["loc"] += stats["loc"]
             i["files"].update(stats["files"])
@@ -431,7 +451,8 @@ def run(args):
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
                       warn_binary=args.warn_binary, bytype=args.bytype, show_email=args.show_email,
                       prefix_gitdir=len(gitdirs) > 1, churn=churn, ignore_rev=args.ignore_rev,
-                      ignore_revs_file=args.ignore_revs_file)
+                      ignore_revs_file=args.ignore_revs_file,
+                      show_name_and_email=args.show_name_and_email)
 
     # concurrent multi-repo processing
     if len(gitdirs) > 1:
