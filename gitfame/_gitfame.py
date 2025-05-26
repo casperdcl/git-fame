@@ -35,8 +35,9 @@ Options:
   -s, --silent-progress    Suppress `tqdm` [default: False].
   --warn-binary  Don't silently skip files which appear to be binary data
                  [default: False].
-  -e, --show-email  Show author email instead of name [default: False].
-  --show-name-and-email  Show author name and email [default: False].
+  --show=<info>  Author information to show [default: name]|email.
+                 Use 'name,email' to show both.
+  -e, --show-email  Shortcut for `--show=email`.
   --enum         Show row numbers [default: False].
   -t, --bytype             Show stats per file extension [default: False].
   -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
@@ -106,6 +107,8 @@ COST_HOURS = {'commit', 'commits', 'hour', 'hours'}
 CHURN_SLOC = {'surv', 'survive', 'surviving'}
 CHURN_INS = {'ins', 'insert', 'insertion', 'insertions', 'add', 'addition', 'additions', '+'}
 CHURN_DEL = {'del', 'deletion', 'deletions', 'delete', '-'}
+SHOW_NAME = {'name', 'n'}
+SHOW_EMAIL = {'email', 'e'}
 
 
 def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
@@ -209,12 +212,12 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None,
                     silent_progress=False, ignore_whitespace=False, M=False, C=False,
-                    warn_binary=False, bytype=False, show_email=False, prefix_gitdir=False,
-                    churn=None, ignore_rev="", ignore_revs_file=None, until=None,
-                    show_name_and_email=False):
+                    warn_binary=False, bytype=False, show=None, prefix_gitdir=False, churn=None,
+                    ignore_rev="", ignore_revs_file=None, until=None):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
+    show = show or SHOW_NAME
     git_cmd = ["git", "-C", gitdir]
     log.debug("base command:%s", git_cmd)
     file_list = check_output(git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
@@ -337,32 +340,20 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     auth2name = {}
     for (ncom, name, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
         auth = f'{name} <{em}>'
-        auth2em[auth] = em # TODO: count most used email?
+        auth2em[auth] = em
         auth2name[auth] = name
         try:
             auth_stats[auth]["commits"] += int(ncom)
         except KeyError:
             auth_stats[auth] = {"loc": 0, "files": set(), "commits": int(ncom), "ctimes": []}
-    if show_email:         # replace author with email
-        log.debug(auth2em)
+    if not (show & SHOW_NAME and show & SHOW_EMAIL): # replace author with either email or name
+        auth2new = auth2em if (show & SHOW_EMAIL) else auth2name
+        log.debug(auth2new)
         old = auth_stats
         auth_stats = {}
 
         for auth, stats in getattr(old, 'iteritems', old.items)():
-            i = auth_stats.setdefault(auth2em[auth],
-                                      {"loc": 0, "files": set(), "commits": 0, "ctimes": []})
-            i["loc"] += stats["loc"]
-            i["files"].update(stats["files"])
-            i["commits"] += stats["commits"]
-            i["ctimes"] += stats["ctimes"]
-        del old
-    if not show_email and not show_name_and_email: # replace author with name
-        log.debug(auth2name)
-        old = auth_stats
-        auth_stats = {}
-
-        for auth, stats in getattr(old, 'iteritems', old.items)():
-            i = auth_stats.setdefault(auth2name[auth],
+            i = auth_stats.setdefault(auth2new[auth],
                                       {"loc": 0, "files": set(), "commits": 0, "ctimes": []})
             i["loc"] += stats["loc"]
             i["files"].update(stats["files"])
@@ -380,6 +371,10 @@ def run(args):
     if args.sort not in "loc commits files hours months".split():
         log.warning("--sort argument (%s) unrecognised\n%s", args.sort, __doc__)
         raise KeyError(args.sort)
+
+    args.show = set(args.show.lower().split(','))
+    if args.show_email:
+        args.show = SHOW_EMAIL
 
     if not args.excl:
         args.excl = ""
@@ -449,10 +444,9 @@ def run(args):
                       include_files=include_files, exclude_files=exclude_files,
                       silent_progress=args.silent_progress,
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
-                      warn_binary=args.warn_binary, bytype=args.bytype, show_email=args.show_email,
+                      warn_binary=args.warn_binary, bytype=args.bytype, show=args.show,
                       prefix_gitdir=len(gitdirs) > 1, churn=churn, ignore_rev=args.ignore_rev,
-                      ignore_revs_file=args.ignore_revs_file,
-                      show_name_and_email=args.show_name_and_email)
+                      ignore_revs_file=args.ignore_revs_file)
 
     # concurrent multi-repo processing
     if len(gitdirs) > 1:

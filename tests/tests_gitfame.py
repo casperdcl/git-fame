@@ -208,7 +208,7 @@ def test_main():
                    ['--no-regex', '--incl', 'setup.py,README.rst'], ['--excl', r'.*\.py'],
                    ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'],
                    ['--cost', 'month', '--excl', r'.*\.py'], ['-e'], ['-w'], ['-M'], ['-C'],
-                   ['-t'], ['--show-name-and-email']]:
+                   ['-t'], ['--show=name,email']]:
         main(['-s'] + params)
 
     # test --manpath

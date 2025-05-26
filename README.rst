@@ -210,7 +210,9 @@ Documentation
       -s, --silent-progress    Suppress `tqdm` [default: False].
       --warn-binary  Don't silently skip files which appear to be binary data
                      [default: False].
-      -e, --show-email  Show author email instead of name [default: False].
+      --show=<info>  Author information to show [default: name]|email.
+                     Use 'name,email' to show both.
+      -e, --show-email  Shortcut for `--show=email`.
       --enum         Show row numbers [default: False].
       -t, --bytype             Show stats per file extension [default: False].
       -w, --ignore-whitespace  Ignore whitespace when comparing the parent's
