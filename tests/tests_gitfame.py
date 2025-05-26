@@ -5,7 +5,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from textwrap import dedent
 
-from pytest import skip
+from pytest import mark, skip
 
 from gitfame import _gitfame, main
 
@@ -156,6 +156,17 @@ def test_tabulate_unknown():
         raise ValueError("Should not support unknown tabulate format")
 
 
+@mark.parametrize(
+    'params',
+    [['--sort', 'commits'], ['--no-regex'], ['--no-regex', '--incl', 'setup.py,README.rst'],
+     ['--excl', r'.*\.py'], ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'],
+     ['--cost', 'month', '--excl', r'.*\.py'], ['-e'], ['-w'], ['-M'], ['-C'], ['-t'],
+     ['--show=name,email']])
+def test_options(params):
+    """Test command line options"""
+    main(['-s'] + params)
+
+
 # WARNING: this should be the last test as it messes with sys.argv
 def test_main():
     """Test command line pipes"""
@@ -200,16 +211,6 @@ def test_main():
     except KeyError as e:
         if "badSortArg" not in str(e):
             raise ValueError("Expected `--sort=badSortArg` to fail")
-
-    for params in [['--sort', 'commits'], ['--no-regex'],
-                   ['--no-regex', '--incl', 'setup.py,README.rst'], ['--excl', r'.*\.py'],
-                   ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'],
-                   ['--cost', 'month', '--excl', r'.*\.py'], ['-e'], ['-w'], ['-M'], ['-C'],
-                   ['-t'], ['--show=name,email']]:
-        try:
-            main(['-s'] + params)
-        except Exception as exc:
-            raise KeyError(params) from exc
 
     # test --manpath
     tmp = mkdtemp()

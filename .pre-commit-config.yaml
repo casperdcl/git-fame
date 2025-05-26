@@ -29,11 +29,12 @@ repos:
     name: Run tests
     language: python
     entry: pytest
-    args: [-qq, --durations=1]
+    args: [-qq, --durations=1, -n=auto]
     types: [python]
     pass_filenames: false
     additional_dependencies:
     - pytest-timeout
+    - pytest-xdist
     - argopt
     - pyyaml
     - tabulate
