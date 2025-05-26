@@ -123,7 +123,7 @@ def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
 
 
 def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost=None,
-             row_nums=False):
+             row_nums=False, width=TERM_WIDTH):
     """
     backends  : [default: md]|yaml|json|csv|tsv|tabulate|
       `in tabulate.tabulate_formats`
@@ -199,7 +199,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
             raise ValueError(f"Unknown backend:{backend}")
         log.debug("backend:tabulate:%s", backend)
         COL_LENS = [max(len(Str(i[j])) for i in [COL_NAMES] + tab) for j in range(len(COL_NAMES))]
-        COL_LENS[0] = min(TERM_WIDTH - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4, COL_LENS[0])
+        COL_LENS[0] = min(width - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4, COL_LENS[0])
         tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
         return totals + tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
 

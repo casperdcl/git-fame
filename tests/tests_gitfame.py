@@ -43,7 +43,8 @@ def test_tabulate():
 
 def test_tabulate_cost():
     """Test cost estimates"""
-    assert (_gitfame.tabulate(auth_stats, stats_tot, cost={"hours", "months"}) == dedent("""\
+    assert (_gitfame.tabulate(auth_stats, stats_tot, cost={"hours", "months"},
+                              width=256) == dedent("""\
     Total commits: 35
     Total files: 14
     Total hours: 5.5
