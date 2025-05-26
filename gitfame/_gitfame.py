@@ -94,8 +94,8 @@ RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
 RE_BLAME_BOUNDS = re.compile(
     r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
     flags=re.M | re.DOTALL)
-# processing `log --format="aN%aN ae%ae ct%ct" --numstat`
-RE_AUTHS_LOG = re.compile(r"^aN(.+?) ae(.+?) ct(\d+)\n\n", flags=re.M)
+# processing `log --format="aN%aN aE%aE ct%ct" --numstat`
+RE_AUTHS_LOG = re.compile(r"^aN(.+?) aE(.+?) ct(\d+)\n\n", flags=re.M)
 RE_STAT_BINARY = re.compile(r"^\s*?-\s*-.*?\n", flags=re.M)
 RE_RENAME = re.compile(r"\{.+? => (.+?)\}")
 # finds all non-escaped commas
@@ -245,7 +245,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         if ignore_revs_file:
             base_cmd.extend(["--ignore-revs-file", ignore_revs_file])
     else:
-        base_cmd = git_cmd + ["log", "--format=aN%aN ae%ae ct%ct", "--numstat"] + since + until
+        base_cmd = git_cmd + ["log", "--format=aN%aN aE%aE ct%ct", "--numstat"] + since + until
 
     if ignore_whitespace:
         base_cmd.append("-w")

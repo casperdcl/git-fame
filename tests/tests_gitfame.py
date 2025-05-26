@@ -209,7 +209,10 @@ def test_main():
                    ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'],
                    ['--cost', 'month', '--excl', r'.*\.py'], ['-e'], ['-w'], ['-M'], ['-C'],
                    ['-t'], ['--show=name,email']]:
-        main(['-s'] + params)
+        try:
+            main(['-s'] + params)
+        except Exception as exc:
+            raise KeyError(params) from exc
 
     # test --manpath
     tmp = mkdtemp()
