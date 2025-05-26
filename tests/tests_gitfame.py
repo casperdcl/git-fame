@@ -40,8 +40,6 @@ def test_tabulate():
     | Casper da Costa-Luis |   538 |     35 |     10 | 87.8/ 100/71.4  |
     | Not Committed Yet    |    75 |      0 |      4 | 12.2/ 0.0/28.6  |"""))
 
-    sys.stderr.write("\rTest builtin tabulate ... ") # `tqdm` may clear info
-
 
 def test_tabulate_cost():
     """Test cost estimates"""
@@ -167,7 +165,6 @@ def test_options(params):
     main(['-s'] + params)
 
 
-# WARNING: this should be the last test as it messes with sys.argv
 def test_main():
     """Test command line pipes"""
     import subprocess
@@ -181,38 +178,34 @@ def test_main():
       gitfame.main()
       ''')), stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()[0]
 
-    # actual test:
-
     assert ('Total commits' in str(res))
 
-    # semi-fake test which gets coverage:
 
-    _SYS_AOE = sys.argv, sys.stdout, sys.stderr
-    sys.stdout = StringIO()
-    sys.stderr = sys.stdout
-
-    # sys.argv = ['', '--silent-progress']
-    # import gitfame.__main__  # NOQA
+def test_main_errors(capsys):
+    """Test bad options"""
     main(['--silent-progress'])
 
-    sys.stdout.seek(0)
+    capsys.readouterr() # clear output
     try:
         main(['--bad', 'arg'])
     except SystemExit:
-        res = ' '.join(sys.stdout.getvalue().strip().split()[:2])
+        out = capsys.readouterr()
+        res = ' '.join(out.err.strip().split()[:2])
         if res != "usage: gitfame":
-            raise ValueError(sys.stdout.getvalue())
+            raise ValueError(out)
     else:
         raise ValueError("Expected --bad arg to fail")
 
-    sys.stdout.seek(0)
+    capsys.readouterr() # clear output
     try:
         main(['-s', '--sort', 'badSortArg'])
     except KeyError as e:
         if "badSortArg" not in str(e):
             raise ValueError("Expected `--sort=badSortArg` to fail")
 
-    # test --manpath
+
+def test_manpath():
+    """Test --manpath"""
     tmp = mkdtemp()
     man = path.join(tmp, "git-fame.1")
     assert not path.exists(man)
@@ -225,7 +218,7 @@ def test_main():
     assert path.exists(man)
     rmtree(tmp, True)
 
-    # test multiple gitdirs
-    main(['.', '.'])
 
-    sys.argv, sys.stdout, sys.stderr = _SYS_AOE
+def test_multiple_gitdirs():
+    """test multiple gitdirs"""
+    main(['.', '.'])
