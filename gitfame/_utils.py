@@ -18,7 +18,7 @@ else:
     tqdm = partial(tqdm_std, lock_args=(False,))
 
 __author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
-__date__ = "2016-2023"
+__date__ = "2016-2025"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = [
     "TERM_WIDTH", "int_cast_or_len", "Max", "fext", "tqdm", "tighten", "check_output",

@@ -79,7 +79,7 @@ except ImportError:
     except (ImportError, LookupError):
         __version__ = "UNKNOWN"
 __author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
-__date__ = "2016-2023"
+__date__ = "2016-2025"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))

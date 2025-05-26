@@ -35,8 +35,7 @@ jobs:
         # coveralls needs explicit token
         COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  finish:
-    name: Coverage
+  coverage:
     continue-on-error: ${{ github.event_name != 'push' }}
     needs: test
     runs-on: ubuntu-latest
@@ -51,7 +50,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   deploy:
-    name: Deploy
     needs: test
     runs-on: ubuntu-latest
     environment: pypi
@@ -78,10 +76,10 @@ jobs:
         if [[ $GITHUB_REF == refs/tags/v* ]]; then
           echo docker_tags=latest,${GITHUB_REF/refs\/tags\/v/} >> $GITHUB_OUTPUT
           echo snap_channel=stable,candidate,edge >> $GITHUB_OUTPUT
-        elif [[ $GITHUB_REF == refs/heads/main ]]; then
+        elif test "$GITHUB_REF" = refs/heads/main; then
           echo docker_tags=main >> $GITHUB_OUTPUT
           echo snap_channel=candidate,edge >> $GITHUB_OUTPUT
-        elif [[ $GITHUB_REF == refs/heads/devel ]]; then
+        elif test "$GITHUB_REF" = refs/heads/devel; then
           echo docker_tags=devel >> $GITHUB_OUTPUT
           echo snap_channel=edge >> $GITHUB_OUTPUT
         fi
