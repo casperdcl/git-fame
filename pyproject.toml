@@ -98,7 +98,7 @@ git-fame = "gitfame:main"
 
 [tool.flake8]
 max_line_length = 99
-extend_ignore = ["E261"]
+extend_ignore = ["E261", "P103"]
 exclude = [".git", "__pycache__", "build", "dist", ".eggs", ".tox"]
 
 [tool.yapf]

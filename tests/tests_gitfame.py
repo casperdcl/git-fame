@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import sys
 from json import loads
 from os import path
@@ -10,14 +8,13 @@ from textwrap import dedent
 from pytest import skip
 
 from gitfame import _gitfame, main
-from gitfame._utils import StringIO
 
 # test data
 auth_stats = {
-    u'Not Committed Yet': {
+    'Not Committed Yet': {
         'files': {'gitfame/_gitfame.py', 'gitfame/_utils.py', 'Makefile', 'MANIFEST.in'},
         'loc': 75, 'ctimes': [], 'commits': 0},
-    u'Casper da Costa-Luis': {
+    'Casper da Costa-Luis': {
         'files': {
             'gitfame/_utils.py', 'gitfame/__main__.py', 'setup.cfg', 'gitfame/_gitfame.py',
             'gitfame/__init__.py', 'git-fame_completion.bash', 'Makefile', 'MANIFEST.in',

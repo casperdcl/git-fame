@@ -56,8 +56,6 @@ Options:
   --manpath=<path>         Directory in which to install git-fame man pages.
   --log=<lvl>    FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 """
-from __future__ import division, print_function
-
 import logging
 import os
 import re
@@ -120,7 +118,7 @@ def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
     """
     dates = sorted(dates)
     diffInSec = [i - j for (i, j) in zip(dates[1:], dates[:-1])]
-    res = sum(filter(lambda i: i < maxCommitDiffInSec, diffInSec))
+    res = sum(i for i in diffInSec if i < maxCommitDiffInSec)
     return (res/60.0 + firstCommitAdditionInMinutes) / 60.0
 
 
@@ -131,17 +129,16 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
       `in tabulate.tabulate_formats`
     """
     COL_NAMES = ['Author', 'loc', 'coms', 'fils', ' distribution']
-    it_as = getattr(auth_stats, 'iteritems', auth_stats.items)
     # get ready
     tab = [[
         auth, s['loc'],
         s.get('commits', 0),
         len(s.get('files', [])), '/'.join(
-            map('{0:4.1f}'.format,
+            map('{:4.1f}'.format,
                 (100 * s['loc'] / max(1, stats_tot['loc']),
                  100 * s.get('commits', 0) / max(1, stats_tot['commits']),
                  100 * len(s.get('files', [])) / max(1, stats_tot['files'])))).replace(
-                     '/100.0/', '/ 100/')] for (auth, s) in it_as()]
+                     '/100.0/', '/ 100/')] for (auth, s) in auth_stats.items()]
     if cost:
         stats_tot = dict(stats_tot)
         if cost & COST_MONTHS:
@@ -184,8 +181,8 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         elif backend in ['csv', 'tsv']:
             log.debug("backend:csv")
             from csv import writer as tabber
+            from io import StringIO
 
-            from ._utils import StringIO
             res = StringIO()
             t = tabber(res, delimiter=',' if backend == 'csv' else '\t')
             t.writerow(tab['columns'])
@@ -260,9 +257,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         auth = str(auth)
         tstamp = int(tstamp)
         if auth not in auth_stats:
-            # auth_stats[auth] = defaultdict(int) | {"files": set(), "ctimes": []} # py>=3.9
-            auth_stats[auth] = defaultdict(int)
-            auth_stats[auth].update({"files": set(), "ctimes": []})
+            auth_stats[auth] = defaultdict(int, files=set(), ctimes=[])
         auth_stats[auth]["loc"] += loc
         auth_stats[auth]["files"].add(fname)
         auth_stats[auth]["ctimes"].append(tstamp)
@@ -338,8 +333,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         auth2em[auth] = em
         auth2name[auth] = name
         if auth not in auth_stats:
-            auth_stats[auth] = defaultdict(int)
-            auth_stats[auth].update({"files": set(), "ctimes": []})
+            auth_stats[auth] = defaultdict(int, files=set(), ctimes=[])
         auth_stats[auth]["commits"] += int(ncom)
     if not (show & SHOW_NAME and show & SHOW_EMAIL): # replace author with either email or name
         auth2new = auth2em if (show & SHOW_EMAIL) else auth2name
@@ -347,10 +341,8 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         old = auth_stats
         auth_stats = {}
 
-        for auth, stats in getattr(old, 'iteritems', old.items)():
-            i = auth_stats.setdefault(auth2new[auth], defaultdict(int))
-            i.setdefault("files", set())
-            i.setdefault("ctimes", [])
+        for auth, stats in old.items():
+            i = auth_stats.setdefault(auth2new[auth], defaultdict(int, files=set(), ctimes=[]))
             i["files"].update(stats["files"])
             for k, v in stats.items():
                 if k != 'files':
@@ -458,7 +450,7 @@ def run(args):
         mapper = map
 
     for res in mapper(statter, gitdirs):
-        for auth, stats in getattr(res, 'iteritems', res.items)():
+        for auth, stats in res.items():
             if auth in auth_stats:
                 merge_stats(auth_stats[auth], stats)
             else:
