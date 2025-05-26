@@ -208,8 +208,11 @@ def test_main():
                    ['--no-regex', '--incl', 'setup.py,README.rst'], ['--excl', r'.*\.py'],
                    ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'],
                    ['--cost', 'month', '--excl', r'.*\.py'], ['-e'], ['-w'], ['-M'], ['-C'],
-                   ['-t']]:
-        main(['-s'] + params)
+                   ['-t'], ['--show=name,email']]:
+        try:
+            main(['-s'] + params)
+        except Exception as exc:
+            raise KeyError(params) from exc
 
     # test --manpath
     tmp = mkdtemp()
