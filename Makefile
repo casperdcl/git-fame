@@ -66,7 +66,8 @@ gitfame/git-fame.1: .meta/.git-fame.1.md gitfame/_gitfame.py
     sed -r -e 's/\\/\\\\/g' \
       -e 's/^  (--\S+=)<(\S+)>\s+(.*)$$/\n\\\1*\2*\n: \3/' \
       -e 's/^  (-., )(-\S+)\s*/\n\\\1\\\2\n: /' \
-      -e 's/^  (--\S+)\s+/\n\\\1\n: /' |\
+      -e 's/^  (--\S+)\s+/\n\\\1\n: /' \
+      -e 's/^  (-.)\s+/\n\\\1\n: /' |\
     cat "$<" - |\
     pandoc -o "$@" -s -t man
 
