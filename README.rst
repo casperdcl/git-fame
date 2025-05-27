@@ -186,6 +186,7 @@ Documentation
       -v, --version  Print module version and exit.
       --branch=<b>   Branch or tag [default: HEAD] up to which to check.
       --sort=<key>   [default: loc]|commits|files|hours|months.
+      --min=<val>    Minimum value (of `--sort` key) to show [default: 0:int].
       --loc=<type>   surv(iving)|ins(ertions)|del(etions)
                      What `loc` represents. Use 'ins,del' to count both.
                      defaults to 'surviving' unless `--cost` is specified.
@@ -224,7 +225,7 @@ Documentation
       --ignore-revs-file=<f>   Ignore revisions listed in the given file
                                (requires `--loc=surviving`).
       --format=<format>        Table format
-          [default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
+          svg|[default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
           May require `git-fame[<format>]`, e.g. `pip install git-fame[yaml]`.
           Any `tabulate.tabulate_formats` is also accepted.
       --manpath=<path>         Directory in which to install git-fame man pages.
@@ -259,6 +260,15 @@ On the plus side, it is faster to compute ``ins`` and ``del`` compared to
 
 Examples
 --------
+
+Badges
+~~~~~~
+
+An SVG image for inclusion in README files and websites:
+
+.. code:: sh
+
+   git fame -wMC --format svg --min 1 > docs/authors.svg
 
 CODEOWNERS
 ~~~~~~~~~~

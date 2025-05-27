@@ -12,6 +12,7 @@ Options:
   -v, --version  Print module version and exit.
   --branch=<b>   Branch or tag [default: HEAD] up to which to check.
   --sort=<key>   [default: loc]|commits|files|hours|months.
+  --min=<val>    Minimum value (of `--sort` key) to show [default: 0:int].
   --loc=<type>   surv(iving)|ins(ertions)|del(etions)
                  What `loc` represents. Use 'ins,del' to count both.
                  defaults to 'surviving' unless `--cost` is specified.
@@ -50,7 +51,7 @@ Options:
   --ignore-revs-file=<f>   Ignore revisions listed in the given file
                            (requires `--loc=surviving`).
   --format=<format>        Table format
-      [default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
+      svg|[default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
       May require `git-fame[<format>]`, e.g. `pip install git-fame[yaml]`.
       Any `tabulate.tabulate_formats` is also accepted.
   --manpath=<path>         Directory in which to install git-fame man pages.
@@ -123,7 +124,7 @@ def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
 
 
 def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost=None,
-             row_nums=False, width=TERM_WIDTH):
+             row_nums=False, min_sort_val=0, width=TERM_WIDTH):
     """
     backends  : [default: md]|yaml|json|csv|tsv|tabulate|
       `in tabulate.tabulate_formats`
@@ -154,6 +155,8 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 
     for i, j in (("commits", "coms"), ("files", "fils"), ("hours", "hrs"), ("months", "mths")):
         sort = sort.replace(i, j)
+    if min_sort_val:
+        tab = [i for i in tab if i[COL_NAMES.index(sort)] >= min_sort_val]
     tab.sort(key=lambda i: i[COL_NAMES.index(sort)], reverse=True)
     if row_nums:
         tab = [[str(i)] + j for i, j in enumerate(tab, 1)]
@@ -163,6 +166,9 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 
     if (backend := backend.lower()) in ("tabulate", "md", "markdown"):
         backend = "pipe"
+    svg = backend == 'svg'
+    if svg:
+        backend = 'rounded_outline'
 
     if backend in ('yaml', 'yml', 'json', 'csv', 'tsv'):
         tab = [i[:-1] + [float(pc.strip()) for pc in i[-1].split('/')] for i in tab]
@@ -194,13 +200,25 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
             raise RuntimeError("Should be unreachable")
     else:
         import tabulate as tabber
+
         if backend not in tabber.tabulate_formats:
             raise ValueError(f"Unknown backend:{backend}")
         log.debug("backend:tabulate:%s", backend)
         COL_LENS = [max(len(Str(i[j])) for i in [COL_NAMES] + tab) for j in range(len(COL_NAMES))]
         COL_LENS[0] = min(width - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4, COL_LENS[0])
         tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
-        return totals + tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
+        table = tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
+        if svg:
+            rows = table.split('\n')
+            return ('<svg xmlns="http://www.w3.org/2000/svg"'
+                    f' width="{len(rows[0]) / 2 + 1}em" height="{len(rows)}em">'
+                    '<rect x="0" y="0" width="100%" height="100%"'
+                    ' fill="white" fill-opacity="0.5" rx="5"/>'
+                    '<text x="0" y="-0.5em" font-size="15"'
+                    ' font-family="monospace" style="white-space: pre">' +
+                    ''.join(f'<tspan x="0" dy="1em">{row}</tspan>'
+                            for row in rows) + '</text></svg>')
+        return totals + table
 
         # from ._utils import tighten
         # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
@@ -467,7 +485,8 @@ def run(args):
     # log.debug(extns)
 
     print_unicode(
-        tabulate(auth_stats, stats_tot, args.sort, args.bytype, args.format, cost, args.enum))
+        tabulate(auth_stats, stats_tot, args.sort, args.bytype, args.format, cost, args.enum,
+                 args.min))
 
 
 def get_main_parser():
