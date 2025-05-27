@@ -326,9 +326,10 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                     log.warning(i)
                 else:
                     fname = RE_RENAME.sub(r'\\2', fname)
-                    loc = (int(inss) if churn & CHURN_INS and inss else
-                           0) + (int(dels) if churn & CHURN_DEL and dels else 0)
-                    stats_append(fname, auth, loc, tstamp)
+                    if fname in file_list:
+                        loc = int(inss) if churn & CHURN_INS and inss else 0
+                        loc += int(dels) if churn & CHURN_DEL and dels else 0
+                        stats_append(fname, auth, loc, tstamp)
 
     # quickly count commits (even if no surviving loc)
     log.log(logging.NOTSET, "authors:%s", list(auth_stats.keys()))
