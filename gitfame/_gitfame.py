@@ -62,7 +62,7 @@ import logging
 import os
 import re
 import subprocess
-# from __future__ import absolute_import
+from collections import defaultdict
 from functools import partial
 from os import path
 
@@ -259,21 +259,17 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     def stats_append(fname, auth, loc, tstamp):
         auth = str(auth)
         tstamp = int(tstamp)
-        try:
-            auth_stats[auth]["loc"] += loc
-        except KeyError:
-            auth_stats[auth] = {"loc": loc, "files": {fname}, "ctimes": []}
-        else:
-            auth_stats[auth]["files"].add(fname)
-            auth_stats[auth]["ctimes"].append(tstamp)
+        if auth not in auth_stats:
+            # auth_stats[auth] = defaultdict(int) | {"files": set(), "ctimes": []} # py>=3.9
+            auth_stats[auth] = defaultdict(int)
+            auth_stats[auth].update({"files": set(), "ctimes": []})
+        auth_stats[auth]["loc"] += loc
+        auth_stats[auth]["files"].add(fname)
+        auth_stats[auth]["ctimes"].append(tstamp)
 
         if bytype:
             fext_key = f".{fext(fname) or '_None_ext'}"
-            # auth_stats[auth].setdefault(fext_key, 0)
-            try:
-                auth_stats[auth][fext_key] += loc
-            except KeyError:
-                auth_stats[auth][fext_key] = loc
+            auth_stats[auth][fext_key] += loc
 
     if churn & CHURN_SLOC:
         for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing",
@@ -326,15 +322,14 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                     log.warning(i)
                 else:
                     fname = RE_RENAME.sub(r'\\2', fname)
-                    loc = (int(inss) if churn & CHURN_INS and inss else
-                           0) + (int(dels) if churn & CHURN_DEL and dels else 0)
-                    stats_append(fname, auth, loc, tstamp)
+                    if fname in file_list:
+                        loc = int(inss) if churn & CHURN_INS and inss else 0
+                        loc += int(dels) if churn & CHURN_DEL and dels else 0
+                        stats_append(fname, auth, loc, tstamp)
 
     # quickly count commits (even if no surviving loc)
     log.log(logging.NOTSET, "authors:%s", list(auth_stats.keys()))
     auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch] + since + until)
-    for stats in auth_stats.values():
-        stats.setdefault("commits", 0)
     log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
     auth2em = {}
     auth2name = {}
@@ -342,10 +337,10 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         auth = f'{name} <{em}>'
         auth2em[auth] = em
         auth2name[auth] = name
-        try:
-            auth_stats[auth]["commits"] += int(ncom)
-        except KeyError:
-            auth_stats[auth] = {"loc": 0, "files": set(), "commits": int(ncom), "ctimes": []}
+        if auth not in auth_stats:
+            auth_stats[auth] = defaultdict(int)
+            auth_stats[auth].update({"files": set(), "ctimes": []})
+        auth_stats[auth]["commits"] += int(ncom)
     if not (show & SHOW_NAME and show & SHOW_EMAIL): # replace author with either email or name
         auth2new = auth2em if (show & SHOW_EMAIL) else auth2name
         log.debug(auth2new)
@@ -353,12 +348,13 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         auth_stats = {}
 
         for auth, stats in getattr(old, 'iteritems', old.items)():
-            i = auth_stats.setdefault(auth2new[auth],
-                                      {"loc": 0, "files": set(), "commits": 0, "ctimes": []})
-            i["loc"] += stats["loc"]
+            i = auth_stats.setdefault(auth2new[auth], defaultdict(int))
+            i.setdefault("files", set())
+            i.setdefault("ctimes", [])
             i["files"].update(stats["files"])
-            i["commits"] += stats["commits"]
-            i["ctimes"] += stats["ctimes"]
+            for k, v in stats.items():
+                if k != 'files':
+                    i[k] += v
         del old
 
     return auth_stats
