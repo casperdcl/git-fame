@@ -62,7 +62,7 @@ import logging
 import os
 import re
 import subprocess
-# from __future__ import absolute_import
+from collections import defaultdict
 from functools import partial
 from os import path
 
@@ -354,12 +354,13 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         auth_stats = {}
 
         for auth, stats in getattr(old, 'iteritems', old.items)():
-            i = auth_stats.setdefault(auth2new[auth],
-                                      {"loc": 0, "files": set(), "commits": 0, "ctimes": []})
-            i["loc"] += stats["loc"]
+            i = auth_stats.setdefault(auth2new[auth], defaultdict(int))
+            i.setdefault("files", set())
+            i.setdefault("ctimes", [])
             i["files"].update(stats["files"])
-            i["commits"] += stats["commits"]
-            i["ctimes"] += stats["ctimes"]
+            for k, v in stats.items():
+                if k != 'files':
+                    i[k] += v
         del old
 
     return auth_stats
