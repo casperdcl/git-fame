@@ -24,8 +24,7 @@ __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__ # weird foreign language
 
 log = logging.getLogger(__name__)
-TERM_WIDTH = _screen_shape_wrapper()(sys.stdout)[0]
-if not TERM_WIDTH:
+if not (TERM_WIDTH := _screen_shape_wrapper()(sys.stdout)[0]):
     # non interactive pipe
     TERM_WIDTH = 256
 
@@ -53,7 +52,7 @@ def tighten(t, max_width=256, blanks=' -=', seps='|+'):
     curr_blank = bool()
     prev_blank = blank_col(rows, i - 1, blanks)
     len_r = len(rows[0])
-    while (i < len_r):
+    while i < len_r:
         curr_blank = blank_col(rows, i, blanks)
         if prev_blank and curr_blank:
             rows = [r[:i - 1] + r[i:] for r in rows]

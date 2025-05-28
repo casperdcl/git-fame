@@ -3,11 +3,8 @@ requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "gitfame/_dist_ver.py"
-write_to_template = "__version__ = '{version}'\n"
-# py>3.7:
-# version_file = "gitfame/_dist_ver.py"
-# version_file_template = "__version__ = '{version}'\n"
+version_file = "gitfame/_dist_ver.py"
+version_file_template = "__version__ = '{version}'\n"
 
 [tool.setuptools.packages.find]
 exclude = ["tests"]
@@ -22,7 +19,7 @@ dynamic = ["version"]
 authors = [{name = "Casper da Costa-Luis", email = "casper.dcl@physics.org"}]
 description = "Pretty-print `git` repository collaborators sorted by contributions"
 readme = "README.rst"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 keywords = ["git", "blame", "git-blame", "git-log", "code-analysis", "cost", "loc", "author", "commit", "shortlog", "ls-files"]
 license = {text = "MPL-2.0"}
 # Trove classifiers (https://pypi.org/pypi?%3Aaction=list_classifiers)
@@ -39,7 +36,6 @@ classifiers = [
     "Intended Audience :: End Users/Desktop",
     "Intended Audience :: Other Audience",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
     "Operating System :: MacOS",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft",
@@ -53,7 +49,6 @@ classifiers = [
     "Operating System :: Unix",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",

@@ -152,7 +152,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
     # log.debug(auth_stats)
 
-    for i, j in [("commits", "coms"), ("files", "fils"), ("hours", "hrs"), ("months", "mths")]:
+    for i, j in (("commits", "coms"), ("files", "fils"), ("hours", "hrs"), ("months", "mths")):
         sort = sort.replace(i, j)
     tab.sort(key=lambda i: i[COL_NAMES.index(sort)], reverse=True)
     if row_nums:
@@ -161,16 +161,15 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 
     totals = 'Total ' + '\nTotal '.join("%s: %s" % i for i in sorted(stats_tot.items())) + '\n'
 
-    backend = backend.lower()
-    if backend in ("tabulate", "md", "markdown"):
+    if (backend := backend.lower()) in ("tabulate", "md", "markdown"):
         backend = "pipe"
 
-    if backend in ['yaml', 'yml', 'json', 'csv', 'tsv']:
+    if backend in ('yaml', 'yml', 'json', 'csv', 'tsv'):
         tab = [i[:-1] + [float(pc.strip()) for pc in i[-1].split('/')] for i in tab]
         tab = {
             "total": stats_tot, "data": tab,
             "columns": COL_NAMES[:-1] + ['%' + i for i in COL_NAMES[-4:-1]]}
-        if backend in ['yaml', 'yml']:
+        if backend in ('yaml', 'yml'):
             log.debug("backend:yaml")
             from yaml import safe_dump as tabber
             return tabber(tab).rstrip()
@@ -178,7 +177,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
             log.debug("backend:json")
             from json import dumps as tabber
             return tabber(tab, ensure_ascii=False)
-        elif backend in ['csv', 'tsv']:
+        elif backend in ('csv', 'tsv'):
             log.debug("backend:csv")
             from csv import writer as tabber
             from io import StringIO
@@ -254,9 +253,8 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     auth_stats = {}
 
     def stats_append(fname, auth, loc, tstamp):
-        auth = str(auth)
         tstamp = int(tstamp)
-        if auth not in auth_stats:
+        if (auth := str(auth)) not in auth_stats:
             auth_stats[auth] = defaultdict(int, files=set(), ctimes=[])
         auth_stats[auth]["loc"] += loc
         auth_stats[auth]["files"].add(fname)
@@ -316,8 +314,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                 except ValueError:
                     log.warning(i)
                 else:
-                    fname = RE_RENAME.sub(r'\\2', fname)
-                    if fname in file_list:
+                    if (fname := RE_RENAME.sub(r'\\2', fname)) in file_list:
                         loc = int(inss) if churn & CHURN_INS and inss else 0
                         loc += int(dels) if churn & CHURN_DEL and dels else 0
                         stats_append(fname, auth, loc, tstamp)

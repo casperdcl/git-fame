@@ -56,7 +56,7 @@ repos:
   rev: v3.20.0
   hooks:
   - id: pyupgrade
-    args: [--py37-plus]
+    args: [--py38-plus]
 - repo: https://github.com/google/yapf
   rev: v0.43.0
   hooks:
