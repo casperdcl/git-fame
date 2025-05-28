@@ -9,9 +9,18 @@ Pretty-print ``git`` repository collaborators sorted by contributions.
 
 |DOI-URI| |LICENCE| |OpenHub-Status| |Sponsor-Casper|
 
+.. code::
+
+    https://git-fame.cdcl.ml/gh/{owner}/{repo}
+
+|Contributions|
+
 .. code:: sh
 
-    ~$ git fame --cost hour,month --loc ins
+    git fame --cost hour,month --loc ins
+
+.. code:: sh
+
     Processing: 100%|██████████████████████████| 1/1 [00:00<00:00,  2.16repo/s]
     Total commits: 1775
     Total ctimes: 2770
@@ -116,7 +125,7 @@ Tab completion
 
 Optionally, systems with ``bash-completion`` can install tab completion
 support. The
-`git-fame_completion.bash <https://raw.githubusercontent.com/casperdcl/git-fame/main/git-fame_completion.bash>`__
+`git-fame_completion.bash <https://raw.githubusercontent.com/casperdcl/git-fame/main/git-fame_completion.bash>`_
 file needs to be copied to an appropriate folder.
 
 On Ubuntu, the procedure would be:
@@ -137,7 +146,7 @@ followed by a terminal restart.
 Changelog
 ---------
 
-The list of all changes is available on the Releases page: |GitHub-Status|.
+The list of all changes is available on the Releases page: |GitHub-Status|
 
 
 Usage
@@ -165,11 +174,13 @@ It is also possible to run from within a python shell or script.
     >>> import gitfame
     >>> gitfame.main(['--sort=commits', '-wt', '/path/to/my/repo'])
 
+Finally, there is a live server for public GitHub repositories at `git-fame.cdcl.ml/gh/{owner}/{repo} <https://git-fame.cdcl.ml/docs>`_.
+
+The ``rendered by git-fame.cdcl.ml`` watermark is removed for sponsors of `casperdcl <https://github.com/casperdcl>`_: |Sponsor-Casper|
+
 
 Documentation
 -------------
-
-|Py-Versions| |README-Hits|
 
 .. code::
 
@@ -258,6 +269,7 @@ In such cases, ``--excl`` may need to be significantly extended.
 On the plus side, it is faster to compute ``ins`` and ``del`` compared to
 ``surv``.
 
+
 Examples
 --------
 
@@ -270,11 +282,17 @@ An SVG image for inclusion in README files and websites:
 
    git fame -wMC --format svg --min 1 > docs/authors.svg
 
+Which can also be dynamically created for public GitHub repositories:
+
+.. code:: md
+
+   ![markdown-image](https://git-fame.cdcl.ml/gh/{owner}/{repo}?min=1)
+
 CODEOWNERS
 ~~~~~~~~~~
 
 Generating
-`CODEOWNERS <https://help.github.com/en/articles/about-code-owners>`__:
+`CODEOWNERS <https://help.github.com/en/articles/about-code-owners>`_:
 
 .. code:: sh
 
@@ -302,7 +320,7 @@ Generating
 Zenodo config
 ~~~~~~~~~~~~~
 
-Generating `.zenodo.json <https://developers.zenodo.org/#deposit-metadata>`__:
+Generating `.zenodo.json <https://developers.zenodo.org/#deposit-metadata>`_:
 
 .. code:: sh
 
@@ -311,14 +329,18 @@ Generating `.zenodo.json <https://developers.zenodo.org/#deposit-metadata>`__:
       | sed -r -e 's/(\{"name")/\n    \1/g' -e 's/:/: /g' \
       > .zenodo.json
 
+
 Contributions
 -------------
 
 |GitHub-Commits| |GitHub-Issues| |GitHub-PRs| |OpenHub-Status|
 
-All source code is hosted on `GitHub <https://github.com/casperdcl/git-fame>`__.
+All source code is hosted on `GitHub <https://github.com/casperdcl/git-fame>`_.
 Contributions are welcome.
 
+|Contributions|
+
+The ``rendered by git-fame.cdcl.ml`` watermark is removed for sponsors of `casperdcl <https://github.com/casperdcl>`_: |Sponsor-Casper|
 
 LICENCE
 -------
@@ -326,16 +348,6 @@ LICENCE
 Open Source (OSI approved): |LICENCE|
 
 Citation information: |DOI-URI|
-
-
-Authors
--------
-
-|OpenHub-Status|
-
-- Casper da Costa-Luis (`casperdcl <https://github.com/casperdcl>`__ |Sponsor-Casper|)
-
-We are grateful for all |GitHub-Contributions|.
 
 |README-Hits|
 
@@ -359,8 +371,8 @@ We are grateful for all |GitHub-Contributions|.
    :target: https://github.com/casperdcl/git-fame/issues
 .. |GitHub-PRs| image:: https://img.shields.io/github/issues-pr-closed/casperdcl/git-fame.svg?logo=github
    :target: https://github.com/casperdcl/git-fame/pulls
-.. |GitHub-Contributions| image:: https://img.shields.io/github/contributors/casperdcl/git-fame.svg?logo=github
-   :target: https://github.com/casperdcl/git-fame/graphs/contributors
+.. |Contributions| image:: https://git-fame.cdcl.ml/gh/casperdcl/git-fame
+   :target: https://git-fame.cdcl.ml/gh/casperdcl/git-fame
 .. |GitHub-Updated| image:: https://img.shields.io/github/last-commit/casperdcl/git-fame?label=pushed&logo=github
    :target: https://github.com/casperdcl/git-fame/pulse
 .. |Sponsor-Casper| image:: https://img.shields.io/badge/sponsor-FOSS-dc10ff.svg?logo=Contactless%20Payment
