@@ -1,10 +1,7 @@
-from __future__ import print_function
-
 import logging
 import subprocess
 import sys
 from functools import partial
-from io import StringIO
 
 from tqdm import tqdm as tqdm_std
 from tqdm.utils import _screen_shape_wrapper
@@ -18,22 +15,21 @@ else:
     tqdm = partial(tqdm_std, lock_args=(False,))
 
 __author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
-__date__ = "2016-2023"
+__date__ = "2016-2025"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = [
     "TERM_WIDTH", "int_cast_or_len", "Max", "fext", "tqdm", "tighten", "check_output",
-    "print_unicode", "StringIO", "Str"]
+    "print_unicode", "Str"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__ # weird foreign language
 
 log = logging.getLogger(__name__)
-TERM_WIDTH = _screen_shape_wrapper()(sys.stdout)[0]
-if not TERM_WIDTH:
+if not (TERM_WIDTH := _screen_shape_wrapper()(sys.stdout)[0]):
     # non interactive pipe
     TERM_WIDTH = 256
 
 
-class TqdmStream(object):
+class TqdmStream:
     @classmethod
     def write(cls, msg):
         tqdm_std.write(msg, end='')
@@ -56,7 +52,7 @@ def tighten(t, max_width=256, blanks=' -=', seps='|+'):
     curr_blank = bool()
     prev_blank = blank_col(rows, i - 1, blanks)
     len_r = len(rows[0])
-    while (i < len_r):
+    while i < len_r:
         curr_blank = blank_col(rows, i, blanks)
         if prev_blank and curr_blank:
             rows = [r[:i - 1] + r[i:] for r in rows]
@@ -138,7 +134,7 @@ def Str(i):
 
 def merge_stats(left, right):
     """Add `right`'s values to `left` (modifies `left` in-place)"""
-    for k, val in getattr(right, 'iteritems', right.items)():
+    for k, val in right.items():
         if isinstance(val, int):
             left[k] = left.get(k, 0) + val
         elif hasattr(val, 'extend'):

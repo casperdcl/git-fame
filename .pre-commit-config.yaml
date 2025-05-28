@@ -29,17 +29,18 @@ repos:
     name: Run tests
     language: python
     entry: pytest
-    args: [-qq, --durations=1]
+    args: [-qq, --durations=1, -n=auto]
     types: [python]
     pass_filenames: false
     additional_dependencies:
     - pytest-timeout
+    - pytest-xdist
     - argopt
     - pyyaml
     - tabulate
     - tqdm
 - repo: https://github.com/PyCQA/flake8
-  rev: 7.1.1
+  rev: 7.2.0
   hooks:
   - id: flake8
     args: [-j8]
@@ -51,6 +52,11 @@ repos:
     - flake8-isort
     - flake8-pyproject
     - flake8-string-format
+- repo: https://github.com/asottile/pyupgrade
+  rev: v3.20.0
+  hooks:
+  - id: pyupgrade
+    args: [--py38-plus]
 - repo: https://github.com/google/yapf
   rev: v0.43.0
   hooks:
@@ -58,6 +64,6 @@ repos:
     args: [-i]
     additional_dependencies: [toml]
 - repo: https://github.com/PyCQA/isort
-  rev: 6.0.0
+  rev: 6.0.1
   hooks:
   - id: isort

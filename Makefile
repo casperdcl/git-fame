@@ -17,12 +17,12 @@
 	prebuildclean
 	clean
 	toxclean
+	install_build
 	install_dev
 	install
 	build
 	buildupload
 	pypi
-	snap
 	docker
 	help
 	none
@@ -66,7 +66,8 @@ gitfame/git-fame.1: .meta/.git-fame.1.md gitfame/_gitfame.py
     sed -r -e 's/\\/\\\\/g' \
       -e 's/^  (--\S+=)<(\S+)>\s+(.*)$$/\n\\\1*\2*\n: \3/' \
       -e 's/^  (-., )(-\S+)\s*/\n\\\1\\\2\n: /' \
-      -e 's/^  (--\S+)\s+/\n\\\1\n: /' |\
+      -e 's/^  (--\S+)\s+/\n\\\1\n: /' \
+      -e 's/^  (-.)\s+/\n\\\1\n: /' |\
     cat "$<" - |\
     pandoc -o "$@" -s -t man
 
@@ -86,12 +87,12 @@ prebuildclean:
 coverclean:
 	@+python -c "import os; os.remove('.coverage') if os.path.exists('.coverage') else None"
 	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('.coverage.*')]"
-	@+python -c "import shutil; shutil.rmtree('tests/__pycache__', True)"
 	@+python -c "import shutil; shutil.rmtree('gitfame/__pycache__', True)"
+	@+python -c "import shutil; shutil.rmtree('tests/__pycache__', True)"
 clean:
 	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('*.py[co]')]"
-	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('tests/*.py[co]')]"
 	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('gitfame/*.py[co]')]"
+	@+python -c "import os, glob; [os.remove(i) for i in glob.glob('tests/*.py[co]')]"
 toxclean:
 	@+python -c "import shutil; shutil.rmtree('.tox', True)"
 

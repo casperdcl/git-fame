@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import sys
 from json import loads
 from os import path
@@ -7,17 +5,16 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from textwrap import dedent
 
-from pytest import skip
+from pytest import mark, skip
 
 from gitfame import _gitfame, main
-from gitfame._utils import StringIO
 
 # test data
 auth_stats = {
-    u'Not Committed Yet': {
+    'Not Committed Yet': {
         'files': {'gitfame/_gitfame.py', 'gitfame/_utils.py', 'Makefile', 'MANIFEST.in'},
         'loc': 75, 'ctimes': [], 'commits': 0},
-    u'Casper da Costa-Luis': {
+    'Casper da Costa-Luis': {
         'files': {
             'gitfame/_utils.py', 'gitfame/__main__.py', 'setup.cfg', 'gitfame/_gitfame.py',
             'gitfame/__init__.py', 'git-fame_completion.bash', 'Makefile', 'MANIFEST.in',
@@ -43,12 +40,11 @@ def test_tabulate():
     | Casper da Costa-Luis |   538 |     35 |     10 | 87.8/ 100/71.4  |
     | Not Committed Yet    |    75 |      0 |      4 | 12.2/ 0.0/28.6  |"""))
 
-    sys.stderr.write("\rTest builtin tabulate ... ") # `tqdm` may clear info
-
 
 def test_tabulate_cost():
     """Test cost estimates"""
-    assert (_gitfame.tabulate(auth_stats, stats_tot, cost={"hours", "months"}) == dedent("""\
+    assert (_gitfame.tabulate(auth_stats, stats_tot, cost={"hours", "months"},
+                              width=256) == dedent("""\
     Total commits: 35
     Total files: 14
     Total hours: 5.5
@@ -159,7 +155,17 @@ def test_tabulate_unknown():
         raise ValueError("Should not support unknown tabulate format")
 
 
-# WARNING: this should be the last test as it messes with sys.argv
+@mark.parametrize(
+    'params',
+    [['--sort', 'commits'], ['--no-regex'], ['--no-regex', '--incl', 'setup.py,README.rst'],
+     ['--excl', r'.*\.py'], ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'],
+     ['--cost', 'month', '--excl', r'.*\.py'], ['-e'], ['-w'], ['-M'], ['-C'], ['-t'],
+     ['--show=name,email']])
+def test_options(params):
+    """Test command line options"""
+    main(['-s'] + params)
+
+
 def test_main():
     """Test command line pipes"""
     import subprocess
@@ -173,48 +179,34 @@ def test_main():
       gitfame.main()
       ''')), stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()[0]
 
-    # actual test:
-
     assert ('Total commits' in str(res))
 
-    # semi-fake test which gets coverage:
 
-    _SYS_AOE = sys.argv, sys.stdout, sys.stderr
-    sys.stdout = StringIO()
-    sys.stderr = sys.stdout
-
-    # sys.argv = ['', '--silent-progress']
-    # import gitfame.__main__  # NOQA
+def test_main_errors(capsys):
+    """Test bad options"""
     main(['--silent-progress'])
 
-    sys.stdout.seek(0)
+    capsys.readouterr() # clear output
     try:
         main(['--bad', 'arg'])
     except SystemExit:
-        res = ' '.join(sys.stdout.getvalue().strip().split()[:2])
+        out = capsys.readouterr()
+        res = ' '.join(out.err.strip().split()[:2])
         if res != "usage: gitfame":
-            raise ValueError(sys.stdout.getvalue())
+            raise ValueError(out)
     else:
         raise ValueError("Expected --bad arg to fail")
 
-    sys.stdout.seek(0)
+    capsys.readouterr() # clear output
     try:
         main(['-s', '--sort', 'badSortArg'])
     except KeyError as e:
         if "badSortArg" not in str(e):
             raise ValueError("Expected `--sort=badSortArg` to fail")
 
-    for params in [['--sort', 'commits'], ['--no-regex'],
-                   ['--no-regex', '--incl', 'setup.py,README.rst'], ['--excl', r'.*\.py'],
-                   ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'],
-                   ['--cost', 'month', '--excl', r'.*\.py'], ['-e'], ['-w'], ['-M'], ['-C'],
-                   ['-t'], ['--show=name,email']]:
-        try:
-            main(['-s'] + params)
-        except Exception as exc:
-            raise KeyError(params) from exc
 
-    # test --manpath
+def test_manpath():
+    """Test --manpath"""
     tmp = mkdtemp()
     man = path.join(tmp, "git-fame.1")
     assert not path.exists(man)
@@ -227,7 +219,7 @@ def test_main():
     assert path.exists(man)
     rmtree(tmp, True)
 
-    # test multiple gitdirs
-    main(['.', '.'])
 
-    sys.argv, sys.stdout, sys.stderr = _SYS_AOE
+def test_multiple_gitdirs():
+    """test multiple gitdirs"""
+    main(['.', '.'])
