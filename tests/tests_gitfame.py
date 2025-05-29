@@ -40,6 +40,8 @@ def test_tabulate():
     | Casper da Costa-Luis |   538 |     35 |     10 | 87.8/ 100/71.4  |
     | Not Committed Yet    |    75 |      0 |      4 | 12.2/ 0.0/28.6  |"""))
 
+    assert "Not Committed Yet" not in _gitfame.tabulate(auth_stats, stats_tot, min_sort_val=76)
+
 
 def test_tabulate_cost():
     """Test cost estimates"""
@@ -160,7 +162,7 @@ def test_tabulate_unknown():
     [['--sort', 'commits'], ['--no-regex'], ['--no-regex', '--incl', 'setup.py,README.rst'],
      ['--excl', r'.*\.py'], ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'],
      ['--cost', 'month', '--excl', r'.*\.py'], ['-e'], ['-w'], ['-M'], ['-C'], ['-t'],
-     ['--show=name,email']])
+     ['--show=name,email'], ['--format=csv'], ['--format=svg']])
 def test_options(params):
     """Test command line options"""
     main(['-s'] + params)

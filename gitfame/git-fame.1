@@ -41,6 +41,9 @@ Branch or tag [default: HEAD] up to which to check.
 \-\-sort=\f[I]key\f[R]
 [default: loc]|commits|files|hours|months.
 .TP
+\-\-min=\f[I]val\f[R]
+Minimum value (of \f[CR]\-\-sort\f[R] key) to show [default: 0:int].
+.TP
 \-\-loc=\f[I]type\f[R]
 surv(iving)|ins(ertions)|del(etions) What \f[CR]loc\f[R] represents.
 Use `ins,del' to count both.
@@ -118,7 +121,8 @@ Ignore revisions listed in the given file (requires
 \f[CR]\-\-loc=surviving\f[R]).
 .TP
 \-\-format=\f[I]format\f[R]
-Table format [default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
+Table format svg|[default:
+pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
 May require \f[CR]git\-fame[<format>]\f[R],
 e.g.\ \f[CR]pip install git\-fame[yaml]\f[R].
 Any \f[CR]tabulate.tabulate_formats\f[R] is also accepted.
