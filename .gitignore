@@ -8,7 +8,6 @@ __pycache__/
 /build/
 /dist/
 /git-fame_*.snap
-/.dockerignore
 
 # Unit test / coverage reports
 /.tox/
