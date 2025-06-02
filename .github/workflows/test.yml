@@ -64,7 +64,7 @@ jobs:
       run: |
         sudo apt-get install -yqq pandoc
         pip install -r .meta/requirements-build.txt
-        make build .dockerignore
+        make build
     - id: dist
       uses: casperdcl/deploy-pypi@v2
       with:

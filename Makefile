@@ -71,9 +71,6 @@ gitfame/git-fame.1: .meta/.git-fame.1.md gitfame/_gitfame.py
     cat "$<" - |\
     pandoc -o "$@" -s -t man
 
-.dockerignore:
-	@+python -c "fd=open('.dockerignore', 'w'); fd.write('*\n!dist/*.whl\n')"
-
 distclean:
 	@+make coverclean
 	@+make prebuildclean
@@ -118,7 +115,6 @@ buildupload:
 
 docker:
 	@make build
-	@make .dockerignore
 	docker build . -t casperdcl/git-fame
 	docker tag casperdcl/git-fame:latest casperdcl/git-fame:$(shell docker run --rm casperdcl/git-fame -v)
 none:
