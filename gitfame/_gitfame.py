@@ -87,14 +87,14 @@ log = logging.getLogger(__name__)
 
 # processing `blame --line-porcelain`
 RE_AUTHS_BLAME = re.compile(
-    r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)\nauthor-mail <(.+?)>$.*?\ncommitter-time (\d+)',
+    r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)\nauthor-mail <(.*?)>$.*?\ncommitter-time (\d+)',
     flags=re.M | re.DOTALL)
 RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
 RE_BLAME_BOUNDS = re.compile(
     r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
     flags=re.M | re.DOTALL)
 # processing `log --format="aN%aN aE%aE ct%ct" --numstat`
-RE_AUTHS_LOG = re.compile(r"^aN(.+?) aE(.+?) ct(\d+)\n\n", flags=re.M)
+RE_AUTHS_LOG = re.compile(r"^aN(.+?) aE(.*?) ct(\d+)\n\n", flags=re.M)
 RE_STAT_BINARY = re.compile(r"^\s*?-\s*-.*?\n", flags=re.M)
 RE_RENAME = re.compile(r"\{.+? => (.+?)\}")
 # finds all non-escaped commas
