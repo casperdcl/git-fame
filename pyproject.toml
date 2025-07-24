@@ -117,7 +117,8 @@ timeout = 30
 log_level = "INFO"
 python_files = ["tests_*.py"]
 testpaths = ["tests"]
-addopts = "-v --tb=short -rxs -W=error --durations=0 --durations-min=0.1"
+addopts = "-v --tb=short -rxs --durations=0 --durations-min=0.1"
+filterwarnings = ["error", "ignore:co_lnotab:DeprecationWarning"]
 
 [tool.coverage.run]
 branch = true
