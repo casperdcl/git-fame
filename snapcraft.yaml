@@ -21,8 +21,13 @@ parts:
     override-stage: |
         craftctl default
         craftctl set version=$(bin/python3 -m gitfame --version)
+plugs:
+  etc-gitconfig:
+    interface: system-files
+    read:
+    - /etc/gitconfig
 apps:
   git-fame:
     command: bin/git-fame
     completer: completion.sh
-    plugs: [home]
+    plugs: [home, etc-gitconfig]
