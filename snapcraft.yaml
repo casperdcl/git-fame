@@ -26,3 +26,7 @@ apps:
     command: bin/git-fame
     completer: completion.sh
     plugs: [home]
+    environment:
+      GIT_EXEC_PATH: $SNAP/libexec/git-core
+      GIT_TEMPLATE_DIR: $SNAP/usr/share/git-core/templates
+      GIT_CONFIG_NOSYSTEM: "true"
