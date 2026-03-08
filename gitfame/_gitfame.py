@@ -343,6 +343,12 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         auth_stats = {}
 
         for auth, stats in old.items():
+            if auth not in auth2new:
+                m = auth.rfind(' <')
+                if m >= 0:
+                    auth2new[auth] = auth[m + 2:-1] if (show & SHOW_EMAIL) else auth[:m]
+                else:
+                    auth2new[auth] = auth
             i = auth_stats.setdefault(auth2new[auth], defaultdict(int, files=set(), ctimes=[]))
             i["files"].update(stats["files"])
             for k, v in stats.items():
