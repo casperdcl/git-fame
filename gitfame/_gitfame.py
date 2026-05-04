@@ -65,8 +65,7 @@ from collections import defaultdict
 from functools import partial
 from os import path
 
-from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats,
-                     print_unicode, tqdm)
+from ._utils import TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats, print_unicode, tqdm
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
 try:
@@ -86,13 +85,11 @@ __license__ = __licence__ # weird foreign language
 log = logging.getLogger(__name__)
 
 # processing `blame --line-porcelain`
-RE_AUTHS_BLAME = re.compile(
-    r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)\nauthor-mail <(.*?)>$.*?\ncommitter-time (\d+)',
-    flags=re.M | re.DOTALL)
+RE_AUTHS_BLAME = re.compile(r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)\nauthor-mail <(.*?)>$.*?\ncommitter-time (\d+)',
+                            flags=re.M | re.DOTALL)
 RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
-RE_BLAME_BOUNDS = re.compile(
-    r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
-    flags=re.M | re.DOTALL)
+RE_BLAME_BOUNDS = re.compile(r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
+                             flags=re.M | re.DOTALL)
 # processing `log --format="aN%aN aE%aE ct%ct" --numstat`
 RE_AUTHS_LOG = re.compile(r"^aN(.+?) aE(.*?) ct(\d+)\n\n", flags=re.M)
 RE_STAT_BINARY = re.compile(r"^\s*?-\s*-.*?\n", flags=re.M)
@@ -123,8 +120,8 @@ def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
     return (res/60.0 + firstCommitAdditionInMinutes) / 60.0
 
 
-def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost=None,
-             row_nums=False, min_sort_val=0, width=TERM_WIDTH):
+def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost=None, row_nums=False, min_sort_val=0,
+             width=TERM_WIDTH):
     """
     backends  : [default: md]|yaml|json|csv|tsv|tabulate|
       `in tabulate.tabulate_formats`
@@ -136,10 +133,9 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         s.get('commits', 0),
         len(s.get('files', [])), '/'.join(
             map('{:4.1f}'.format,
-                (100 * s['loc'] / max(1, stats_tot['loc']),
-                 100 * s.get('commits', 0) / max(1, stats_tot['commits']),
-                 100 * len(s.get('files', [])) / max(1, stats_tot['files'])))).replace(
-                     '/100.0/', '/ 100/')] for (auth, s) in auth_stats.items()]
+                (100 * s['loc'] / max(1, stats_tot['loc']), 100 * s.get('commits', 0) / max(1, stats_tot['commits']),
+                 100 * len(s.get('files', [])) / max(1, stats_tot['files'])))).replace('/100.0/', '/ 100/')]
+           for (auth, s) in auth_stats.items()]
     if cost:
         stats_tot = dict(stats_tot)
         if cost & COST_MONTHS:
@@ -172,9 +168,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 
     if backend in ('yaml', 'yml', 'json', 'csv', 'tsv'):
         tab = [i[:-1] + [float(pc.strip()) for pc in i[-1].split('/')] for i in tab]
-        tab = {
-            "total": stats_tot, "data": tab,
-            "columns": COL_NAMES[:-1] + ['%' + i for i in COL_NAMES[-4:-1]]}
+        tab = {"total": stats_tot, "data": tab, "columns": COL_NAMES[:-1] + ['%' + i for i in COL_NAMES[-4:-1]]}
         if backend in ('yaml', 'yml'):
             log.debug("backend:yaml")
             from yaml import safe_dump as tabber
@@ -216,18 +210,16 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
                     ' fill="white" fill-opacity="0.5" rx="5"/>'
                     '<text x="0" y="-0.5em" font-size="15"'
                     ' font-family="monospace" style="white-space: pre">' +
-                    ''.join(f'<tspan x="0" dy="1em">{row}</tspan>'
-                            for row in rows) + '</text></svg>')
+                    ''.join(f'<tspan x="0" dy="1em">{row}</tspan>' for row in rows) + '</text></svg>')
         return totals + table
 
         # from ._utils import tighten
         # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
 
 
-def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None,
-                    silent_progress=False, ignore_whitespace=False, M=False, C=False,
-                    warn_binary=False, bytype=False, show=None, prefix_gitdir=False, churn=None,
-                    ignore_rev="", ignore_revs_file=None, until=None):
+def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None, silent_progress=False,
+                    ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False, show=None,
+                    prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
@@ -236,16 +228,11 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     log.debug("base command:%s", git_cmd)
     file_list = check_output(git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
     text_file_list = check_output(git_cmd + ["grep", "-I", "--name-only", ".", branch]).strip()
-    text_file_list = set(
-        re.sub(f"^{re.escape(branch)}:", "", text_file_list, flags=re.M).split('\n'))
+    text_file_list = set(re.sub(f"^{re.escape(branch)}:", "", text_file_list, flags=re.M).split('\n'))
     if not hasattr(include_files, 'search'):
-        file_list = [
-            i for i in file_list if (not include_files or (i in include_files))
-            if i not in exclude_files]
+        file_list = [i for i in file_list if (not include_files or (i in include_files)) if i not in exclude_files]
     else:
-        file_list = [
-            i for i in file_list if include_files.search(i)
-            if not (exclude_files and exclude_files.search(i))]
+        file_list = [i for i in file_list if include_files.search(i) if not (exclude_files and exclude_files.search(i))]
     for fname in set(file_list) - text_file_list:
         getattr(log, "warn" if warn_binary else "debug")("binary:%s", fname.strip())
     file_list = [f for f in file_list if f in text_file_list] # preserve order
@@ -283,8 +270,8 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             auth_stats[auth][fext_key] += loc
 
     if churn & CHURN_SLOC:
-        for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing",
-                          disable=silent_progress, unit="file"):
+        for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
+                          unit="file"):
             if prefix_gitdir:
                 fname = path.join(gitdir, fname)
             try:
@@ -310,8 +297,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                 stats_append(fname, auth, loc, tstamp)
 
     else:
-        with tqdm(total=1, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
-                  unit="repo") as t:
+        with tqdm(total=1, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress, unit="repo") as t:
             blame_out = check_output(base_cmd + [branch], stderr=subprocess.STDOUT)
             t.update()
         log.log(logging.NOTSET, blame_out)
@@ -386,8 +372,7 @@ def run(args):
         args.gitdir = [args.gitdir]
     # strip `/`, `.git`
     gitdirs = [i.rstrip(os.sep) for i in args.gitdir]
-    gitdirs = [
-        path.join(*path.split(i)[:-1]) if path.split(i)[-1] == '.git' else i for i in args.gitdir]
+    gitdirs = [path.join(*path.split(i)[:-1]) if path.split(i)[-1] == '.git' else i for i in args.gitdir]
     # remove duplicates
     for i, d in reversed(list(enumerate(gitdirs))):
         if d in gitdirs[:i]:
@@ -444,12 +429,10 @@ def run(args):
 
     auth_stats = {}
     statter = partial(_get_auth_stats, branch=args.branch, since=args.since, until=args.until,
-                      include_files=include_files, exclude_files=exclude_files,
-                      silent_progress=args.silent_progress,
-                      ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C,
-                      warn_binary=args.warn_binary, bytype=args.bytype, show=args.show,
-                      prefix_gitdir=len(gitdirs) > 1, churn=churn, ignore_rev=args.ignore_rev,
-                      ignore_revs_file=args.ignore_revs_file)
+                      include_files=include_files, exclude_files=exclude_files, silent_progress=args.silent_progress,
+                      ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C, warn_binary=args.warn_binary,
+                      bytype=args.bytype, show=args.show, prefix_gitdir=len(gitdirs) > 1, churn=churn,
+                      ignore_rev=args.ignore_rev, ignore_revs_file=args.ignore_revs_file)
 
     # concurrent multi-repo processing
     if len(gitdirs) > 1:
@@ -457,8 +440,8 @@ def run(args):
             from concurrent.futures import ThreadPoolExecutor  # NOQA, yapf: disable
 
             from tqdm.contrib.concurrent import thread_map
-            mapper = partial(thread_map, desc="Repos", unit="repo", miniters=1,
-                             disable=args.silent_progress or len(gitdirs) <= 1)
+            mapper = partial(thread_map, desc="Repos", unit="repo", miniters=1, disable=args.silent_progress
+                             or len(gitdirs) <= 1)
         except ImportError:
             mapper = map
     else:
@@ -484,9 +467,7 @@ def run(args):
     #     extns.update([fext(i) for i in stats["files"]])
     # log.debug(extns)
 
-    print_unicode(
-        tabulate(auth_stats, stats_tot, args.sort, args.bytype, args.format, cost, args.enum,
-                 args.min))
+    print_unicode(tabulate(auth_stats, stats_tot, args.sort, args.bytype, args.format, cost, args.enum, args.min))
 
 
 def get_main_parser():

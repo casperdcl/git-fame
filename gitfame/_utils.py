@@ -17,9 +17,7 @@ else:
 __author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
 __date__ = "2016-2025"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
-__all__ = [
-    "TERM_WIDTH", "int_cast_or_len", "Max", "fext", "tqdm", "tighten", "check_output",
-    "print_unicode", "Str"]
+__all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "tqdm", "tighten", "check_output", "print_unicode", "Str"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__ # weird foreign language
 
@@ -67,8 +65,7 @@ def tighten(t, max_width=256, blanks=' -=', seps='|+'):
             if blank_col(rows, i, seps):
                 if have_first_line:
                     if i > len_r - max_width:
-                        return '\n'.join(r[:i - len_r + max_width] + r[i:]
-                                         for r in rows[:3] + rows[3::2] + [rows[-1]])
+                        return '\n'.join(r[:i - len_r + max_width] + r[i:] for r in rows[:3] + rows[3::2] + [rows[-1]])
                     break
                 else:
                     have_first_line = True
