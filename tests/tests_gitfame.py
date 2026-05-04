@@ -12,19 +12,17 @@ from gitfame import _gitfame, main
 # test data
 auth_stats = {
     'Not Committed Yet': {
-        'files': {'gitfame/_gitfame.py', 'gitfame/_utils.py', 'Makefile', 'MANIFEST.in'},
-        'loc': 75, 'ctimes': [], 'commits': 0},
+        'files': {'gitfame/_gitfame.py', 'gitfame/_utils.py', 'Makefile', 'MANIFEST.in'}, 'loc': 75, 'ctimes': [],
+        'commits': 0},
     'Casper da Costa-Luis': {
         'files': {
-            'gitfame/_utils.py', 'gitfame/__main__.py', 'setup.cfg', 'gitfame/_gitfame.py',
-            'gitfame/__init__.py', 'git-fame_completion.bash', 'Makefile', 'MANIFEST.in',
-            '.gitignore', 'setup.py'}, 'loc': 538,
+            'gitfame/_utils.py', 'gitfame/__main__.py', 'setup.cfg', 'gitfame/_gitfame.py', 'gitfame/__init__.py',
+            'git-fame_completion.bash', 'Makefile', 'MANIFEST.in', '.gitignore', 'setup.py'}, 'loc': 538,
         'ctimes': [
-            1510942009, 1517426360, 1532103452, 1543323944, 1548030670, 1459558286, 1510942009,
-            1459559144, 1481150373, 1510942009, 1548030670, 1517178199, 1481150379, 1517426360,
-            1548030670, 1459625059, 1510942009, 1517426360, 1481150373, 1517337751, 1517426360,
-            1510942009, 1548030670, 1459099074, 1459598664, 1517337751, 1517176447, 1552697404,
-            1546630326, 1543326881, 1459558286, 1481150373, 1510930168, 1459598664, 1517596988],
+            1510942009, 1517426360, 1532103452, 1543323944, 1548030670, 1459558286, 1510942009, 1459559144, 1481150373,
+            1510942009, 1548030670, 1517178199, 1481150379, 1517426360, 1548030670, 1459625059, 1510942009, 1517426360,
+            1481150373, 1517337751, 1517426360, 1510942009, 1548030670, 1459099074, 1459598664, 1517337751, 1517176447,
+            1552697404, 1546630326, 1543326881, 1459558286, 1481150373, 1510930168, 1459598664, 1517596988],
         'commits': 35}}
 stats_tot = {'files': 14, 'loc': 613, 'commits': 35}
 
@@ -45,8 +43,7 @@ def test_tabulate():
 
 def test_tabulate_cost():
     """Test cost estimates"""
-    assert (_gitfame.tabulate(auth_stats, stats_tot, cost={"hours", "months"},
-                              width=256) == dedent("""\
+    assert (_gitfame.tabulate(auth_stats, stats_tot, cost={"hours", "months"}, width=256) == dedent("""\
     Total commits: 35
     Total files: 14
     Total hours: 5.5
@@ -159,10 +156,9 @@ def test_tabulate_unknown():
 
 @mark.parametrize(
     'params',
-    [['--sort', 'commits'], ['--no-regex'], ['--no-regex', '--incl', 'setup.py,README.rst'],
-     ['--excl', r'.*\.py'], ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'],
-     ['--cost', 'month', '--excl', r'.*\.py'], ['-e'], ['-w'], ['-M'], ['-C'], ['-t'],
-     ['--show=name,email'], ['--format=csv'], ['--format=svg']])
+    [['--sort', 'commits'], ['--no-regex'], ['--no-regex', '--incl', 'setup.py,README.rst'], ['--excl', r'.*\.py'],
+     ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'], ['--cost', 'month', '--excl', r'.*\.py'], ['-e'],
+     ['-w'], ['-M'], ['-C'], ['-t'], ['--show=name,email'], ['--format=csv'], ['--format=svg']])
 def test_options(params):
     """Test command line options"""
     main(['-s'] + params)
