@@ -343,6 +343,9 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         auth_stats = {}
 
         for auth, stats in old.items():
+            if auth not in auth2new:
+                # https://github.com/casperdcl/git-fame/issues/122
+                auth2new[auth] = re.match('(.*) <(.*)>$', auth).group(2 if (show & SHOW_EMAIL) else 1) or auth
             i = auth_stats.setdefault(auth2new[auth], defaultdict(int, files=set(), ctimes=[]))
             i["files"].update(stats["files"])
             for k, v in stats.items():
