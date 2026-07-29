@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 
 [tool.setuptools.packages.find]
-exclude = ["tests"]
+include = ["gitfame"]
 
 [project.urls]
 repository = "https://github.com/casperdcl/git-fame"
@@ -53,10 +53,8 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: Implementation",
-    "Programming Language :: Python :: Implementation :: IronPython",
-    "Programming Language :: Python :: Implementation :: PyPy",
     "Programming Language :: Unix Shell",
     "Topic :: Desktop Environment",
     "Topic :: Education :: Computer Aided Instruction (CAI)",
@@ -120,7 +118,5 @@ filterwarnings = ["error", "ignore:co_lnotab:DeprecationWarning"]
 
 [tool.coverage.run]
 branch = true
-omit = ["tests/*"]
-relative_files = true
 [tool.coverage.report]
 show_missing = true

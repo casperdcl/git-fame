@@ -379,8 +379,8 @@ Citation information: |DOI-URI|
    :target: https://cdcl.ml/sponsor
 .. |PyPI| image:: https://img.shields.io/pypi/v/git-fame.svg?logo=PyPI&logoColor=white
    :target: https://pypi.org/project/git-fame
-.. |PyPI-Downloads| image:: https://img.shields.io/pypi/dm/git-fame.svg?label=pypi%20downloads&logo=DocuSign
-   :target: https://pypi.org/project/git-fame
+.. |PyPI-Downloads| image:: https://static.pepy.tech/personalized-badge/git-fame?left_text=downloads%2Fmonth
+   :target: https://pepy.tech/project/git-fame
 .. |Py-Versions| image:: https://img.shields.io/pypi/pyversions/git-fame.svg?logo=python&logoColor=white
    :target: https://pypi.org/project/git-fame
 .. |Conda-Forge| image:: https://img.shields.io/conda/v/conda-forge/git-fame.svg?label=conda-forge&logo=conda-forge
