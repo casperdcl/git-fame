@@ -9,6 +9,5 @@ __pycache__/
 /git-fame_*.snap
 
 # Unit test / coverage reports
-/.tox/
 /.coverage*
 /coverage.xml

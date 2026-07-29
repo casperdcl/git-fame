@@ -22,33 +22,33 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python }}
-    - name: Install
-      run: pip install -U tox tox-gh-actions
-    - name: Test
-      run: tox -e py${PYVER/./}
+    - run: pip install -e .[full,dev]
+    - run: pytest --cov=gitfame --cov-report=xml
+    - uses: coverallsapp/github-action@v2
+      with:
+        flag-name: ${{ matrix.python }}-${{ matrix.os }}
+        parallel: true
+    - uses: codecov/codecov-action@v7
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: ${{ matrix.python }}, ${{ matrix.os }}
+    - name: codacy
+      run: |
+        bash <(curl -fsL https://coverage.codacy.com/get.sh) report -l Python -r coverage.xml --partial || :
       env:
-        PYVER: ${{ matrix.python }}
-        PLATFORM: ${{ matrix.os }}
-        COVERALLS_FLAG_NAME: py${{ matrix.python }}-${{ matrix.os }}
-        COVERALLS_PARALLEL: true
-        COVERALLS_SERVICE_NAME: github
-        # coveralls needs explicit token
-        COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  coverage:
+        CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+  finish:
     continue-on-error: ${{ github.event_name != 'push' }}
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.x'
-    - name: Coveralls Finished
+    - uses: coverallsapp/github-action@v2
+      with: {parallel-finished: true}
+    - name: codacy
       run: |
-        pip install -U coveralls
-        coveralls --finish || :
+        bash <(curl -fsL https://coverage.codacy.com/get.sh) final || :
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
   deploy:
     needs: test
     runs-on: ubuntu-latest
