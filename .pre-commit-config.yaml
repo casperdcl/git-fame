@@ -5,11 +5,12 @@ repos:
   rev: v6.0.0
   hooks:
   - id: check-added-large-files
+  - id: check-builtin-literals
   - id: check-case-conflict
   - id: check-docstring-first
   - id: check-executables-have-shebangs
-  - id: check-toml
   - id: check-merge-conflict
+  - id: check-toml
   - id: check-yaml
   - id: debug-statements
   - id: end-of-file-fixer
@@ -26,13 +27,14 @@ repos:
     types: [text]
     exclude: ^(.pre-commit-config.yaml|.github/workflows/test.yml)$
   - id: pytest
-    name: Run tests
+    name: pytest
     language: python
-    entry: pytest
-    args: [-qq, --durations=1, -n=auto]
+    entry: env PYTHONPATH=. pytest
+    args: [--cov=gitfame, --cov-fail-under=85, -vv, --durations=1, -n=auto]
     types: [python]
     pass_filenames: false
     additional_dependencies:
+    - pytest-cov
     - pytest-timeout
     - pytest-xdist
     - argopt
@@ -63,6 +65,6 @@ repos:
     args: [-i]
     additional_dependencies: [toml]
 - repo: https://github.com/PyCQA/isort
-  rev: 9.0.0a3
+  rev: 9.0.0b1
   hooks:
   - id: isort
