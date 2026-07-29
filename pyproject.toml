@@ -1,10 +1,8 @@
 [build-system]
-requires = ["setuptools>=42", "setuptools_scm[toml]>=3.4"]
+requires = ["setuptools>=42", "setuptools-scm[toml]>=3.4"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-version_file = "gitfame/_dist_ver.py"
-version_file_template = "__version__ = '{version}'\n"
 
 [tool.setuptools.packages.find]
 exclude = ["tests"]

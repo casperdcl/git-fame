@@ -63,19 +63,16 @@ import re
 import subprocess
 from collections import defaultdict
 from functools import partial
+from importlib.metadata import PackageNotFoundError, version
 from os import path
 
 from ._utils import TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats, print_unicode, tqdm
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
 try:
-    from ._dist_ver import __version__
-except ImportError:
-    try:
-        from setuptools_scm import get_version
-        __version__ = get_version(root='..', relative_to=__file__)
-    except (ImportError, LookupError):
-        __version__ = "UNKNOWN"
+    __version__ = version('git-fame')
+except PackageNotFoundError:
+    __version__ = "UNKNOWN"
 __author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
 __date__ = "2016-2025"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"

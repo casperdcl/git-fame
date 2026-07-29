@@ -3,7 +3,6 @@
 __pycache__/
 
 # Packages
-/gitfame/_dist_ver.py
 /*.egg*/
 /build/
 /dist/
