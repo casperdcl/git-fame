@@ -358,7 +358,7 @@ Citation information: |DOI-URI|
 .. |Branch-Coverage-Status| image:: https://codecov.io/gh/casperdcl/git-fame/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/casperdcl/git-fame
 .. |Codacy-Grade| image:: https://api.codacy.com/project/badge/Grade/bde789ee0e57491eb2bb8609bd4190c3
-   :target: https://www.codacy.com/app/casper-dcl/git-fame/dashboard
+   :target: https://app.codacy.com/gh/casperdcl/git-fame
 .. |GitHub-Status| image:: https://img.shields.io/github/tag/casperdcl/git-fame.svg?maxAge=86400&logo=github
    :target: https://github.com/casperdcl/git-fame/releases
 .. |GitHub-Forks| image:: https://img.shields.io/github/forks/casperdcl/git-fame.svg?logo=github

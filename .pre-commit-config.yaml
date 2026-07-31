@@ -22,25 +22,29 @@ repos:
   - id: todo
     name: Check TODO
     language: pygrep
-    entry: WIP
     args: [-i]
+    entry: TODO
     types: [text]
     exclude: ^(.pre-commit-config.yaml|.github/workflows/test.yml)$
   - id: pytest
     name: pytest
     language: python
     entry: env PYTHONPATH=. pytest
-    args: [--cov=gitfame, --cov-fail-under=85, -vv, --durations=1, -n=auto]
+    args: [-vv]
     types: [python]
     pass_filenames: false
     additional_dependencies:
     - pytest-cov
-    - pytest-timeout
     - pytest-xdist
     - argopt
     - pyyaml
     - tabulate
     - tqdm
+- repo: https://github.com/PyCQA/bandit
+  rev: 1.9.4
+  hooks:
+  - id: bandit
+    args: [-c, pyproject.toml]
 - repo: https://github.com/PyCQA/flake8
   rev: 7.3.0
   hooks:
@@ -68,3 +72,5 @@ repos:
   rev: 9.0.0b1
   hooks:
   - id: isort
+ci:
+  autoupdate_schedule: monthly

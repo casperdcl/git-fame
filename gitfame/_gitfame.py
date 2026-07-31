@@ -74,7 +74,7 @@ try:
 except PackageNotFoundError:
     __version__ = "UNKNOWN"
 __author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
-__date__ = "2016-2025"
+__date__ = "2016-2026"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
 __all__ = ["main"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
@@ -460,7 +460,7 @@ def run(args):
         stats_tot[k] = sum(int_cast_or_len(stats.get(k, 0)) for stats in auth_stats.values())
     log.debug(stats_tot)
 
-    # TODO:
+    # NOTE: future idea: show stats per file extension (or other grouping) in addition to per-author
     # extns = set()
     # if args.bytype:
     #   for stats in auth_stats.values():

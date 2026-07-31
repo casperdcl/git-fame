@@ -79,13 +79,17 @@ dependencies = [
     "tqdm>=4.44.0"]
 
 [project.optional-dependencies]
-dev = ["pytest>=6", "pytest-cov", "pytest-timeout", "pytest-xdist"]
+dev = ["pytest>=6", "pytest-cov", "pytest-xdist"]
 yaml = ["pyyaml"]
 tabulate = []
 full = ["pyyaml"]
 
 [project.scripts]
 git-fame = "gitfame:main"
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B404"]
 
 [tool.flake8]
 max_line_length = 120
@@ -109,12 +113,8 @@ line_length = 120
 known_first_party = ["gitfame", "tests"]
 
 [tool.pytest.ini_options]
-timeout = 30
-log_level = "INFO"
-python_files = ["tests_*.py"]
 testpaths = ["tests"]
-addopts = "-v --tb=short -rxs --durations=0 --durations-min=0.1"
-filterwarnings = ["error", "ignore:co_lnotab:DeprecationWarning"]
+addopts = "-v --tb=short -rxs -W=error --durations=5 -n=auto --cov=gitfame --cov-fail-under=85"
 
 [tool.coverage.run]
 branch = true

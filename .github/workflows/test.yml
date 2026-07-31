@@ -21,7 +21,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - run: pip install -e .[full,dev]
-    - run: pytest --cov=gitfame --cov-report=xml
+    - run: pytest --cov-report=xml --cov-report=term
     - uses: coverallsapp/github-action@v2
       with:
         flag-name: ${{ matrix.python }}-${{ matrix.os }}
@@ -81,7 +81,7 @@ jobs:
           echo snap_channel=edge >> $GITHUB_OUTPUT
         fi
     - if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-      name: Release
+      name: gh release create --draft
       run: |
         changelog=$(git log --pretty='format:%d%n- %s%n%b---' $(git tag --sort=v:refname | tail -n2 | head -n1)..HEAD)
         tag="${GITHUB_REF#refs/tags/}"
