@@ -4,6 +4,7 @@ from os import path
 from shutil import rmtree
 from tempfile import mkdtemp
 from textwrap import dedent
+from xml.etree import ElementTree
 
 from pytest import mark, skip
 
@@ -134,6 +135,15 @@ def test_tabulate_tabulate():
       Not Committed Yet        75       0       4  12.2/ 0.0/28.6"""))
     except ImportError as err:
         raise skip(str(err))
+
+
+def test_tabulate_svg_escape():
+    """Test SVG tabulate escapes markup in author names"""
+    stats = {'<script/> & co': {'files': {'setup.py'}, 'loc': 1, 'ctimes': [], 'commits': 1}}
+    svg = _gitfame.tabulate(stats, {'files': 1, 'loc': 1, 'commits': 1}, backend='svg')
+    ElementTree.fromstring(svg) # must be well-formed XML
+    assert '<script' not in svg
+    assert '&lt;script/&gt; &amp; co' in svg
 
 
 def test_tabulate_enum():

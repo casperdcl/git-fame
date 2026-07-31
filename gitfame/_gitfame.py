@@ -65,6 +65,7 @@ from collections import defaultdict
 from functools import partial
 from importlib.metadata import PackageNotFoundError, version
 from os import path
+from xml.sax.saxutils import escape
 
 from ._utils import TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats, print_unicode, tqdm
 
@@ -207,7 +208,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
                     ' fill="white" fill-opacity="0.5" rx="5"/>'
                     '<text x="0" y="-0.5em" font-size="15"'
                     ' font-family="monospace" style="white-space: pre">' +
-                    ''.join(f'<tspan x="0" dy="1em">{row}</tspan>' for row in rows) + '</text></svg>')
+                    ''.join(f'<tspan x="0" dy="1em">{escape(row)}</tspan>' for row in rows) + '</text></svg>')
         return totals + table
 
         # from ._utils import tighten
