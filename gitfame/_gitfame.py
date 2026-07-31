@@ -65,7 +65,6 @@ from collections import defaultdict
 from functools import partial
 from importlib.metadata import PackageNotFoundError, version
 from os import path
-from xml.sax.saxutils import escape
 
 from ._utils import TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats, print_unicode, tqdm
 
@@ -201,6 +200,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
         table = tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
         if svg:
+            from xml.sax.saxutils import escape  # nosec B406, yapf: disable
             rows = table.split('\n')
             return ('<svg xmlns="http://www.w3.org/2000/svg"'
                     f' width="{len(rows[0]) / 2 + 1}em" height="{len(rows)}em">'
