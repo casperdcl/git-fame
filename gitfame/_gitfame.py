@@ -269,12 +269,12 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     if churn & CHURN_SLOC:
         for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
                           unit="file"):
-            if prefix_gitdir:
-                fname = path.join(gitdir, fname)
+            # `fname` is relative to `gitdir`, so only prefix the reported name
+            display_fname = path.join(gitdir, fname) if prefix_gitdir else fname
             try:
                 blame_out = check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
             except Exception as err:
-                getattr(log, "warn" if warn_binary else "debug")(fname + ':' + str(err))
+                getattr(log, "warn" if warn_binary else "debug")(display_fname + ':' + str(err))
                 continue
             log.log(logging.NOTSET, blame_out)
 
@@ -291,7 +291,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             for loc, name, email, tstamp in RE_AUTHS_BLAME.findall(blame_out): # for each chunk
                 loc = int(loc)
                 auth = f'{name} <{email}>'
-                stats_append(fname, auth, loc, tstamp)
+                stats_append(display_fname, auth, loc, tstamp)
 
     else:
         with tqdm(total=1, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress, unit="repo") as t:
