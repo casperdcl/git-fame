@@ -201,13 +201,22 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         table = tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
         if svg:
             rows = table.split('\n')
-            return ('<svg xmlns="http://www.w3.org/2000/svg"'
-                    f' width="{len(rows[0]) / 2 + 1}em" height="{len(rows)}em">'
+            font_size = 15
+            # typical monospace advance (`textLength` below makes it exact for any font)
+            char_width = 0.6 * font_size
+            # `em` in the root `<svg>`'s size refers to the (inherited) font size of the `<svg>`
+            # element itself rather than to `font-size` below, so use user units instead
+            svg_width = char_width * max(map(len, rows))
+            # 0.2em of padding above the first & below the last row
+            svg_height = font_size * (len(rows) + 0.7)
+            return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_width:g}" height="{svg_height:g}"'
+                    f' viewBox="0 0 {svg_width:g} {svg_height:g}">'
                     '<rect x="0" y="0" width="100%" height="100%"'
                     ' fill="white" fill-opacity="0.5" rx="5"/>'
-                    '<text x="0" y="-0.5em" font-size="15"'
+                    f'<text x="0" y="0.2em" font-size="{font_size}"'
                     ' font-family="monospace" style="white-space: pre">' +
-                    ''.join(f'<tspan x="0" dy="1em">{row}</tspan>' for row in rows) + '</text></svg>')
+                    ''.join(f'<tspan x="0" dy="1em" textLength="{char_width * len(row):g}"'
+                            f' lengthAdjust="spacingAndGlyphs">{row}</tspan>' for row in rows) + '</text></svg>')
         return totals + table
 
         # from ._utils import tighten

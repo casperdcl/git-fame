@@ -1,3 +1,4 @@
+import re
 import sys
 from json import loads
 from os import path
@@ -134,6 +135,29 @@ def test_tabulate_tabulate():
       Not Committed Yet        75       0       4  12.2/ 0.0/28.6"""))
     except ImportError as err:
         raise skip(str(err))
+
+
+def test_tabulate_svg():
+    """Test SVG tabulate"""
+    svg = _gitfame.tabulate(auth_stats, stats_tot, backend='svg')
+    assert svg.startswith('<svg ') and svg.endswith('</svg>')
+    rows = re.findall('<tspan[^>]*>(.*?)</tspan>', svg)
+    assert rows and len(set(map(len, rows))) == 1
+
+    size = {}
+    for i in ('width', 'height'):
+        value, unit = re.search(f'{i}="([\\d.]+)([^"]*)"', svg).groups()
+        # `em` would refer to the `<svg>`'s own font size rather than to `font-size` below
+        assert not unit, f'viewport {i}="{value}{unit}" is not in user units'
+        size[i] = float(value)
+    width, height = size['width'], size['height']
+
+    # the viewport must fit the text (rendered at `font-size` in a `0.6em`-advance monospace)
+    font_size = float(re.search('font-size="([\\d.]+)"', svg).group(1))
+    assert width >= 0.6 * font_size * len(rows[0])
+    assert height >= font_size * (len(rows) + 0.5)
+    # ... and the text must be forced to fit, whatever the font's actual metrics
+    assert [float(i) for i in re.findall('textLength="([\\d.]+)"', svg)] == [width] * len(rows)
 
 
 def test_tabulate_enum():
