@@ -255,3 +255,31 @@ def test_manpath():
 def test_multiple_gitdirs():
     """test multiple gitdirs"""
     main(['.', '.'])
+
+
+def test_multiple_gitdirs_loc(capsys):
+    """test surviving loc are counted for each of multiple gitdirs"""
+    import subprocess
+    from os import chdir, getcwd
+    tmp = mkdtemp()
+    cwd = getcwd()
+    try:
+        for name in ("repo_a", "repo_b"):
+            repo = path.join(tmp, name)
+            subprocess.check_call(["git", "init", "-q", repo])
+            with open(path.join(repo, name + ".txt"), 'w') as fd:
+                fd.write("one\ntwo\nthree\n")
+            commit = ["-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "-qm", "initial"]
+            for cmd in (["add", "-A"], commit):
+                subprocess.check_call(["git", "-C", repo] + cmd)
+
+        chdir(tmp)          # relative gitdirs, as reported
+        capsys.readouterr() # clear output
+        main(['-s', "repo_a", "repo_b"])
+        out = capsys.readouterr().out
+    finally:
+        chdir(cwd)
+        rmtree(tmp, True)
+
+    assert "Total loc: 6" in out
+    assert "Total files: 2" in out
