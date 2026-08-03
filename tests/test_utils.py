@@ -90,10 +90,27 @@ def test_imap_bounded():
     assert list(_utils.imap_bounded(lambda i: i * 2, [], 4)) == []
 
 
-def test_imap_bounded_window_edges():
-    """Test input lengths either side of the `2 * jobs` window"""
-    for n in range(2*4 + 2): # fewer than, exactly, and more than the window
-        assert list(_utils.imap_bounded(lambda i: i * 2, range(n), 4)) == [i * 2 for i in range(n)]
+@pytest.mark.parametrize('jobs', [2, 4, 8])
+def test_imap_bounded_window_edges(jobs):
+    """Test input lengths around the `min(2 * jobs, jobs + 4)` window"""
+    window = min(2 * jobs, jobs + 4)
+    # fewer than, exactly, and more than the window
+    for n in [window - 1, window, window + 1]:
+        assert list(_utils.imap_bounded(lambda i: i * 2, range(n), jobs)) == [i * 2 for i in range(n)]
+
+    # The clamp matters for jobs > 4; verify the initial lookahead size.
+    consumed = [0]
+
+    def counted_items():
+        for i in range(2*jobs + 2):
+            consumed[0] += 1
+            yield i
+
+    gen = _utils.imap_bounded(lambda i: i * 2, counted_items(), jobs)
+    assert next(gen) == 0
+    # one extra item is pulled after the first result completes but before yielding
+    assert consumed[0] == window + 1
+    gen.close()
 
 
 def test_imap_bounded_abandoned():
