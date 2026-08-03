@@ -34,6 +34,9 @@ Options:
                   rather than regular expressions [default: False].
                   NB: if regex is enabled ',' is equivalent to '|'.
   -s, --silent-progress    Suppress `tqdm` [default: False].
+  -j, --jobs=<n>  Number of concurrent `git blame` processes per repository
+                  [default: 0:int]. 0: automatic (based on CPU count);
+                  1: serial (the pre-3.2 behaviour).
   --warn-binary  Don't silently skip files which appear to be binary data
                  [default: False].
   --show=<info>  Author information to show [default: name]|email.
@@ -66,7 +69,8 @@ from functools import partial
 from importlib.metadata import PackageNotFoundError, version
 from os import path
 
-from ._utils import TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats, print_unicode, tqdm
+from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, imap_bounded, int_cast_or_len, merge_stats,
+                     print_unicode, tqdm)
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
 try:
@@ -227,7 +231,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None, silent_progress=False,
                     ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False, show=None,
-                    prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None):
+                    prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None, jobs=1):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
@@ -278,14 +282,24 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             auth_stats[auth][fext_key] += loc
 
     if churn & CHURN_SLOC:
-        for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
-                          unit="file"):
+
+        def blame_file(fname):
+            """Blame one file. Returns `(fname, output_or_exception)` so that
+            failures stay in input order and are reported by the caller."""
+            try:
+                return fname, check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
+            except Exception as err:
+                return fname, err
+
+        # only the subprocess runs concurrently; parsing and `stats_append`
+        # stay in this thread, so output is identical to `--jobs=1`
+        for fname, blame_out in tqdm(imap_bounded(blame_file, file_list, jobs), total=len(file_list),
+                                     desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
+                                     unit="file"):
             # `fname` is relative to `gitdir`, so only prefix the reported name
             display_fname = path.join(gitdir, fname) if prefix_gitdir else fname
-            try:
-                blame_out = check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
-            except Exception as err:
-                getattr(log, "warn" if warn_binary else "debug")(display_fname + ':' + str(err))
+            if isinstance(blame_out, Exception):
+                getattr(log, "warn" if warn_binary else "debug")(display_fname + ':' + str(blame_out))
                 continue
             log.log(logging.NOTSET, blame_out)
 
@@ -439,11 +453,16 @@ def run(args):
                     " which may need to be added to --excl")
 
     auth_stats = {}
+    jobs = args.jobs or min(32, (os.cpu_count() or 1) + 4)
+    if len(gitdirs) > 1:
+        # repos are already processed concurrently below; divide the budget so
+        # the product stays bounded rather than multiplying
+        jobs = max(1, jobs // len(gitdirs))
     statter = partial(_get_auth_stats, branch=args.branch, since=args.since, until=args.until,
                       include_files=include_files, exclude_files=exclude_files, silent_progress=args.silent_progress,
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C, warn_binary=args.warn_binary,
                       bytype=args.bytype, show=args.show, prefix_gitdir=len(gitdirs) > 1, churn=churn,
-                      ignore_rev=args.ignore_rev, ignore_revs_file=args.ignore_revs_file)
+                      ignore_rev=args.ignore_rev, ignore_revs_file=args.ignore_revs_file, jobs=jobs)
 
     # concurrent multi-repo processing
     if len(gitdirs) > 1:

@@ -192,7 +192,8 @@ def test_tabulate_unknown():
     'params',
     [['--sort', 'commits'], ['--no-regex'], ['--no-regex', '--incl', 'setup.py,README.rst'], ['--excl', r'.*\.py'],
      ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'], ['--cost', 'month', '--excl', r'.*\.py'], ['-e'],
-     ['-w'], ['-M'], ['-C'], ['-t'], ['--show=name,email'], ['--format=csv'], ['--format=svg']])
+     ['-w'], ['-j', '1'], ['-j', '4'], ['-M'], ['-C'], ['-t'], ['--show=name,email'], ['--format=csv'],
+     ['--format=svg']])
 def test_options(params):
     """Test command line options"""
     main(['-s'] + params)
@@ -283,3 +284,14 @@ def test_multiple_gitdirs_loc(capsys):
 
     assert "Total loc: 6" in out
     assert "Total files: 2" in out
+
+
+def test_jobs_determinism(capsys):
+    """--jobs must not change output"""
+    root = path.dirname(path.dirname(__file__))
+    main(['-s', '--format=json', '-j', '1', root])
+    serial = capsys.readouterr().out
+    main(['-s', '--format=json', '-j', '4', root])
+    parallel = capsys.readouterr().out
+    assert serial == parallel
+    assert loads(serial)['total']['loc'] > 0
