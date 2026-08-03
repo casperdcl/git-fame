@@ -36,7 +36,7 @@ _git_fame()
         --manpath)
           COMPREPLY=($(compgen -d -- "${cur}"))
           ;;
-        --incl|--excl|--since|--ignore-rev|--until|--min|--jobs)
+        --incl|--excl|--since|--ignore-rev|--until|--min|--jobs|-j)
           COMPREPLY=( )
           ;;
         *)

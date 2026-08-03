@@ -37,7 +37,7 @@ Options:
   -j, --jobs=<n>  Number of concurrent `git blame` processes (divided
                   across repositories when several are given)
                   [default: 0:int]. 0: automatic (based on CPU count);
-                  1: serial (the previous behaviour).
+                  1: serial.
   --warn-binary  Don't silently skip files which appear to be binary data
                  [default: False].
   --show=<info>  Author information to show [default: name]|email.
@@ -233,7 +233,10 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None, silent_progress=False,
                     ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False, show=None,
                     prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None, jobs=1):
-    """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
+    """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}
+
+    `jobs` arrives already resolved (1 = serial); the CLI maps its 0 to an
+    automatic value before calling this."""
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
     show = show or SHOW_NAME

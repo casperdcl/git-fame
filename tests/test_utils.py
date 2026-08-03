@@ -68,66 +68,67 @@ def test_imap_bounded():
     from threading import Lock
     from time import sleep
 
-    from gitfame._utils import imap_bounded
-
     live, peak, lock = [0], [0], Lock()
 
     def work(i):
         with lock:
             live[0] += 1
             peak[0] = max(peak[0], live[0])
-        sleep(0.005)
+        # descending durations: item 0 is slowest, so an implementation
+        # yielding as-completed (instead of in input order) fails below
+        sleep(0.002 * (20-i))
         with lock:
             live[0] -= 1
         return i * 2
 
-    assert list(imap_bounded(work, range(20), 4)) == [i * 2 for i in range(20)]
+    assert list(_utils.imap_bounded(work, range(20), 4)) == [i * 2 for i in range(20)]
     assert peak[0] > 1, "should have run concurrently"
     assert peak[0] <= 4, "should not exceed the job cap"
 
     # serial fallback: no executor, same results
-    assert list(imap_bounded(lambda i: i * 2, range(5), 1)) == [0, 2, 4, 6, 8]
-    assert list(imap_bounded(lambda i: i * 2, [], 4)) == []
+    assert list(_utils.imap_bounded(lambda i: i * 2, range(5), 1)) == [0, 2, 4, 6, 8]
+    assert list(_utils.imap_bounded(lambda i: i * 2, [], 4)) == []
 
 
 def test_imap_bounded_window_edges():
     """Test input lengths either side of the `2 * jobs` window"""
-    from gitfame._utils import imap_bounded
-
     for n in range(2*4 + 2): # fewer than, exactly, and more than the window
-        assert list(imap_bounded(lambda i: i * 2, range(n), 4)) == [i * 2 for i in range(n)]
+        assert list(_utils.imap_bounded(lambda i: i * 2, range(n), 4)) == [i * 2 for i in range(n)]
 
 
 def test_imap_bounded_abandoned():
     """Test abandoning the generator early doesn't consume the whole input"""
-    from threading import Lock
+    from threading import Event, Lock
 
-    from gitfame._utils import imap_bounded
-
-    started, lock = [0], Lock()
+    started, lock, release = [0], Lock(), Event()
 
     def work(i):
         with lock:
             started[0] += 1
+        # only item 0 finishes promptly; the rest block briefly so that
+        # queued items can only start if the finally:/cancel is missing
+        if i:
+            release.wait(0.2)
         return i
 
-    gen = imap_bounded(work, range(200), 2)
+    gen = _utils.imap_bounded(work, range(200), 2)
     assert next(gen) == 0
     gen.close()
-    # window is `2 * jobs`, plus the one submitted after the first result
-    assert started[0] <= 5, "should not have consumed the whole input"
+    release.set()
+    # two workers, so at most tasks 0-2 are in flight when the generator is
+    # closed; without the cancel, the rest of the submitted window (5 items
+    # total) runs too
+    assert started[0] <= 3, "should not have run the whole submitted window"
 
 
 def test_imap_bounded_raises():
     """Test exceptions from `func` propagate"""
-    from gitfame._utils import imap_bounded
-
     def work(i):
         if i == 3:
             raise ValueError(i)
         return i
 
     with pytest.raises(ValueError):
-        list(imap_bounded(work, range(200), 4))
+        list(_utils.imap_bounded(work, range(200), 4))
     with pytest.raises(ValueError):
-        list(imap_bounded(work, range(200), 1))
+        list(_utils.imap_bounded(work, range(200), 1))
