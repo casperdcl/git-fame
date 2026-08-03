@@ -148,10 +148,12 @@ def imap_bounded(func, items, jobs):
     Like `map(func, items)` but runs up to `jobs` calls concurrently,
     yielding results in input order.
 
-    At most `2 * jobs` calls are outstanding at once, so memory stays
-    bounded regardless of how many items there are (an unbounded map
-    would buffer every result; e.g. `git blame` output for a large
-    repository could be gigabytes).
+    At most `min(2 * jobs, jobs + 4)` calls are outstanding at once, so
+    the number of buffered results stays bounded regardless of how many
+    items there are (an unbounded map would buffer every result). The
+    bound is on the *number* of outstanding calls only: peak memory also
+    grows with the size of the largest single result (e.g. `git blame`
+    output for one large file can be megabytes).
     """
     if jobs < 2:
         for i in items:
@@ -166,7 +168,7 @@ def imap_bounded(func, items, jobs):
     with ThreadPoolExecutor(max_workers=jobs) as pool:
         pending = deque()
         try:
-            for i in islice(it, 2 * jobs):
+            for i in islice(it, min(2 * jobs, jobs + 4)):
                 pending.append(pool.submit(func, i))
             while pending:
                 res = pending.popleft().result()

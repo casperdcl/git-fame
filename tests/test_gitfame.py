@@ -293,3 +293,39 @@ def test_jobs_determinism(capsys):
     parallel = capsys.readouterr().out
     assert serial == parallel
     assert loads(serial)['total']['loc'] > 0
+
+
+def test_blame_failure_determinism(capsys, caplog):
+    """Blame failures are reported identically (files, order, log level) at any --jobs"""
+    import logging
+    import subprocess
+    from unittest.mock import patch
+
+    root = path.dirname(path.dirname(__file__))
+    failing = ['LICENCE', 'Makefile'] # text files, in `ls-files` order
+    real_check_output = _gitfame.check_output
+
+    def fake_check_output(args, *a, **k):
+        if args[3:4] == ['blame'] and args[-1] in failing:
+            raise subprocess.CalledProcessError(1, args)
+        return real_check_output(args, *a, **k)
+
+    caplog.set_level(logging.DEBUG, logger='gitfame._gitfame')
+    runs = []
+    for jobs in ('1', '4'):
+        with patch.object(_gitfame, 'check_output', fake_check_output):
+            caplog.clear()
+            main(['-s', '--format=json', '-j', jobs, root])
+            out = capsys.readouterr().out
+        reported = [(r.levelname, r.getMessage()) for r in caplog.records
+                    if r.name == 'gitfame._gitfame' and r.getMessage().split(':', 1)[0] in failing]
+        runs.append((out, reported))
+
+    (serial_out, serial_log), (parallel_out, parallel_log) = runs
+    # both runs report the same files, in `file_list` order, at the same level
+    assert serial_log == parallel_log
+    assert [level for level, _ in serial_log] == ['DEBUG', 'DEBUG']
+    assert [msg.split(':', 1)[0] for _, msg in serial_log] == failing
+    # and the report itself is byte-identical (and non-empty)
+    assert serial_out == parallel_out
+    assert loads(serial_out)['total']['loc'] > 0

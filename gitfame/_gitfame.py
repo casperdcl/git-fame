@@ -70,6 +70,11 @@ from functools import partial
 from importlib.metadata import PackageNotFoundError, version
 from os import path
 
+try:
+    from os import process_cpu_count as cpu_count
+except ImportError: # Python < 3.13  # pragma: no cover
+    from os import cpu_count
+
 from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, imap_bounded, int_cast_or_len, merge_stats,
                      print_unicode, tqdm)
 
@@ -457,7 +462,7 @@ def run(args):
                     " which may need to be added to --excl")
 
     auth_stats = {}
-    jobs = args.jobs or min(32, (os.cpu_count() or 1) + 4)
+    jobs = args.jobs or min(32, (cpu_count() or 1) + 4)
     if len(gitdirs) > 1:
         # repos are already processed concurrently below; divide the budget so
         # the product stays bounded rather than multiplying
