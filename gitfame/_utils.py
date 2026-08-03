@@ -141,3 +141,38 @@ def merge_stats(left, right):
         else:
             raise TypeError(val)
     return left
+
+
+def imap_bounded(func, items, jobs):
+    """
+    Like `map(func, items)` but runs up to `jobs` calls concurrently,
+    yielding results in input order.
+
+    Only `2 * jobs` results are held at once, so memory stays bounded
+    regardless of how many items there are (`git blame --line-porcelain`
+    output is ~300 bytes per source line, so an unbounded map would buffer
+    gigabytes on a large repository).
+    """
+    if jobs < 2:
+        for i in items:
+            yield func(i)
+        return
+
+    from collections import deque
+    from concurrent.futures import ThreadPoolExecutor
+    from itertools import islice
+
+    it = iter(items)
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        pending = deque(pool.submit(func, i) for i in islice(it, 2 * jobs))
+        try:
+            while pending:
+                res = pending.popleft().result()
+                for i in islice(it, 1):
+                    pending.append(pool.submit(func, i))
+                yield res
+        finally:
+            # abandoned early, or `func` raised: nobody wants the queued
+            # results, so don't let `pool.shutdown()` wait for them
+            for future in pending:
+                future.cancel()
