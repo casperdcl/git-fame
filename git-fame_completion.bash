@@ -36,12 +36,12 @@ _git_fame()
         --manpath)
           COMPREPLY=($(compgen -d -- "${cur}"))
           ;;
-        --incl|--excl|--since|--ignore-rev|--until|--min)
+        --incl|--excl|--since|--ignore-rev|--until|--min|--jobs)
           COMPREPLY=( )
           ;;
         *)
           if [ ${COMP_WORDS[1]} == fame ]; then
-            COMPREPLY=($(compgen -dW '-h --help -v --version --cost --branch --since --until --sort --loc --incl --excl -R --recurse -n --no-regex -s --silent-progress --warn-binary -t --bytype -w --ignore-whitespace --show -e --show-email --enum -M -C --ignore-rev --ignore-revs-file --format --manpath --log' -- ${cur}))
+            COMPREPLY=($(compgen -dW '-h --help -v --version --cost --branch --since --until --sort --loc --incl --excl -R --recurse -n --no-regex -s --silent-progress -j --jobs --warn-binary -t --bytype -w --ignore-whitespace --show -e --show-email --enum -M -C --ignore-rev --ignore-revs-file --format --manpath --log' -- ${cur}))
           fi
           ;;
       esac
