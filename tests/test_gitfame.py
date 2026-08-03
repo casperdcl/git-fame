@@ -188,12 +188,10 @@ def test_tabulate_unknown():
         raise ValueError("Should not support unknown tabulate format")
 
 
-@mark.parametrize(
-    'params',
-    [['--sort', 'commits'], ['--no-regex'], ['--no-regex', '--incl', 'setup.py,README.rst'], ['--excl', r'.*\.py'],
-     ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'], ['--cost', 'month', '--excl', r'.*\.py'], ['-e'],
-     ['-w'], ['-j', '1'], ['-j', '4'], ['-M'], ['-C'], ['-t'], ['--show=name,email'], ['--format=csv'],
-     ['--format=svg']])
+@mark.parametrize('params', [['--sort', 'commits'], ['--no-regex'], ['--no-regex', '--incl', 'setup.py,README.rst'],
+                             ['--excl', r'.*\.py'], ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'],
+                             ['--cost', 'month', '--excl', r'.*\.py'], ['-e'], ['-w'], ['-j', '1'], ['-j', '4'], ['-M'],
+                             ['-C'], ['-t'], ['--show=name,email'], ['--format=csv'], ['--format=svg']])
 def test_options(params):
     """Test command line options"""
     main(['-s'] + params)
