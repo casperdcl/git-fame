@@ -111,3 +111,42 @@ def merge_stats(left, right):
         else:
             raise TypeError(val)
     return left
+
+
+def imap_bounded(func, items, jobs):
+    """
+    Like `map(func, items)` but runs up to `jobs` calls concurrently,
+    yielding results in input order.
+
+    At most `min(2 * jobs, jobs + 4)` calls are outstanding at once, so
+    the number of buffered results stays bounded regardless of how many
+    items there are (an unbounded map would buffer every result). The
+    bound is on the *number* of outstanding calls only: peak memory also
+    grows with the size of the largest single result (e.g. `git blame`
+    output for one large file can be megabytes).
+    """
+    if jobs < 2:
+        for i in items:
+            yield func(i)
+        return
+
+    from collections import deque
+    from concurrent.futures import ThreadPoolExecutor
+    from itertools import islice
+
+    it = iter(items)
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        pending = deque()
+        try:
+            for i in islice(it, min(2 * jobs, jobs + 4)):
+                pending.append(pool.submit(func, i))
+            while pending:
+                res = pending.popleft().result()
+                for i in islice(it, 1):
+                    pending.append(pool.submit(func, i))
+                yield res
+        finally:
+            # abandoned early, or `func` raised: nobody wants the queued
+            # results, so don't let `pool.shutdown()` wait for them
+            for future in pending:
+                future.cancel()

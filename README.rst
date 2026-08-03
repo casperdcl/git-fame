@@ -214,6 +214,10 @@ Documentation
                       rather than regular expressions [default: False].
                       NB: if regex is enabled ',' is equivalent to '|'.
       -s, --silent-progress    Suppress `tqdm` [default: False].
+      -j, --jobs=<n>  Number of concurrent `git blame` processes (divided
+                      across repositories when several are given)
+                      [default: 0:int]. 0: automatic (based on CPU count);
+                      1: serial.
       --warn-binary  Don't silently skip files which appear to be binary data
                      [default: False].
       --show=<info>  Author information to show [default: name]|email.
