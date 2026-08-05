@@ -193,7 +193,7 @@ def test_tabulate_svg():
 def test_tabulate_svg_grapheme_clusters():
     """Test SVG tabulate aligns rows containing multi-codepoint graphemes"""
     # 5 codepoints drawn as 3 clusters: a whole-row `textLength` would squeeze the entire row
-    name = 'Saugat Pachhai (सौगात)'
+    name = 'सौगात'
     stats = {
         name: {'files': {'setup.py'}, 'loc': 1, 'ctimes': [], 'commits': 1},
         'ASCII': {'files': {'setup.py'}, 'loc': 1, 'ctimes': [], 'commits': 1}}
@@ -306,7 +306,9 @@ def test_multiple_gitdirs_loc(capsys):
             subprocess.check_call(["git", "init", "-q", repo])
             with open(path.join(repo, name + ".txt"), 'w') as fd:
                 fd.write("one\ntwo\nthree\n")
-            commit = ["-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "-qm", "initial"]
+            commit = [
+                "-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "--no-gpg-sign", "-qm",
+                "initial"]
             for cmd in (["add", "-A"], commit):
                 subprocess.check_call(["git", "-C", repo] + cmd)
 

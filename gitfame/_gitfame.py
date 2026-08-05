@@ -162,7 +162,6 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
     svg = backend == 'svg'
     if svg:
         backend = 'rounded_outline'
-        VERT = '│' # `rounded_outline`'s column separator
 
     if backend in ('yaml', 'yml', 'json', 'csv', 'tsv'):
         tab = [i[:-1] + [float(pc.strip()) for pc in i[-1].split('/')] for i in tab]
@@ -214,11 +213,9 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 
             def cells(row):
                 """One `<tspan>` per cell, each pinned to & stretched over its own columns."""
-                # a whole-row `textLength` would spread the misfit of any cell whose glyphs don't
-                # advance by `char_width` (e.g. the 5 codepoints of "सौगात" draw as 3 clusters)
-                # across the entire row, displacing every column separator on it
                 col = 0
-                for cell in filter(None, re.split(f'({VERT})', row)):
+                # split on 'rounded_outline' separator
+                for cell in filter(None, re.split('(\u2502)', row)):
                     yield (f'<tspan x="{char_width * col:g}" textLength="{char_width * len(cell):g}"'
                            f' lengthAdjust="spacingAndGlyphs">{escape(cell)}</tspan>')
                     col += len(cell)
