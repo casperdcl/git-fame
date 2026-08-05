@@ -232,9 +232,6 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
             return table2svg(table, tabber._table_formats[backend].datarow[1])
         return totals + table
 
-        # from ._utils import tighten
-        # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
-
 
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None, silent_progress=False,
                     ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False, show=None,

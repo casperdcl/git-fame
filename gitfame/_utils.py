@@ -17,7 +17,7 @@ else:
 __author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
 __date__ = "2016-2025"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
-__all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "tqdm", "tighten", "check_output", "print_unicode", "Str"]
+__all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "tqdm", "check_output", "print_unicode", "Str"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__ # weird foreign language
 
@@ -41,36 +41,6 @@ def check_output(*a, **k):
 
 def blank_col(rows, i, blanks):
     return all(r[i] in blanks for r in rows)
-
-
-def tighten(t, max_width=256, blanks=' -=', seps='|+'):
-    """Tighten (default: grid) table padding"""
-    rows = t.strip().split('\n')
-    i = 1
-    curr_blank = bool()
-    prev_blank = blank_col(rows, i - 1, blanks)
-    len_r = len(rows[0])
-    while i < len_r:
-        curr_blank = blank_col(rows, i, blanks)
-        if prev_blank and curr_blank:
-            rows = [r[:i - 1] + r[i:] for r in rows]
-            len_r -= 1
-            i -= 1
-        prev_blank = curr_blank
-        i += 1
-
-    if len_r > max_width:
-        have_first_line = False
-        for i in range(len_r):
-            if blank_col(rows, i, seps):
-                if have_first_line:
-                    if i > len_r - max_width:
-                        return '\n'.join(r[:i - len_r + max_width] + r[i:] for r in rows[:3] + rows[3::2] + [rows[-1]])
-                    break
-                else:
-                    have_first_line = True
-
-    return '\n'.join(rows[:3] + rows[3::2] + [rows[-1]])
 
 
 def fext(fn):
