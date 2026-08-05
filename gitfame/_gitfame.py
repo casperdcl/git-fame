@@ -162,6 +162,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
     svg = backend == 'svg'
     if svg:
         backend = 'rounded_outline'
+        VERT = '│' # `rounded_outline`'s column separator
 
     if backend in ('yaml', 'yml', 'json', 'csv', 'tsv'):
         tab = [i[:-1] + [float(pc.strip()) for pc in i[-1].split('/')] for i in tab]
@@ -210,15 +211,25 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
             svg_width = char_width * max(map(len, rows))
             # 0.2em of padding above the first & below the last row
             svg_height = font_size * (len(rows) + 0.7)
+
+            def cells(row):
+                """One `<tspan>` per cell, each pinned to & stretched over its own columns."""
+                # a whole-row `textLength` would spread the misfit of any cell whose glyphs don't
+                # advance by `char_width` (e.g. the 5 codepoints of "सौगात" draw as 3 clusters)
+                # across the entire row, displacing every column separator on it
+                col = 0
+                for cell in filter(None, re.split(f'({VERT})', row)):
+                    yield (f'<tspan x="{char_width * col:g}" textLength="{char_width * len(cell):g}"'
+                           f' lengthAdjust="spacingAndGlyphs">{escape(cell)}</tspan>')
+                    col += len(cell)
+
             return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_width:g}" height="{svg_height:g}"'
                     f' viewBox="0 0 {svg_width:g} {svg_height:g}">'
                     '<rect x="0" y="0" width="100%" height="100%"'
                     ' fill="white" fill-opacity="0.5" rx="5"/>'
                     f'<text x="0" y="0.2em" font-size="{font_size}"'
                     ' font-family="monospace" style="white-space: pre">' +
-                    ''.join(f'<tspan x="0" dy="1em" textLength="{char_width * len(row):g}"'
-                            f' lengthAdjust="spacingAndGlyphs">{escape(row)}</tspan>'
-                            for row in rows) + '</text></svg>')
+                    ''.join(f'<tspan x="0" dy="1em">{"".join(cells(row))}</tspan>' for row in rows) + '</text></svg>')
         return totals + table
 
         # from ._utils import tighten
