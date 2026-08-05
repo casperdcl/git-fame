@@ -147,27 +147,64 @@ def test_tabulate_svg_escape():
     assert '&lt;script/&gt; &amp; co' in svg
 
 
+SVG_NS = {'': 'http://www.w3.org/2000/svg'}
+
+
+def svg_grid(svg):
+    """(viewport width, `font-size`, rows of `(column, text)` cells) of a tabulated SVG"""
+    # must be well-formed XML
+    root = ElementTree.fromstring(svg)
+    size = {}
+    for i in ('width', 'height'):
+        value, unit = re.fullmatch('([\\d.]+)(.*)', root.get(i)).groups()
+        # `em` would refer to the `<svg>`'s own font size rather than to `font-size` below
+        assert not unit, f'viewport {i}="{value}{unit}" is not in user units'
+        size[i] = float(value)
+    text = root.find('text', SVG_NS)
+    font_size = float(text.get('font-size'))
+    # a monospace advance; `textLength` makes it exact for any font
+    char_width = 0.6 * font_size
+
+    rows = []
+    for row in text.findall('tspan', SVG_NS):
+        cells, col = [], 0
+        for cell in row.findall('tspan', SVG_NS):
+            # each cell is pinned to & stretched over its own columns, so that a cell whose
+            # glyphs don't advance by `char_width` cannot displace the ones after it
+            assert float(cell.get('x')) == char_width * col
+            assert float(cell.get('textLength')) == char_width * len(cell.text)
+            cells.append((col, cell.text))
+            col += len(cell.text)
+        assert char_width * col == size['width'], 'row does not span the viewport'
+        rows.append(cells)
+    assert rows and size['height'] >= font_size * (len(rows) + 0.5)
+    return size['width'], font_size, rows
+
+
 def test_tabulate_svg():
     """Test SVG tabulate"""
     svg = _gitfame.tabulate(auth_stats, stats_tot, backend='svg')
     assert svg.startswith('<svg ') and svg.endswith('</svg>')
-    rows = re.findall('<tspan[^>]*>(.*?)</tspan>', svg)
-    assert rows and len(set(map(len, rows))) == 1
-
-    size = {}
-    for i in ('width', 'height'):
-        value, unit = re.search(f'{i}="([\\d.]+)([^"]*)"', svg).groups()
-        # `em` would refer to the `<svg>`'s own font size rather than to `font-size` below
-        assert not unit, f'viewport {i}="{value}{unit}" is not in user units'
-        size[i] = float(value)
-    width, height = size['width'], size['height']
-
+    width, font_size, rows = svg_grid(svg)
     # the viewport must fit the text (rendered at `font-size` in a `0.6em`-advance monospace)
-    font_size = float(re.search('font-size="([\\d.]+)"', svg).group(1))
-    assert width >= 0.6 * font_size * len(rows[0])
-    assert height >= font_size * (len(rows) + 0.5)
-    # ... and the text must be forced to fit, whatever the font's actual metrics
-    assert [float(i) for i in re.findall('textLength="([\\d.]+)"', svg)] == [width] * len(rows)
+    assert width >= 0.6 * font_size * len(''.join(text for _, text in rows[0]))
+
+
+def test_tabulate_svg_grapheme_clusters():
+    """Test SVG tabulate aligns rows containing multi-codepoint graphemes"""
+    # 5 codepoints drawn as 3 clusters: a whole-row `textLength` would squeeze the entire row
+    name = 'सौगात'
+    stats = {
+        name: {'files': {'setup.py'}, 'loc': 1, 'ctimes': [], 'commits': 1},
+        'ASCII': {'files': {'setup.py'}, 'loc': 1, 'ctimes': [], 'commits': 1}}
+    svg = _gitfame.tabulate(stats, {'files': 1, 'loc': 2, 'commits': 2}, backend='svg')
+    # `svg_grid` asserts that every cell sits on the character grid
+    _, _, rows = svg_grid(svg)
+    # the name is drawn as one cell, so its clusters stay intact
+    assert any(text.strip() == name for row in rows for _, text in row)
+    # ... and the separators are at the same columns on every row which has them
+    seps = {tuple(col for col, text in row) for row in rows if len(row) > 1}
+    assert len(seps) == 1
 
 
 def test_tabulate_enum():
@@ -269,7 +306,9 @@ def test_multiple_gitdirs_loc(capsys):
             subprocess.check_call(["git", "init", "-q", repo])
             with open(path.join(repo, name + ".txt"), 'w') as fd:
                 fd.write("one\ntwo\nthree\n")
-            commit = ["-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "-qm", "initial"]
+            commit = [
+                "-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "--no-gpg-sign", "-qm",
+                "initial"]
             for cmd in (["add", "-A"], commit):
                 subprocess.check_call(["git", "-C", repo] + cmd)
 

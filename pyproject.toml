@@ -27,8 +27,6 @@ classifiers = [
     "Environment :: MacOS X",
     "Environment :: Other Environment",
     "Environment :: Win32 (MS Windows)",
-    "Environment :: X11 Applications",
-    "Framework :: IPython",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Intended Audience :: End Users/Desktop",
