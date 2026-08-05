@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 r"""Usage:
-  gitfame [--help | options] [<gitdir>...]
+  git-fame [--help | options] [<gitdir>...]
 
 Arguments:
   <gitdir>       Git directory [default: ./].
@@ -378,11 +378,6 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
 def run(args):
     """args  : Namespace (`argopt.DictAttrWrap` or from `argparse`)"""
     log.debug("parsing args")
-
-    if args.sort not in "loc commits files hours months".split():
-        log.warning("--sort argument (%s) unrecognised\n%s", args.sort, __doc__)
-        raise KeyError(args.sort)
-
     args.show = set(args.show.lower().split(','))
     if args.show_email:
         args.show = SHOW_EMAIL
@@ -494,7 +489,52 @@ def run(args):
 
 def get_main_parser():
     from argopt import argopt
-    return argopt(__doc__ + '\n' + __copyright__, version=__version__)
+    parser = argopt(__doc__ + '\n' + __copyright__, version=__version__)
+    try:
+        import shtab
+    except ImportError:
+        log.debug("missing shtab")
+    else:
+
+        def csv_permute(a, b):
+            return a | b | {k for i in a for j in b for k in (f"{i},{j}", f"{j},{i}")}
+
+        for o in parser._get_optional_actions():
+            if o.dest == 'branch':
+                try:
+                    o.complete = shtab.cmd("git branch")
+                except AttributeError:
+                    log.debug("shtab>1.9.3 required")
+            elif o.dest == 'sort':
+                o.choices = 'loc', 'commits', 'files', 'hours', 'months'
+            elif o.dest == 'loc':
+                o.choices = CHURN_SLOC | csv_permute(CHURN_INS, CHURN_DEL)
+            elif o.dest == 'cost':
+                o.choices = csv_permute(COST_HOURS, COST_MONTHS)
+            elif o.dest == 'show':
+                o.choices = csv_permute(SHOW_NAME, SHOW_EMAIL)
+            elif o.dest == 'ignore_revs_file':
+                try:
+                    o.complete = shtab.glob("*git*rev*")
+                except AttributeError:
+                    log.debug("shtab>1.9.3 required")
+            elif o.dest == 'format':
+                o.choices = ['yaml', 'yml', 'json', 'csv', 'tsv', 'svg', 'md', 'markdown', 'tabulate']
+                try:
+                    import tabulate as tabber
+                except ImportError:
+                    pass
+                else:
+                    o.choices.extend(tabber.tabulate_formats)
+                    o.choices.extend(
+                        f"svg-{i}" for i in tabber.tabulate_formats
+                        if not re.search("asciidoc|html|jira|latex|mediawiki|moinmoin|textile|tsv|youtrack", i))
+            elif o.dest == 'manpath':
+                o.complete = shtab.DIRECTORY
+            elif o.dest == 'log':
+                o.choices = 'FATAL', 'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'
+        shtab.add_argument_to(parser)
+    return parser
 
 
 def main(args=None):

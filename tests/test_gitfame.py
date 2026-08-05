@@ -7,7 +7,7 @@ from tempfile import mkdtemp
 from textwrap import dedent
 from xml.etree import ElementTree
 
-from pytest import mark, skip
+from pytest import mark, raises, skip
 
 from gitfame import _gitfame, main
 
@@ -261,17 +261,16 @@ def test_main_errors(capsys):
     except SystemExit:
         out = capsys.readouterr()
         res = ' '.join(out.err.strip().split()[:2])
-        if res != "usage: gitfame":
+        if res != "usage: git-fame":
             raise ValueError(out)
     else:
         raise ValueError("Expected --bad arg to fail")
 
     capsys.readouterr() # clear output
-    try:
+    with raises(SystemExit):
         main(['-s', '--sort', 'badSortArg'])
-    except KeyError as e:
-        if "badSortArg" not in str(e):
-            raise ValueError("Expected `--sort=badSortArg` to fail")
+    if "badSortArg" not in capsys.readouterr().err:
+        raise ValueError("Expected `--sort=badSortArg` to fail")
 
 
 def test_manpath():
