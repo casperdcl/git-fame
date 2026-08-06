@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 r"""Usage:
-  gitfame [--help | options] [<gitdir>...]
+  git-fame [--help | options] [<gitdir>...]
 
 Arguments:
   <gitdir>       Git directory [default: ./].
@@ -117,11 +117,41 @@ def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
     return (res/60.0 + firstCommitAdditionInMinutes) / 60.0
 
 
+def table2svg(table, row_separator):
+    from xml.sax.saxutils import escape  # nosec B406, yapf: disable
+    rows = table.split('\n')
+    font_size = 15
+    # typical monospace advance (`textLength` below makes it exact for any font)
+    char_width = 0.6 * font_size
+    # `em` in the root `<svg>`'s size refers to the (inherited) font size of the `<svg>`
+    # element itself rather than to `font-size` below, so use user units instead
+    svg_width = char_width * max(map(len, rows))
+    # 0.2em of padding above the first & below the last row
+    svg_height = font_size * (len(rows) + 0.7)
+
+    def cells(row):
+        """One `<tspan>` per cell, each pinned to & stretched over its own columns."""
+        col = 0
+        for cell in filter(None, re.split(f'({row_separator})', row)):
+            yield (f'<tspan x="{char_width * col:g}" textLength="{char_width * len(cell):g}"'
+                   f' lengthAdjust="spacingAndGlyphs">{escape(cell)}</tspan>')
+            col += len(cell)
+
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_width:g}" height="{svg_height:g}"'
+            f' viewBox="0 0 {svg_width:g} {svg_height:g}">'
+            '<rect x="0" y="0" width="100%" height="100%"'
+            ' fill="white" fill-opacity="0.5" rx="5"/>'
+            f'<text x="0" y="0.2em" font-size="{font_size}"'
+            ' font-family="monospace" style="white-space: pre">' +
+            ''.join(f'<tspan x="0" dy="1em">{"".join(cells(row))}</tspan>' for row in rows) + '</text></svg>')
+
+
 def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost=None, row_nums=False, min_sort_val=0,
              width=TERM_WIDTH):
     """
-    backends  : [default: md]|yaml|json|csv|tsv|tabulate|
-      `in tabulate.tabulate_formats`
+    backend  : yaml, json, csv, tsv, html, or any `tabulate.tabulate_formats`
+      Any tabulate format can prefixed by `svg-`.
+      e.g.: md, rst, rounded_outline, svg-rounded_outline, ...
     """
     COL_NAMES = ['Author', 'loc', 'coms', 'fils', ' distribution']
     # get ready
@@ -159,9 +189,8 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 
     if (backend := backend.lower()) in ("tabulate", "md", "markdown"):
         backend = "pipe"
-    svg = backend == 'svg'
-    if svg:
-        backend = 'rounded_outline'
+    if svg := backend.startswith("svg"):
+        backend = backend[3:].lstrip('-') or 'rounded_outline'
 
     if backend in ('yaml', 'yml', 'json', 'csv', 'tsv'):
         tab = [i[:-1] + [float(pc.strip()) for pc in i[-1].split('/')] for i in tab]
@@ -200,37 +229,8 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
         table = tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
         if svg:
-            from xml.sax.saxutils import escape  # nosec B406, yapf: disable
-            rows = table.split('\n')
-            font_size = 15
-            # typical monospace advance (`textLength` below makes it exact for any font)
-            char_width = 0.6 * font_size
-            # `em` in the root `<svg>`'s size refers to the (inherited) font size of the `<svg>`
-            # element itself rather than to `font-size` below, so use user units instead
-            svg_width = char_width * max(map(len, rows))
-            # 0.2em of padding above the first & below the last row
-            svg_height = font_size * (len(rows) + 0.7)
-
-            def cells(row):
-                """One `<tspan>` per cell, each pinned to & stretched over its own columns."""
-                col = 0
-                # split on 'rounded_outline' separator
-                for cell in filter(None, re.split('(\u2502)', row)):
-                    yield (f'<tspan x="{char_width * col:g}" textLength="{char_width * len(cell):g}"'
-                           f' lengthAdjust="spacingAndGlyphs">{escape(cell)}</tspan>')
-                    col += len(cell)
-
-            return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_width:g}" height="{svg_height:g}"'
-                    f' viewBox="0 0 {svg_width:g} {svg_height:g}">'
-                    '<rect x="0" y="0" width="100%" height="100%"'
-                    ' fill="white" fill-opacity="0.5" rx="5"/>'
-                    f'<text x="0" y="0.2em" font-size="{font_size}"'
-                    ' font-family="monospace" style="white-space: pre">' +
-                    ''.join(f'<tspan x="0" dy="1em">{"".join(cells(row))}</tspan>' for row in rows) + '</text></svg>')
+            return table2svg(table, tabber._table_formats[backend].datarow[1])
         return totals + table
-
-        # from ._utils import tighten
-        # return totals + tighten(tabber(...), max_width=TERM_WIDTH)
 
 
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None, silent_progress=False,
@@ -375,11 +375,6 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
 def run(args):
     """args  : Namespace (`argopt.DictAttrWrap` or from `argparse`)"""
     log.debug("parsing args")
-
-    if args.sort not in "loc commits files hours months".split():
-        log.warning("--sort argument (%s) unrecognised\n%s", args.sort, __doc__)
-        raise KeyError(args.sort)
-
     args.show = set(args.show.lower().split(','))
     if args.show_email:
         args.show = SHOW_EMAIL
@@ -491,7 +486,52 @@ def run(args):
 
 def get_main_parser():
     from argopt import argopt
-    return argopt(__doc__ + '\n' + __copyright__, version=__version__)
+    parser = argopt(__doc__ + '\n' + __copyright__, version=__version__)
+    try:
+        import shtab
+    except ImportError:
+        log.debug("missing shtab")
+    else:
+
+        def csv_permute(a, b):
+            return a | b | {k for i in a for j in b for k in (f"{i},{j}", f"{j},{i}")}
+
+        for o in parser._get_optional_actions():
+            if o.dest == 'branch':
+                try:
+                    o.complete = shtab.cmd("git branch")
+                except AttributeError:
+                    log.debug("shtab>1.9.3 required")
+            elif o.dest == 'sort':
+                o.choices = 'loc', 'commits', 'files', 'hours', 'months'
+            elif o.dest == 'loc':
+                o.choices = CHURN_SLOC | csv_permute(CHURN_INS, CHURN_DEL)
+            elif o.dest == 'cost':
+                o.choices = csv_permute(COST_HOURS, COST_MONTHS)
+            elif o.dest == 'show':
+                o.choices = csv_permute(SHOW_NAME, SHOW_EMAIL)
+            elif o.dest == 'ignore_revs_file':
+                try:
+                    o.complete = shtab.glob("*git*rev*")
+                except AttributeError:
+                    log.debug("shtab>1.9.3 required")
+            elif o.dest == 'format':
+                o.choices = ['yaml', 'yml', 'json', 'csv', 'tsv', 'svg', 'md', 'markdown', 'tabulate']
+                try:
+                    import tabulate as tabber
+                except ImportError:
+                    pass
+                else:
+                    o.choices.extend(tabber.tabulate_formats)
+                    o.choices.extend(
+                        f"svg-{i}" for i in tabber.tabulate_formats
+                        if not re.search("asciidoc|html|jira|latex|mediawiki|moinmoin|textile|tsv|youtrack", i))
+            elif o.dest == 'manpath':
+                o.complete = shtab.DIRECTORY
+            elif o.dest == 'log':
+                o.choices = 'FATAL', 'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'
+        shtab.add_argument_to(parser)
+    return parser
 
 
 def main(args=None):

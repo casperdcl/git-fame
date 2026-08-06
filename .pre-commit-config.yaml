@@ -38,6 +38,7 @@ repos:
     - pytest-xdist
     - argopt
     - pyyaml
+    - shtab
     - tabulate
     - tqdm
 - repo: https://github.com/PyCQA/bandit

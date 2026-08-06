@@ -16,11 +16,11 @@ parts:
     build-packages: [git]
     stage-packages: [git]
     override-build: |
-        craftctl default
-        cp $SNAPCRAFT_PART_BUILD/git-fame_completion.bash $SNAPCRAFT_PART_INSTALL/completion.sh
+      craftctl default
+      $CRAFT_PART_INSTALL/bin/git-fame --print-completion bash > $CRAFT_PART_INSTALL/completion.sh
     override-stage: |
-        craftctl default
-        craftctl set version=$(bin/python3 -m gitfame --version)
+      craftctl default
+      craftctl set version=$(bin/git-fame --version)
 apps:
   git-fame:
     command: bin/git-fame
