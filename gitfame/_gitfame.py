@@ -117,8 +117,12 @@ def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
     return (res/60.0 + firstCommitAdditionInMinutes) / 60.0
 
 
-def table2svg(table, row_separator):
+def table2svg(table, table_fmt):
     from xml.sax.saxutils import escape  # nosec B406, yapf: disable
+    row_separator = '|'.join(
+        re.escape(fmtrow[i])
+        for attr in ('lineabove', 'linebelowheader', 'linebetweenrows', 'linebelow', 'headerrow', 'datarow')
+        if (fmtrow := getattr(table_fmt, attr, None)) for i in (0, -1, -2))
     rows = table.split('\n')
     font_size = 15
     # typical monospace advance (`textLength` below makes it exact for any font)
@@ -229,7 +233,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
         table = tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
         if svg:
-            return table2svg(table, tabber._table_formats[backend].datarow[1])
+            return table2svg(table, tabber._table_formats[backend])
         return totals + table
 
 
