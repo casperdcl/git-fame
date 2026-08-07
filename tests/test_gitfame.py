@@ -277,21 +277,6 @@ def test_main_errors(capsys):
         raise ValueError("Expected `--sort=badSortArg` to fail")
 
 
-def test_manpath():
-    """Test --manpath"""
-    tmp = mkdtemp()
-    man = path.join(tmp, "git-fame.1")
-    assert not path.exists(man)
-    try:
-        main(['--manpath', tmp])
-    except SystemExit:
-        pass
-    else:
-        raise SystemExit("Expected system exit")
-    assert path.exists(man)
-    rmtree(tmp, True)
-
-
 def test_multiple_gitdirs():
     """test multiple gitdirs"""
     main(['.', '.'])

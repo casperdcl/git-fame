@@ -54,7 +54,6 @@ Options:
       fame|svg|[default: md]|yaml|json|csv|tsv.
       Any `tabulate.tabulate_formats` is also accepted.
       Most formats can also be prefixex by `svg-`, e.g. `svg-fame`.
-  --manpath=<path>         Directory in which to install git-fame man pages.
   --log=<lvl>    FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 """
 import logging
@@ -537,8 +536,6 @@ def get_main_parser():
             o.choices = FORMATS
             o.metavar = None
             o.help = "[default: md]."
-        elif o.dest == 'manpath':
-            o.complete = shtab.DIRECTORY
         elif o.dest == 'log':
             o.choices = 'FATAL', 'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'
             o.metavar = None
@@ -553,22 +550,7 @@ def main(args=None):
     args = parser.parse_args(args=args)
     logging.basicConfig(level=getattr(logging, args.log, logging.INFO), stream=TqdmStream,
                         format="%(levelname)s:gitfame.%(funcName)s:%(lineno)d:%(message)s")
-
     log.debug(args)
-    if args.manpath is not None:
-        import sys
-        from pathlib import Path
-
-        try:  # py<3.9
-            import importlib_resources as resources
-        except ImportError:
-            from importlib import resources
-        fi = resources.files('gitfame') / 'git-fame.1'
-        fo = Path(args.manpath) / 'git-fame.1'
-        fo.write_bytes(fi.read_bytes())
-        log.info("written:%s", fo)
-        sys.exit(0)
-
     run(args)
 
 

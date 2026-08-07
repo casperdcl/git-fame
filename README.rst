@@ -234,7 +234,6 @@ Documentation
           fame|svg|[default: md]|yaml|json|csv|tsv.
           Any `tabulate.tabulate_formats` is also accepted.
           Most formats can also be prefixex by `svg-`, e.g. `svg-fame`.
-      --manpath=<path>         Directory in which to install git-fame man pages.
       --log=<lvl>    FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 
 
