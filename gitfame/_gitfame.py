@@ -497,43 +497,39 @@ def run(args):
 
 
 def get_main_parser():
+    import shtab
     from argopt import argopt
     parser = argopt(__doc__ + '\n' + __copyright__, version=__version__)
-    try:
-        import shtab
-    except ImportError:
-        log.debug("missing shtab")
-    else:
 
-        def csv_permute(a, b):
-            return a | b | {k for i in a for j in b for k in (f"{i},{j}", f"{j},{i}")}
+    def csv_permute(a, b):
+        return a | b | {k for i in a for j in b for k in (f"{i},{j}", f"{j},{i}")}
 
-        for o in parser._get_optional_actions():
-            if o.dest == 'branch':
-                try:
-                    o.complete = shtab.cmd("git branch")
-                except AttributeError:
-                    log.debug("shtab>1.9.3 required")
-            elif o.dest == 'sort':
-                o.choices = 'loc', 'commits', 'files', 'hours', 'months'
-            elif o.dest == 'loc':
-                o.choices = CHURN_SLOC | csv_permute(CHURN_INS, CHURN_DEL)
-            elif o.dest == 'cost':
-                o.choices = csv_permute(COST_HOURS, COST_MONTHS)
-            elif o.dest == 'show':
-                o.choices = csv_permute(SHOW_NAME, SHOW_EMAIL)
-            elif o.dest == 'ignore_revs_file':
-                try:
-                    o.complete = shtab.glob("*git*rev*")
-                except AttributeError:
-                    log.debug("shtab>1.9.3 required")
-            elif o.dest == 'format':
-                o.choices = FORMATS
-            elif o.dest == 'manpath':
-                o.complete = shtab.DIRECTORY
-            elif o.dest == 'log':
-                o.choices = 'FATAL', 'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'
-        shtab.add_argument_to(parser)
+    for o in parser._get_optional_actions():
+        if o.dest == 'branch':
+            try:
+                o.complete = shtab.cmd("git branch")
+            except AttributeError:
+                log.debug("shtab>1.9.3 required")
+        elif o.dest == 'sort':
+            o.choices = 'loc', 'commits', 'files', 'hours', 'months'
+        elif o.dest == 'loc':
+            o.choices = CHURN_SLOC | csv_permute(CHURN_INS, CHURN_DEL)
+        elif o.dest == 'cost':
+            o.choices = csv_permute(COST_HOURS, COST_MONTHS)
+        elif o.dest == 'show':
+            o.choices = csv_permute(SHOW_NAME, SHOW_EMAIL)
+        elif o.dest == 'ignore_revs_file':
+            try:
+                o.complete = shtab.glob("*git*rev*")
+            except AttributeError:
+                log.debug("shtab>1.9.3 required")
+        elif o.dest == 'format':
+            o.choices = FORMATS
+        elif o.dest == 'manpath':
+            o.complete = shtab.DIRECTORY
+        elif o.dest == 'log':
+            o.choices = 'FATAL', 'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'
+    shtab.add_argument_to(parser)
     return parser
 
 
