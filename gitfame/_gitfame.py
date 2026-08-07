@@ -51,10 +51,9 @@ Options:
   --ignore-revs-file=<f>   Ignore revisions listed in the given file
                            (requires `--loc=surviving`).
   --format=<format>        Table format
-      svg|[default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
-      May require `git-fame[<format>]`, e.g. `pip install git-fame[yaml]`.
+      fame|svg|[default: md]|yaml|json|csv|tsv.
       Any `tabulate.tabulate_formats` is also accepted.
-  --manpath=<path>         Directory in which to install git-fame man pages.
+      Most formats can also be prefixex by `svg-`, e.g. `svg-fame`.
   --log=<lvl>    FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 """
 import logging
@@ -106,8 +105,13 @@ SHOW_NAME = {'name', 'n'}
 SHOW_EMAIL = {'email', 'e'}
 FORMATS = ['yaml', 'yml', 'json', 'csv', 'tsv']
 FORMATS.extend(['svg', 'md', 'markdown', 'tabulate'])
-FORMATS.extend(tabber.tabulate_formats)
-FORMATS.extend(f"svg-{i}" for i in tabber.tabulate_formats
+tabber._table_formats['fame'] = tabber.TableFormat(lineabove=None, linebelowheader=tabber.Line("", "─", "┼", ""),
+                                                   linebetweenrows=None, linebelow=tabber.Line("", "─", "┴", ""),
+                                                   headerrow=tabber.DataRow("", "│",
+                                                                            ""), datarow=tabber.DataRow("", "│", ""),
+                                                   padding=1, with_header_hide=None)
+FORMATS.extend(tabber._table_formats)
+FORMATS.extend(f"svg-{i}" for i in tabber._table_formats
                if not re.search("asciidoc|html|jira|latex|mediawiki|moinmoin|textile|tsv|youtrack", i))
 
 
@@ -204,14 +208,17 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
     if (backend := backend.lower()) in ("tabulate", "md", "markdown"):
         backend = "pipe"
     if svg := backend.startswith("svg"):
-        backend = backend[3:].lstrip('-') or 'rounded_outline'
+        backend = backend[3:].lstrip('-') or 'fame'
 
     if backend in ('yaml', 'yml', 'json', 'csv', 'tsv'):
         tab = [i[:-1] + [float(pc.strip()) for pc in i[-1].split('/')] for i in tab]
         tab = {"total": stats_tot, "data": tab, "columns": COL_NAMES[:-1] + ['%' + i for i in COL_NAMES[-4:-1]]}
         if backend in ('yaml', 'yml'):
             log.debug("backend:yaml")
-            import yaml
+            try:
+                import yaml
+            except ImportError as exc:
+                raise RuntimeError('Try: pip install "git-fame[yaml]"') from exc
             return yaml.safe_dump(tab).rstrip()
         elif backend == 'json':
             log.debug("backend:json")
@@ -233,7 +240,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         else:      # pragma: nocover
             raise RuntimeError("Should be unreachable")
 
-    if backend not in tabber.tabulate_formats:
+    if backend not in tabber._table_formats:
         raise ValueError(f"Unknown backend:{backend}")
     log.debug("backend:tabulate:%s", backend)
     COL_LENS = [max(len(Str(i[j])) for i in [COL_NAMES] + tab) for j in range(len(COL_NAMES))]
@@ -512,6 +519,8 @@ def get_main_parser():
                 log.debug("shtab>1.9.3 required")
         elif o.dest == 'sort':
             o.choices = 'loc', 'commits', 'files', 'hours', 'months'
+            o.metavar = None
+            o.help = "[default: loc]."
         elif o.dest == 'loc':
             o.choices = CHURN_SLOC | csv_permute(CHURN_INS, CHURN_DEL)
         elif o.dest == 'cost':
@@ -525,10 +534,12 @@ def get_main_parser():
                 log.debug("shtab>1.9.3 required")
         elif o.dest == 'format':
             o.choices = FORMATS
-        elif o.dest == 'manpath':
-            o.complete = shtab.DIRECTORY
+            o.metavar = None
+            o.help = "[default: md]."
         elif o.dest == 'log':
             o.choices = 'FATAL', 'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'
+            o.metavar = None
+            o.help = "[default: INFO]."
     shtab.add_argument_to(parser)
     return parser
 
@@ -539,22 +550,7 @@ def main(args=None):
     args = parser.parse_args(args=args)
     logging.basicConfig(level=getattr(logging, args.log, logging.INFO), stream=TqdmStream,
                         format="%(levelname)s:gitfame.%(funcName)s:%(lineno)d:%(message)s")
-
     log.debug(args)
-    if args.manpath is not None:
-        import sys
-        from pathlib import Path
-
-        try:  # py<3.9
-            import importlib_resources as resources
-        except ImportError:
-            from importlib import resources
-        fi = resources.files('gitfame') / 'git-fame.1'
-        fo = Path(args.manpath) / 'git-fame.1'
-        fo.write_bytes(fi.read_bytes())
-        log.info("written:%s", fo)
-        sys.exit(0)
-
     run(args)
 
 

@@ -57,14 +57,10 @@ jobs:
       with: {fetch-depth: 0}
     - uses: actions/setup-python@v7
       with: {python-version: '3.x'}
-    - name: Install
-      run: |
-        sudo apt-get install -yqq pandoc
-        pip install -r .meta/requirements-build.txt
-        make build
     - id: dist
       uses: casperdcl/deploy-pypi@v3
       with:
+        build: true
         gpg_key: ${{ secrets.GPG_KEY }}
         upload: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags') }}
     - id: collect_assets
