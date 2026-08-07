@@ -1,3 +1,4 @@
+import operator
 import re
 import sys
 from json import loads
@@ -150,7 +151,7 @@ def test_tabulate_svg_escape():
 SVG_NS = {'': 'http://www.w3.org/2000/svg'}
 
 
-def svg_grid(svg):
+def svg_grid(svg, cmp=operator.eq):
     """(viewport width, `font-size`, rows of `(column, text)` cells) of a tabulated SVG"""
     # must be well-formed XML
     root = ElementTree.fromstring(svg)
@@ -175,17 +176,20 @@ def svg_grid(svg):
             assert float(cell.get('textLength')) == char_width * len(cell.text)
             cells.append((col, cell.text))
             col += len(cell.text)
-        assert char_width * col == size['width'], 'row does not span the viewport'
+        assert cmp(char_width * col, size['width']), 'row does not span the viewport'
         rows.append(cells)
     assert rows and size['height'] >= font_size * (len(rows) + 0.5)
     return size['width'], font_size, rows
 
 
-def test_tabulate_svg():
-    """Test SVG tabulate"""
-    svg = _gitfame.tabulate(auth_stats, stats_tot, backend='svg')
-    assert svg.startswith('<svg ') and svg.endswith('</svg>')
-    width, font_size, rows = svg_grid(svg)
+@mark.parametrize('backend', _gitfame.FORMATS)
+def test_tabulate_formats(backend):
+    tab = _gitfame.tabulate(auth_stats, stats_tot, backend=backend)
+    if not backend.startswith('svg'):
+        skip(backend)
+    assert tab.startswith('<svg ') and tab.endswith('</svg>')
+    ragged = any(backend == f'svg-{i}' for i in ('rst', 'plain', 'simple', 'presto'))
+    width, font_size, rows = svg_grid(tab, operator.le if ragged else operator.eq)
     # the viewport must fit the text (rendered at `font-size` in a `0.6em`-advance monospace)
     assert width >= 0.6 * font_size * len(''.join(text for _, text in rows[0]))
 
