@@ -229,11 +229,10 @@ def test_tabulate_unknown():
         raise ValueError("Should not support unknown tabulate format")
 
 
-@mark.parametrize(
-    'params',
-    [['--sort', 'commits'], ['--no-regex'], ['--no-regex', '--incl', 'setup.py,README.rst'], ['--excl', r'.*\.py'],
-     ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'], ['--cost', 'month', '--excl', r'.*\.py'], ['-e'],
-     ['-w'], ['-M'], ['-C'], ['-t'], ['--show=name,email'], ['--format=csv'], ['--format=svg']])
+@mark.parametrize('params', [['--sort', 'commits'], ['--no-regex'], ['--no-regex', '--incl', 'setup.py,README.rst'],
+                             ['--excl', r'.*\.py'], ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'],
+                             ['--cost', 'month', '--excl', r'.*\.py'], ['-e'], ['-w'], ['-M'], ['-C'], ['-t'],
+                             ['--show=name,email'], ['--format=csv'], ['--format=svg'], ['-j', '1'], ['-j', '4']])
 def test_options(params):
     """Test command line options"""
     main(['-s'] + params)
@@ -310,3 +309,50 @@ def test_multiple_gitdirs_loc(capsys):
 
     assert "Total loc: 6" in out
     assert "Total files: 2" in out
+
+
+def test_jobs_determinism(capsys):
+    """--jobs must not change output"""
+    root = path.dirname(path.dirname(__file__))
+    main(['-s', '--format=json', '-j', '1', root])
+    serial = capsys.readouterr().out
+    main(['-s', '--format=json', '-j', '4', root])
+    parallel = capsys.readouterr().out
+    assert serial == parallel
+    assert loads(serial)['total']['loc'] > 0
+
+
+def test_blame_failure_determinism(capsys, caplog):
+    """Blame failures are reported identically (files, order, log level) at any --jobs"""
+    import logging
+    import subprocess
+    from unittest.mock import patch
+
+    root = path.dirname(path.dirname(__file__))
+    failing = ['LICENCE'] # text files, in `ls-files` order
+    real_check_output = _gitfame.check_output
+
+    def fake_check_output(args, *a, **k):
+        if args[3:4] == ['blame'] and args[-1] in failing:
+            raise subprocess.CalledProcessError(1, args)
+        return real_check_output(args, *a, **k)
+
+    caplog.set_level(logging.DEBUG, logger='gitfame._gitfame')
+    runs = []
+    for jobs in ('1', '4'):
+        with patch.object(_gitfame, 'check_output', fake_check_output):
+            caplog.clear()
+            main(['-s', '--format=json', '-j', jobs, root])
+            out = capsys.readouterr().out
+        reported = [(r.levelname, r.getMessage()) for r in caplog.records
+                    if r.name == 'gitfame._gitfame' and r.getMessage().split(':', 1)[0] in failing]
+        runs.append((out, reported))
+
+    (serial_out, serial_log), (parallel_out, parallel_log) = runs
+    # both runs report the same files, in `file_list` order, at the same level
+    assert serial_log == parallel_log
+    assert [level for level, _ in serial_log] == ['DEBUG']
+    assert [msg.split(':', 1)[0] for _, msg in serial_log] == failing
+    # and the report itself is byte-identical (and non-empty)
+    assert serial_out == parallel_out
+    assert loads(serial_out)['total']['loc'] > 0

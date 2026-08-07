@@ -34,6 +34,8 @@ Options:
                   rather than regular expressions [default: False].
                   NB: if regex is enabled ',' is equivalent to '|'.
   -s, --silent-progress    Suppress `tqdm` [default: False].
+  -j=<n>, --jobs=<n>  Number of concurrent `git blame` threads per <gitfir>
+                      [default: 0:int]: automatic.
   --warn-binary  Don't silently skip files which appear to be binary data
                  [default: False].
   --show=<info>  Author information to show [default: name]|email.
@@ -67,7 +69,8 @@ from os import path
 
 import tabulate as tabber
 
-from ._utils import TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats, print_unicode, tqdm
+from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, mapper, merge_stats,
+                     print_unicode, tqdm)
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
 try:
@@ -254,7 +257,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None, silent_progress=False,
                     ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False, show=None,
-                    prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None):
+                    prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None, jobs=None):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
@@ -305,14 +308,29 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             auth_stats[auth][fext_key] += loc
 
     if churn & CHURN_SLOC:
-        for fname in tqdm(file_list, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
-                          unit="file"):
+
+        def blame_file(fname):
+            """Blame one file. Returns `(fname, output_or_exception)` so that
+            failures stay in input order and are reported by the caller."""
+            try:
+                return fname, check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
+            except Exception as err:
+                return fname, err
+
+        if jobs != 1 and mapper is not map:
+            # concurrent multi-file processing
+            _mapper = partial(mapper, max_workers=jobs)
+        else:
+
+            def _mapper(func, iterable, **kwargs):
+                return map(func, tqdm(iterable, **kwargs))
+
+        for fname, blame_out in _mapper(blame_file, file_list, desc=gitdir if prefix_gitdir else "Processing",
+                                        disable=silent_progress, unit="file"):
             # `fname` is relative to `gitdir`, so only prefix the reported name
             display_fname = path.join(gitdir, fname) if prefix_gitdir else fname
-            try:
-                blame_out = check_output(base_cmd + [branch, fname], stderr=subprocess.STDOUT)
-            except Exception as err:
-                getattr(log, "warn" if warn_binary else "debug")(display_fname + ':' + str(err))
+            if isinstance(blame_out, Exception):
+                getattr(log, "warn" if warn_binary else "debug")(display_fname + ':' + str(blame_out))
                 continue
             log.log(logging.NOTSET, blame_out)
 
@@ -465,22 +483,15 @@ def run(args):
                       include_files=include_files, exclude_files=exclude_files, silent_progress=args.silent_progress,
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C, warn_binary=args.warn_binary,
                       bytype=args.bytype, show=args.show, prefix_gitdir=len(gitdirs) > 1, churn=churn,
-                      ignore_rev=args.ignore_rev, ignore_revs_file=args.ignore_revs_file)
+                      ignore_rev=args.ignore_rev, ignore_revs_file=args.ignore_revs_file, jobs=args.jobs or None)
 
-    # concurrent multi-repo processing
-    if len(gitdirs) > 1:
-        try:
-            from concurrent.futures import ThreadPoolExecutor  # NOQA, yapf: disable
-
-            from tqdm.contrib.concurrent import thread_map
-            mapper = partial(thread_map, desc="Repos", unit="repo", miniters=1, disable=args.silent_progress
-                             or len(gitdirs) <= 1)
-        except ImportError:
-            mapper = map
+    if len(gitdirs) > 1 and mapper is not map:
+        # concurrent multi-repo processing
+        _mapper = partial(mapper, desc="Repos", unit="repo", miniters=1, disable=args.silent_progress
+                          or len(gitdirs) <= 1)
     else:
-        mapper = map
-
-    for res in mapper(statter, gitdirs):
+        _mapper = map
+    for res in _mapper(statter, gitdirs):
         for auth, stats in res.items():
             if auth in auth_stats:
                 merge_stats(auth_stats[auth], stats)

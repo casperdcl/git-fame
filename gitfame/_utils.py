@@ -14,10 +14,18 @@ else:
     tqdm_std.set_lock(RLock())
     tqdm = partial(tqdm_std, lock_args=(False,))
 
+try:
+    from concurrent.futures import ThreadPoolExecutor  # noqa: F401, yapf: disable
+
+    from tqdm.contrib.concurrent import thread_map
+    mapper = partial(thread_map, tqdm_class=tqdm_std)
+except ImportError:
+    mapper = map
+
 __author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
 __date__ = "2016-2025"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
-__all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "tqdm", "check_output", "print_unicode", "Str"]
+__all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "tqdm", "check_output", "print_unicode", "Str", "mapper"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__ # weird foreign language
 
