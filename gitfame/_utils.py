@@ -14,10 +14,18 @@ else:
     tqdm_std.set_lock(RLock())
     tqdm = partial(tqdm_std, lock_args=(False,))
 
+try:
+    from concurrent.futures import ThreadPoolExecutor  # noqa: F401, yapf: disable
+
+    from tqdm.contrib.concurrent import thread_map
+    mapper = partial(thread_map, tqdm_class=tqdm_std)
+except ImportError:
+    mapper = map
+
 __author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
 __date__ = "2016-2025"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
-__all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "tqdm", "check_output", "print_unicode", "Str"]
+__all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "tqdm", "check_output", "print_unicode", "Str", "mapper"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__ # weird foreign language
 
@@ -111,42 +119,3 @@ def merge_stats(left, right):
         else:
             raise TypeError(val)
     return left
-
-
-def imap_bounded(func, items, jobs):
-    """
-    Like `map(func, items)` but runs up to `jobs` calls concurrently,
-    yielding results in input order.
-
-    At most `min(2 * jobs, jobs + 4)` calls are outstanding at once, so
-    the number of buffered results stays bounded regardless of how many
-    items there are (an unbounded map would buffer every result). The
-    bound is on the *number* of outstanding calls only: peak memory also
-    grows with the size of the largest single result (e.g. `git blame`
-    output for one large file can be megabytes).
-    """
-    if jobs < 2:
-        for i in items:
-            yield func(i)
-        return
-
-    from collections import deque
-    from concurrent.futures import ThreadPoolExecutor
-    from itertools import islice
-
-    it = iter(items)
-    with ThreadPoolExecutor(max_workers=jobs) as pool:
-        pending = deque()
-        try:
-            for i in islice(it, min(2 * jobs, jobs + 4)):
-                pending.append(pool.submit(func, i))
-            while pending:
-                res = pending.popleft().result()
-                for i in islice(it, 1):
-                    pending.append(pool.submit(func, i))
-                yield res
-        finally:
-            # abandoned early, or `func` raised: nobody wants the queued
-            # results, so don't let `pool.shutdown()` wait for them
-            for future in pending:
-                future.cancel()

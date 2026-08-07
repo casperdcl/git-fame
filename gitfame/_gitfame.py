@@ -34,10 +34,8 @@ Options:
                   rather than regular expressions [default: False].
                   NB: if regex is enabled ',' is equivalent to '|'.
   -s, --silent-progress    Suppress `tqdm` [default: False].
-  -j, --jobs=<n>  Number of concurrent `git blame` processes (divided
-                  across repositories when several are given)
-                  [default: 0:int]. 0: automatic (based on CPU count);
-                  1: serial.
+  -j=<n>, --jobs=<n>  Number of concurrent `git blame` threads per <gitfir>
+                      [default: 0:int]: automatic.
   --warn-binary  Don't silently skip files which appear to be binary data
                  [default: False].
   --show=<info>  Author information to show [default: name]|email.
@@ -69,14 +67,9 @@ from functools import partial
 from importlib.metadata import PackageNotFoundError, version
 from os import path
 
-try:
-    from os import process_cpu_count as cpu_count
-except ImportError: # Python < 3.13  # pragma: no cover
-    from os import cpu_count
-
 import tabulate as tabber
 
-from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, imap_bounded, int_cast_or_len, merge_stats,
+from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, mapper, merge_stats,
                      print_unicode, tqdm)
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
@@ -264,11 +257,8 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None, silent_progress=False,
                     ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False, show=None,
-                    prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None, jobs=1):
-    """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}
-
-    `jobs` arrives already resolved (1 = serial); the CLI maps its 0 to an
-    automatic value before calling this."""
+                    prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None, jobs=None):
+    """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
     show = show or SHOW_NAME
@@ -327,11 +317,16 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             except Exception as err:
                 return fname, err
 
-        # only the subprocess runs concurrently; parsing and `stats_append`
-        # stay in this thread, so output is identical to `--jobs=1`
-        for fname, blame_out in tqdm(imap_bounded(blame_file, file_list, jobs), total=len(file_list),
-                                     desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
-                                     unit="file"):
+        if jobs != 1 and mapper is not map:
+            # concurrent multi-file processing
+            _mapper = partial(mapper, max_workers=jobs)
+        else:
+
+            def _mapper(func, iterable, **kwargs):
+                return map(func, tqdm(iterable, **kwargs))
+
+        for fname, blame_out in _mapper(blame_file, file_list, desc=gitdir if prefix_gitdir else "Processing",
+                                        disable=silent_progress, unit="file"):
             # `fname` is relative to `gitdir`, so only prefix the reported name
             display_fname = path.join(gitdir, fname) if prefix_gitdir else fname
             if isinstance(blame_out, Exception):
@@ -484,31 +479,19 @@ def run(args):
                     " which may need to be added to --excl")
 
     auth_stats = {}
-    jobs = args.jobs or min(32, (cpu_count() or 1) + 4)
-    if len(gitdirs) > 1:
-        # repos are already processed concurrently below; divide the budget so
-        # the product stays bounded rather than multiplying
-        jobs = max(1, jobs // len(gitdirs))
     statter = partial(_get_auth_stats, branch=args.branch, since=args.since, until=args.until,
                       include_files=include_files, exclude_files=exclude_files, silent_progress=args.silent_progress,
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C, warn_binary=args.warn_binary,
                       bytype=args.bytype, show=args.show, prefix_gitdir=len(gitdirs) > 1, churn=churn,
-                      ignore_rev=args.ignore_rev, ignore_revs_file=args.ignore_revs_file, jobs=jobs)
+                      ignore_rev=args.ignore_rev, ignore_revs_file=args.ignore_revs_file, jobs=args.jobs or None)
 
-    # concurrent multi-repo processing
-    if len(gitdirs) > 1:
-        try:
-            from concurrent.futures import ThreadPoolExecutor  # NOQA, yapf: disable
-
-            from tqdm.contrib.concurrent import thread_map
-            mapper = partial(thread_map, desc="Repos", unit="repo", miniters=1, disable=args.silent_progress
-                             or len(gitdirs) <= 1)
-        except ImportError:
-            mapper = map
+    if len(gitdirs) > 1 and mapper is not map:
+        # concurrent multi-repo processing
+        _mapper = partial(mapper, desc="Repos", unit="repo", miniters=1, disable=args.silent_progress
+                          or len(gitdirs) <= 1)
     else:
-        mapper = map
-
-    for res in mapper(statter, gitdirs):
+        _mapper = map
+    for res in _mapper(statter, gitdirs):
         for auth, stats in res.items():
             if auth in auth_stats:
                 merge_stats(auth_stats[auth], stats)
