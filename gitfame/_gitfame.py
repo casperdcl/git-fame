@@ -66,6 +66,8 @@ from functools import partial
 from importlib.metadata import PackageNotFoundError, version
 from os import path
 
+import tabulate as tabber
+
 from ._utils import TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, merge_stats, print_unicode, tqdm
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
@@ -102,6 +104,11 @@ CHURN_INS = {'ins', 'insert', 'insertion', 'insertions', 'add', 'addition', 'add
 CHURN_DEL = {'del', 'deletion', 'deletions', 'delete', '-'}
 SHOW_NAME = {'name', 'n'}
 SHOW_EMAIL = {'email', 'e'}
+FORMATS = ['yaml', 'yml', 'json', 'csv', 'tsv']
+FORMATS.extend(['svg', 'md', 'markdown', 'tabulate'])
+FORMATS.extend(tabber.tabulate_formats)
+FORMATS.extend(f"svg-{i}" for i in tabber.tabulate_formats
+               if not re.search("asciidoc|html|jira|latex|mediawiki|moinmoin|textile|tsv|youtrack", i))
 
 
 def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
@@ -117,8 +124,15 @@ def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
     return (res/60.0 + firstCommitAdditionInMinutes) / 60.0
 
 
-def table2svg(table, row_separator):
+def table2svg(table, backend):
     from xml.sax.saxutils import escape  # nosec B406, yapf: disable
+    table_fmt = tabber._table_formats[backend]
+    seps = {
+        getattr(fmtrow, i, None)
+        for attr in ('lineabove', 'linebelowheader', 'linebetweenrows', 'linebelow', 'headerrow', 'datarow')
+        if (fmtrow := getattr(table_fmt, attr, None)) for i in ('begin', 'sep', 'end')}
+    # drop '', drop None, sort by longest first, escape regex
+    row_separator = '|'.join(map(re.escape, sorted(filter(None, seps), key=len, reverse=True)))
     rows = table.split('\n')
     font_size = 15
     # typical monospace advance (`textLength` below makes it exact for any font)
@@ -197,19 +211,19 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         tab = {"total": stats_tot, "data": tab, "columns": COL_NAMES[:-1] + ['%' + i for i in COL_NAMES[-4:-1]]}
         if backend in ('yaml', 'yml'):
             log.debug("backend:yaml")
-            from yaml import safe_dump as tabber
-            return tabber(tab).rstrip()
+            import yaml
+            return yaml.safe_dump(tab).rstrip()
         elif backend == 'json':
             log.debug("backend:json")
-            from json import dumps as tabber
-            return tabber(tab, ensure_ascii=False)
+            import json
+            return json.dumps(tab, ensure_ascii=False)
         elif backend in ('csv', 'tsv'):
             log.debug("backend:csv")
-            from csv import writer as tabber
+            import csv
             from io import StringIO
 
             res = StringIO()
-            t = tabber(res, delimiter=',' if backend == 'csv' else '\t')
+            t = csv.writer(res, delimiter=',' if backend == 'csv' else '\t')
             t.writerow(tab['columns'])
             t.writerows(tab['data'])
             t.writerow('')
@@ -218,19 +232,17 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
             return res.getvalue().rstrip()
         else:      # pragma: nocover
             raise RuntimeError("Should be unreachable")
-    else:
-        import tabulate as tabber
 
-        if backend not in tabber.tabulate_formats:
-            raise ValueError(f"Unknown backend:{backend}")
-        log.debug("backend:tabulate:%s", backend)
-        COL_LENS = [max(len(Str(i[j])) for i in [COL_NAMES] + tab) for j in range(len(COL_NAMES))]
-        COL_LENS[0] = min(width - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4, COL_LENS[0])
-        tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
-        table = tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
-        if svg:
-            return table2svg(table, tabber._table_formats[backend].datarow[1])
-        return totals + table
+    if backend not in tabber.tabulate_formats:
+        raise ValueError(f"Unknown backend:{backend}")
+    log.debug("backend:tabulate:%s", backend)
+    COL_LENS = [max(len(Str(i[j])) for i in [COL_NAMES] + tab) for j in range(len(COL_NAMES))]
+    COL_LENS[0] = min(width - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4, COL_LENS[0])
+    tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
+    table = tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
+    if svg:
+        return table2svg(table, backend)
+    return totals + table
 
 
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None, silent_progress=False,
@@ -485,52 +497,39 @@ def run(args):
 
 
 def get_main_parser():
+    import shtab
     from argopt import argopt
     parser = argopt(__doc__ + '\n' + __copyright__, version=__version__)
-    try:
-        import shtab
-    except ImportError:
-        log.debug("missing shtab")
-    else:
 
-        def csv_permute(a, b):
-            return a | b | {k for i in a for j in b for k in (f"{i},{j}", f"{j},{i}")}
+    def csv_permute(a, b):
+        return a | b | {k for i in a for j in b for k in (f"{i},{j}", f"{j},{i}")}
 
-        for o in parser._get_optional_actions():
-            if o.dest == 'branch':
-                try:
-                    o.complete = shtab.cmd("git branch")
-                except AttributeError:
-                    log.debug("shtab>1.9.3 required")
-            elif o.dest == 'sort':
-                o.choices = 'loc', 'commits', 'files', 'hours', 'months'
-            elif o.dest == 'loc':
-                o.choices = CHURN_SLOC | csv_permute(CHURN_INS, CHURN_DEL)
-            elif o.dest == 'cost':
-                o.choices = csv_permute(COST_HOURS, COST_MONTHS)
-            elif o.dest == 'show':
-                o.choices = csv_permute(SHOW_NAME, SHOW_EMAIL)
-            elif o.dest == 'ignore_revs_file':
-                try:
-                    o.complete = shtab.glob("*git*rev*")
-                except AttributeError:
-                    log.debug("shtab>1.9.3 required")
-            elif o.dest == 'format':
-                o.choices = ['yaml', 'yml', 'json', 'csv', 'tsv', 'svg', 'md', 'markdown', 'tabulate']
-                try:
-                    import tabulate as tabber
-                except ImportError:
-                    pass
-                else:
-                    o.choices.extend(tabber.tabulate_formats)
-                    o.choices.extend(
-                        f"svg-{i}" for i in tabber.tabulate_formats
-                        if not re.search("asciidoc|html|jira|latex|mediawiki|moinmoin|textile|tsv|youtrack", i))
-            elif o.dest == 'manpath':
-                o.complete = shtab.DIRECTORY
-            elif o.dest == 'log':
-                o.choices = 'FATAL', 'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'
-        shtab.add_argument_to(parser)
+    for o in parser._get_optional_actions():
+        if o.dest == 'branch':
+            try:
+                o.complete = shtab.cmd("git branch")
+            except AttributeError:
+                log.debug("shtab>1.9.3 required")
+        elif o.dest == 'sort':
+            o.choices = 'loc', 'commits', 'files', 'hours', 'months'
+        elif o.dest == 'loc':
+            o.choices = CHURN_SLOC | csv_permute(CHURN_INS, CHURN_DEL)
+        elif o.dest == 'cost':
+            o.choices = csv_permute(COST_HOURS, COST_MONTHS)
+        elif o.dest == 'show':
+            o.choices = csv_permute(SHOW_NAME, SHOW_EMAIL)
+        elif o.dest == 'ignore_revs_file':
+            try:
+                o.complete = shtab.glob("*git*rev*")
+            except AttributeError:
+                log.debug("shtab>1.9.3 required")
+        elif o.dest == 'format':
+            o.choices = FORMATS
+        elif o.dest == 'manpath':
+            o.complete = shtab.DIRECTORY
+        elif o.dest == 'log':
+            o.choices = 'FATAL', 'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'
+    shtab.add_argument_to(parser)
     return parser
 
 
