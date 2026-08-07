@@ -231,9 +231,9 @@ Documentation
       --ignore-revs-file=<f>   Ignore revisions listed in the given file
                                (requires `--loc=surviving`).
       --format=<format>        Table format
-          svg|[default: pipe]|md|markdown|yaml|yml|json|csv|tsv|tabulate.
-          May require `git-fame[<format>]`, e.g. `pip install git-fame[yaml]`.
+          fame|svg|[default: md]|yaml|json|csv|tsv.
           Any `tabulate.tabulate_formats` is also accepted.
+          Most formats can also be prefixex by `svg-`, e.g. `svg-fame`.
       --manpath=<path>         Directory in which to install git-fame man pages.
       --log=<lvl>    FATAL|CRITICAL|ERROR|WARN(ING)|[default: INFO]|DEBUG|NOTSET.
 

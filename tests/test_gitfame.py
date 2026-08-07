@@ -188,7 +188,7 @@ def test_tabulate_formats(backend):
     if not backend.startswith('svg'):
         skip(backend)
     assert tab.startswith('<svg ') and tab.endswith('</svg>')
-    ragged = any(backend == f'svg-{i}' for i in ('rst', 'plain', 'simple', 'presto'))
+    ragged = backend == 'svg' or any(backend == f'svg-{i}' for i in ('fame', 'rst', 'plain', 'simple', 'presto'))
     width, font_size, rows = svg_grid(tab, operator.le if ragged else operator.eq)
     # the viewport must fit the text (rendered at `font-size` in a `0.6em`-advance monospace)
     assert width >= 0.6 * font_size * len(''.join(text for _, text in rows[0]))
@@ -201,7 +201,7 @@ def test_tabulate_svg_grapheme_clusters():
     stats = {
         name: {'files': {'setup.py'}, 'loc': 1, 'ctimes': [], 'commits': 1},
         'ASCII': {'files': {'setup.py'}, 'loc': 1, 'ctimes': [], 'commits': 1}}
-    svg = _gitfame.tabulate(stats, {'files': 1, 'loc': 2, 'commits': 2}, backend='svg')
+    svg = _gitfame.tabulate(stats, {'files': 1, 'loc': 2, 'commits': 2}, backend='svg-grid')
     # `svg_grid` asserts that every cell sits on the character grid
     _, _, rows = svg_grid(svg)
     # the name is drawn as one cell, so its clusters stay intact
