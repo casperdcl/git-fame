@@ -356,3 +356,34 @@ def test_blame_failure_determinism(capsys, caplog):
     # and the report itself is byte-identical (and non-empty)
     assert serial_out == parallel_out
     assert loads(serial_out)['total']['loc'] > 0
+
+
+def test_warn_binary_order(caplog):
+    """Binary file warnings are emitted in `ls-files` order (#130)"""
+    import logging
+    import subprocess
+    tmp = mkdtemp()
+    try:
+        subprocess.check_call(["git", "init", "-q", tmp])
+        names = [f"bin_{c}.dat" for c in "abcdefgh"]
+        for name in names:
+            with open(path.join(tmp, name), 'wb') as fd:
+                fd.write(b"\x00\x01" + name.encode())
+        with open(path.join(tmp, "text.txt"), 'w') as fd:
+            fd.write("one\n")
+        commit = [
+            "-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "--no-gpg-sign", "-qm",
+            "initial"]
+        for cmd in (["add", "-A"], commit):
+            subprocess.check_call(["git", "-C", tmp] + cmd)
+
+        caplog.set_level(logging.DEBUG, logger='gitfame._gitfame')
+        caplog.clear()
+        main(['-s', '--warn-binary', tmp])
+    finally:
+        rmtree(tmp, True)
+
+    warned = [
+        r.getMessage().split(':', 1)[1] for r in caplog.records
+        if r.name == 'gitfame._gitfame' and r.getMessage().startswith('binary:')]
+    assert warned == names
