@@ -8,9 +8,11 @@ from pathlib import Path
 from textwrap import dedent
 from xml.etree import ElementTree
 
-from pytest import mark, raises, skip
+from pytest import fixture, importorskip, mark, raises, skip
 
 from gitfame import _gitfame, main
+
+ROOT = Path(__file__).parent.parent
 
 # test data
 auth_stats = {
@@ -28,6 +30,24 @@ auth_stats = {
             1552697404, 1546630326, 1543326881, 1459558286, 1481150373, 1510930168, 1459598664, 1517596988],
         'commits': 35}}
 stats_tot = {'files': 14, 'loc': 613, 'commits': 35}
+
+
+@fixture
+def git_repo(tmp_path):
+    """`git_repo({name: contents, ...}, path=tmp_path) -> path`: single-commit repo"""
+    def make(files, path=tmp_path):
+        subprocess.check_call(["git", "init", "-q", path])
+        for name, content in files.items():
+            dest = path / name
+            dest.write_bytes(content) if isinstance(content, bytes) else dest.write_text(content)
+        commit = [
+            "-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "--no-gpg-sign", "-qm",
+            "initial"]
+        for cmd in (["add", "-A"], commit):
+            subprocess.check_call(["git", "-C", path] + cmd)
+        return path
+
+    return make
 
 
 def test_tabulate():
@@ -64,6 +84,7 @@ def test_tabulate_cost():
 
 def test_tabulate_yaml():
     """Test YAML tabulate"""
+    importorskip('yaml')
     res = [
         dedent("""\
       columns:
@@ -99,10 +120,7 @@ def test_tabulate_yaml():
       - [Casper da Costa-Luis, 538, 35, 10, 87.8, 100.0, 71.4]
       - [Not Committed Yet, 75, 0, 4, 12.2, 0.0, 28.6]
       total: {commits: 35, files: 14, loc: 613}""")]
-    try:
-        assert (_gitfame.tabulate(auth_stats, stats_tot, backend='yaml') in res)
-    except ImportError as err: # lacking pyyaml<5
-        raise skip(str(err))
+    assert (_gitfame.tabulate(auth_stats, stats_tot, backend='yaml') in res)
 
 
 def test_tabulate_json():
@@ -126,8 +144,7 @@ def test_tabulate_csv():
 
 def test_tabulate_tabulate():
     """Test external tabulate"""
-    try:
-        assert (_gitfame.tabulate(auth_stats, stats_tot, backend='simple') == dedent("""\
+    assert (_gitfame.tabulate(auth_stats, stats_tot, backend='simple') == dedent("""\
       Total commits: 35
       Total files: 14
       Total loc: 613
@@ -135,8 +152,6 @@ def test_tabulate_tabulate():
       --------------------  -----  ------  ------  ---------------
       Casper da Costa-Luis    538      35      10  87.8/ 100/71.4
       Not Committed Yet        75       0       4  12.2/ 0.0/28.6"""))
-    except ImportError as err:
-        raise skip(str(err))
 
 
 def test_tabulate_svg_escape():
@@ -184,6 +199,8 @@ def svg_grid(svg, cmp=operator.eq):
 
 @mark.parametrize('backend', _gitfame.FORMATS)
 def test_tabulate_formats(backend):
+    if backend in ('yaml', 'yml'):
+        importorskip('yaml')
     tab = _gitfame.tabulate(auth_stats, stats_tot, backend=backend)
     if not backend.startswith('svg'):
         skip(backend)
@@ -220,13 +237,8 @@ def test_tabulate_enum():
 
 def test_tabulate_unknown():
     """Test unknown tabulate format"""
-    try:
+    with raises(ValueError, match='(?i)unknown'):
         _gitfame.tabulate(auth_stats, stats_tot, backend='1337')
-    except ValueError as e:
-        if "unknown" not in str(e).lower():
-            raise
-    else:
-        raise ValueError("Should not support unknown tabulate format")
 
 
 @mark.parametrize('params', [['--sort', 'commits'], ['--no-regex'], ['--no-regex', '--incl', 'setup.py,README.rst'],
@@ -240,15 +252,15 @@ def test_options(params):
 
 def test_main():
     """Test command line pipes"""
-    res = subprocess.Popen((sys.executable, '-c',
-                            dedent(f'''\
+    res = subprocess.check_output((sys.executable, '-c',
+                                   dedent(f'''\
       import gitfame
       import sys
-      sys.argv = ["", "--silent-progress", r"{Path(__file__).parent.parent}"]
+      sys.argv = ["", "--silent-progress", r"{ROOT}"]
       gitfame.main()
-      ''')), stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()[0]
+      ''')), stderr=subprocess.STDOUT, text=True)
 
-    assert ('Total commits' in str(res))
+    assert 'Total commits' in res
 
 
 def test_main_errors(capsys):
@@ -256,21 +268,13 @@ def test_main_errors(capsys):
     main(['--silent-progress'])
 
     capsys.readouterr() # clear output
-    try:
+    with raises(SystemExit):
         main(['--bad', 'arg'])
-    except SystemExit:
-        out = capsys.readouterr()
-        res = ' '.join(out.err.strip().split()[:2])
-        if res != "usage: git-fame":
-            raise ValueError(out)
-    else:
-        raise ValueError("Expected --bad arg to fail")
+    assert ' '.join(capsys.readouterr().err.split()[:2]) == "usage: git-fame"
 
-    capsys.readouterr() # clear output
     with raises(SystemExit):
         main(['-s', '--sort', 'badSortArg'])
-    if "badSortArg" not in capsys.readouterr().err:
-        raise ValueError("Expected `--sort=badSortArg` to fail")
+    assert "badSortArg" in capsys.readouterr().err
 
 
 def test_multiple_gitdirs():
@@ -278,21 +282,13 @@ def test_multiple_gitdirs():
     main(['.', '.'])
 
 
-def test_multiple_gitdirs_loc(capsys, tmp_path):
+def test_multiple_gitdirs_loc(capsys, monkeypatch, tmp_path, git_repo):
     """test surviving loc are counted for each of multiple gitdirs"""
-    from os import chdir
     for name in ("repo_a", "repo_b"):
-        repo = tmp_path / name
-        subprocess.check_call(["git", "init", "-q", repo])
-        (repo / name).with_suffix(".txt").write_text("one\ntwo\nthree\n")
-        commit = [
-            "-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "--no-gpg-sign", "-qm",
-            "initial"]
-        for cmd in (["add", "-A"], commit):
-            subprocess.check_call(["git", "-C", repo] + cmd)
+        git_repo({f"{name}.txt": "one\ntwo\nthree\n"}, tmp_path / name)
 
-    chdir(tmp_path)     # relative gitdirs, as reported
-    capsys.readouterr() # clear output
+    monkeypatch.chdir(tmp_path) # relative gitdirs, as reported
+    capsys.readouterr()         # clear output
     main(['-s', "repo_a", "repo_b"])
     out = capsys.readouterr().out
 
@@ -302,20 +298,16 @@ def test_multiple_gitdirs_loc(capsys, tmp_path):
 
 def test_jobs_determinism(capsys):
     """--jobs must not change output"""
-    root = str(Path(__file__).parent.parent)
-    main(['-s', '--format=json', '-j', '1', root])
+    main(['-s', '--format=json', '-j', '1', str(ROOT)])
     serial = capsys.readouterr().out
-    main(['-s', '--format=json', '-j', '4', root])
+    main(['-s', '--format=json', '-j', '4', str(ROOT)])
     parallel = capsys.readouterr().out
     assert serial == parallel
     assert loads(serial)['total']['loc'] > 0
 
 
-def test_blame_failure_determinism(capsys, caplog):
+def test_blame_failure_determinism(capsys, caplog, monkeypatch):
     """Blame failures are reported identically (files, order, log level) at any --jobs"""
-    from unittest.mock import patch
-
-    root = str(Path(__file__).parent.parent)
     failing = ['LICENCE'] # text files, in `ls-files` order
     real_check_output = _gitfame.check_output
 
@@ -324,13 +316,13 @@ def test_blame_failure_determinism(capsys, caplog):
             raise subprocess.CalledProcessError(1, args)
         return real_check_output(args, *a, **k)
 
+    monkeypatch.setattr(_gitfame, 'check_output', fake_check_output)
     caplog.set_level(logging.DEBUG, logger='gitfame._gitfame')
     runs = []
     for jobs in ('1', '4'):
-        with patch.object(_gitfame, 'check_output', fake_check_output):
-            caplog.clear()
-            main(['-s', '--format=json', '-j', jobs, root])
-            out = capsys.readouterr().out
+        caplog.clear()
+        main(['-s', '--format=json', '-j', jobs, str(ROOT)])
+        out = capsys.readouterr().out
         reported = [(r.levelname, r.getMessage()) for r in caplog.records
                     if r.name == 'gitfame._gitfame' and r.getMessage().split(':', 1)[0] in failing]
         runs.append((out, reported))
@@ -345,21 +337,13 @@ def test_blame_failure_determinism(capsys, caplog):
     assert loads(serial_out)['total']['loc'] > 0
 
 
-def test_warn_binary_order(caplog, tmp_path):
+def test_warn_binary_order(caplog, git_repo):
     """Binary file warnings are emitted in `ls-files` order (#130)"""
-    subprocess.check_call(["git", "init", "-q", tmp_path])
     names = [f"bin_{c}.dat" for c in "abcdefgh"]
-    for name in names:
-        (tmp_path / name).write_bytes(b"\x00\x01" + name.encode())
-    (tmp_path / "text.txt").write_text("one\n")
-    commit = [
-        "-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "--no-gpg-sign", "-qm", "initial"]
-    for cmd in (["add", "-A"], commit):
-        subprocess.check_call(["git", "-C", tmp_path] + cmd)
+    repo = git_repo({**{name: b"\x00\x01" + name.encode() for name in names}, "text.txt": "one\n"})
 
     caplog.set_level(logging.DEBUG, logger='gitfame._gitfame')
-    caplog.clear()
-    main(['-s', '--warn-binary', str(tmp_path)])
+    main(['-s', '--warn-binary', str(repo)])
 
     warned = [
         r.getMessage().split(':', 1)[1] for r in caplog.records
