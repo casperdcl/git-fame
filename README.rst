@@ -23,7 +23,7 @@ Pretty-print ``git`` repository collaborators sorted by contributions.
 
     Processing: 100%|██████████████████████████| 1/1 [00:00<00:00,  2.16repo/s]
     Total commits: 1775
-    Total ctimes: 2770
+    Total atimes: 2770
     Total files: 461
     Total hours: 449.7
     Total loc: 41659
@@ -204,8 +204,8 @@ Documentation
                       or relative to now (eg: 3.weeks).
       --until=<date>  Date to which to check. See `--since` for format.
       --cost=<method>  Include time cost in person-months (COCOMO) or
-                       person-hours (based on commit times).
-                       Methods: month(s)|cocomo|hour(s)|commit(s).
+                       person-hours (based on author times).
+                       Methods: month(s)|cocomo|hour(s).
                        May be multiple comma-separated values.
                        Alters `--loc` default to imply 'ins' (COCOMO) or
                        'ins,del' (hours).

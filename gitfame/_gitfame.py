@@ -24,8 +24,8 @@ Options:
                   or relative to now (eg: 3.weeks).
   --until=<date>  Date to which to check. See `--since` for format.
   --cost=<method>  Include time cost in person-months (COCOMO) or
-                   person-hours (based on commit times).
-                   Methods: month(s)|cocomo|hour(s)|commit(s).
+                   person-hours (based on author times).
+                   Methods: month(s)|cocomo|hour(s).
                    May be multiple comma-separated values.
                    Alters `--loc` default to imply 'ins' (COCOMO) or
                    'ins,del' (hours).
@@ -86,13 +86,13 @@ __license__ = __licence__ # weird foreign language
 log = logging.getLogger(__name__)
 
 # processing `blame --line-porcelain`
-RE_AUTHS_BLAME = re.compile(r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)\nauthor-mail <(.*?)>$.*?\ncommitter-time (\d+)',
+RE_AUTHS_BLAME = re.compile(r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)\nauthor-mail <(.*?)>\nauthor-time (\d+)',
                             flags=re.M | re.DOTALL)
 RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
 RE_BLAME_BOUNDS = re.compile(r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
                              flags=re.M | re.DOTALL)
-# processing `log --format="aN%aN aE%aE ct%ct" --numstat`
-RE_AUTHS_LOG = re.compile(r"^aN(.+?) aE(.*?) ct(\d+)\n\n", flags=re.M)
+# processing `log --format="aN%aN aE%aE at%at" --numstat`
+RE_AUTHS_LOG = re.compile(r"^aN(.+?) aE(.*?) at(\d+)\n\n", flags=re.M)
 RE_STAT_BINARY = re.compile(r"^\s*?-\s*-.*?\n", flags=re.M)
 RE_RENAME = re.compile(r"\{.+? => (.+?)\}")
 # finds all non-escaped commas
@@ -100,7 +100,7 @@ RE_RENAME = re.compile(r"\{.+? => (.+?)\}")
 RE_CSPILT = re.compile(r'(?<!\\),')
 # options
 COST_MONTHS = {'cocomo', 'month', 'months'}
-COST_HOURS = {'commit', 'commits', 'hour', 'hours'}
+COST_HOURS = {'author', 'authors', 'commit', 'commits', 'hour', 'hours'}
 CHURN_SLOC = {'surv', 'survive', 'surviving'}
 CHURN_INS = {'ins', 'insert', 'insertion', 'insertions', 'add', 'addition', 'additions', '+'}
 CHURN_DEL = {'del', 'deletion', 'deletions', 'delete', '-'}
@@ -120,7 +120,7 @@ FORMATS.extend(f"svg-{i}" for i in tabber._table_formats
 
 def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
     """
-    Convert list of commit times (in seconds) to an estimate of hours spent.
+    Convert list of author times (in seconds) to an estimate of hours spent.
 
     https://github.com/kimmobrunfeldt/git-hours/blob/\
 8aaeee237cb9d9028e7a2592a25ad8468b1f45e4/index.js#L114-L143
@@ -192,7 +192,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
             stats_tot.setdefault('months', '%.1f' % sum(i[1] for i in tab))
         if cost & COST_HOURS:
             COL_NAMES.insert(1, 'hrs')
-            tab = [i[:1] + [hours(auth_stats[i[0]]['ctimes'])] + i[1:] for i in tab]
+            tab = [i[:1] + [hours(auth_stats[i[0]]['atimes'])] + i[1:] for i in tab]
 
         stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
     # log.debug(auth_stats)
@@ -258,7 +258,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None, silent_progress=False,
                     ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False, show=None,
                     prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None, jobs=None):
-    """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "ctimes": [int]}}"""
+    """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "atimes": [int]}}"""
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
     show = show or SHOW_NAME
@@ -285,7 +285,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         if ignore_revs_file:
             base_cmd.extend(["--ignore-revs-file", ignore_revs_file])
     else:
-        base_cmd = git_cmd + ["log", "--format=aN%aN aE%aE ct%ct", "--numstat"] + since + until
+        base_cmd = git_cmd + ["log", "--format=aN%aN aE%aE at%at", "--numstat"] + since + until
 
     if ignore_whitespace:
         base_cmd.append("-w")
@@ -299,10 +299,10 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     def stats_append(fname, auth, loc, tstamp):
         tstamp = int(tstamp)
         if (auth := str(auth)) not in auth_stats:
-            auth_stats[auth] = defaultdict(int, files=set(), ctimes=[])
+            auth_stats[auth] = defaultdict(int, files=set(), atimes=[])
         auth_stats[auth]["loc"] += loc
         auth_stats[auth]["files"].add(fname)
-        auth_stats[auth]["ctimes"].append(tstamp)
+        auth_stats[auth]["atimes"].append(tstamp)
 
         if bytype:
             fext_key = f".{fext(fname) or '_None_ext'}"
@@ -388,7 +388,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         auth2em[auth] = em
         auth2name[auth] = name
         if auth not in auth_stats:
-            auth_stats[auth] = defaultdict(int, files=set(), ctimes=[])
+            auth_stats[auth] = defaultdict(int, files=set(), atimes=[])
         auth_stats[auth]["commits"] += int(ncom)
     if not (show & SHOW_NAME and show & SHOW_EMAIL): # replace author with either email or name
         auth2new = auth2em if (show & SHOW_EMAIL) else auth2name
@@ -400,7 +400,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             if auth not in auth2new:
                 # https://github.com/casperdcl/git-fame/issues/122
                 auth2new[auth] = re.match('(.*) <(.*)>$', auth).group(2 if (show & SHOW_EMAIL) else 1) or auth
-            i = auth_stats.setdefault(auth2new[auth], defaultdict(int, files=set(), ctimes=[]))
+            i = auth_stats.setdefault(auth2new[auth], defaultdict(int, files=set(), atimes=[]))
             i["files"].update(stats["files"])
             for k, v in stats.items():
                 if k != 'files':

@@ -15,13 +15,13 @@ from gitfame import _gitfame, main
 # test data
 auth_stats = {
     'Not Committed Yet': {
-        'files': {'gitfame/_gitfame.py', 'gitfame/_utils.py', 'Makefile', 'MANIFEST.in'}, 'loc': 75, 'ctimes': [],
+        'files': {'gitfame/_gitfame.py', 'gitfame/_utils.py', 'Makefile', 'MANIFEST.in'}, 'loc': 75, 'atimes': [],
         'commits': 0},
     'Casper da Costa-Luis': {
         'files': {
             'gitfame/_utils.py', 'gitfame/__main__.py', 'setup.cfg', 'gitfame/_gitfame.py', 'gitfame/__init__.py',
             'git-fame_completion.bash', 'Makefile', 'MANIFEST.in', '.gitignore', 'setup.py'}, 'loc': 538,
-        'ctimes': [
+        'atimes': [
             1510942009, 1517426360, 1532103452, 1543323944, 1548030670, 1459558286, 1510942009, 1459559144, 1481150373,
             1510942009, 1548030670, 1517178199, 1481150379, 1517426360, 1548030670, 1459625059, 1510942009, 1517426360,
             1481150373, 1517337751, 1517426360, 1510942009, 1548030670, 1459099074, 1459598664, 1517337751, 1517176447,
@@ -141,7 +141,7 @@ def test_tabulate_tabulate():
 
 def test_tabulate_svg_escape():
     """Test SVG tabulate escapes markup in author names"""
-    stats = {'<script/> & co': {'files': {'setup.py'}, 'loc': 1, 'ctimes': [], 'commits': 1}}
+    stats = {'<script/> & co': {'files': {'setup.py'}, 'loc': 1, 'atimes': [], 'commits': 1}}
     svg = _gitfame.tabulate(stats, {'files': 1, 'loc': 1, 'commits': 1}, backend='svg')
     ElementTree.fromstring(svg) # must be well-formed XML
     assert '<script' not in svg
@@ -199,8 +199,8 @@ def test_tabulate_svg_grapheme_clusters():
     # 5 codepoints drawn as 3 clusters: a whole-row `textLength` would squeeze the entire row
     name = 'सौगात'
     stats = {
-        name: {'files': {'setup.py'}, 'loc': 1, 'ctimes': [], 'commits': 1},
-        'ASCII': {'files': {'setup.py'}, 'loc': 1, 'ctimes': [], 'commits': 1}}
+        name: {'files': {'setup.py'}, 'loc': 1, 'atimes': [], 'commits': 1},
+        'ASCII': {'files': {'setup.py'}, 'loc': 1, 'atimes': [], 'commits': 1}}
     svg = _gitfame.tabulate(stats, {'files': 1, 'loc': 2, 'commits': 2}, backend='svg-grid')
     # `svg_grid` asserts that every cell sits on the character grid
     _, _, rows = svg_grid(svg)
