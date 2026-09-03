@@ -1,10 +1,10 @@
+import logging
 import operator
 import re
+import subprocess
 import sys
 from json import loads
-from os import path
-from shutil import rmtree
-from tempfile import mkdtemp
+from pathlib import Path
 from textwrap import dedent
 from xml.etree import ElementTree
 
@@ -240,14 +240,11 @@ def test_options(params):
 
 def test_main():
     """Test command line pipes"""
-    import subprocess
-    from os.path import dirname as dn
-
     res = subprocess.Popen((sys.executable, '-c',
-                            dedent('''\
+                            dedent(f'''\
       import gitfame
       import sys
-      sys.argv = ["", "--silent-progress", r"''' + dn(dn(__file__)) + '''"]
+      sys.argv = ["", "--silent-progress", r"{Path(__file__).parent.parent}"]
       gitfame.main()
       ''')), stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()[0]
 
@@ -281,31 +278,23 @@ def test_multiple_gitdirs():
     main(['.', '.'])
 
 
-def test_multiple_gitdirs_loc(capsys):
+def test_multiple_gitdirs_loc(capsys, tmp_path):
     """test surviving loc are counted for each of multiple gitdirs"""
-    import subprocess
-    from os import chdir, getcwd
-    tmp = mkdtemp()
-    cwd = getcwd()
-    try:
-        for name in ("repo_a", "repo_b"):
-            repo = path.join(tmp, name)
-            subprocess.check_call(["git", "init", "-q", repo])
-            with open(path.join(repo, name + ".txt"), 'w') as fd:
-                fd.write("one\ntwo\nthree\n")
-            commit = [
-                "-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "--no-gpg-sign", "-qm",
-                "initial"]
-            for cmd in (["add", "-A"], commit):
-                subprocess.check_call(["git", "-C", repo] + cmd)
+    from os import chdir
+    for name in ("repo_a", "repo_b"):
+        repo = tmp_path / name
+        subprocess.check_call(["git", "init", "-q", repo])
+        (repo / name).with_suffix(".txt").write_text("one\ntwo\nthree\n")
+        commit = [
+            "-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "--no-gpg-sign", "-qm",
+            "initial"]
+        for cmd in (["add", "-A"], commit):
+            subprocess.check_call(["git", "-C", repo] + cmd)
 
-        chdir(tmp)          # relative gitdirs, as reported
-        capsys.readouterr() # clear output
-        main(['-s', "repo_a", "repo_b"])
-        out = capsys.readouterr().out
-    finally:
-        chdir(cwd)
-        rmtree(tmp, True)
+    chdir(tmp_path)     # relative gitdirs, as reported
+    capsys.readouterr() # clear output
+    main(['-s', "repo_a", "repo_b"])
+    out = capsys.readouterr().out
 
     assert "Total loc: 6" in out
     assert "Total files: 2" in out
@@ -313,7 +302,7 @@ def test_multiple_gitdirs_loc(capsys):
 
 def test_jobs_determinism(capsys):
     """--jobs must not change output"""
-    root = path.dirname(path.dirname(__file__))
+    root = str(Path(__file__).parent.parent)
     main(['-s', '--format=json', '-j', '1', root])
     serial = capsys.readouterr().out
     main(['-s', '--format=json', '-j', '4', root])
@@ -324,11 +313,9 @@ def test_jobs_determinism(capsys):
 
 def test_blame_failure_determinism(capsys, caplog):
     """Blame failures are reported identically (files, order, log level) at any --jobs"""
-    import logging
-    import subprocess
     from unittest.mock import patch
 
-    root = path.dirname(path.dirname(__file__))
+    root = str(Path(__file__).parent.parent)
     failing = ['LICENCE'] # text files, in `ls-files` order
     real_check_output = _gitfame.check_output
 
@@ -356,3 +343,25 @@ def test_blame_failure_determinism(capsys, caplog):
     # and the report itself is byte-identical (and non-empty)
     assert serial_out == parallel_out
     assert loads(serial_out)['total']['loc'] > 0
+
+
+def test_warn_binary_order(caplog, tmp_path):
+    """Binary file warnings are emitted in `ls-files` order (#130)"""
+    subprocess.check_call(["git", "init", "-q", tmp_path])
+    names = [f"bin_{c}.dat" for c in "abcdefgh"]
+    for name in names:
+        (tmp_path / name).write_bytes(b"\x00\x01" + name.encode())
+    (tmp_path / "text.txt").write_text("one\n")
+    commit = [
+        "-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "--no-gpg-sign", "-qm", "initial"]
+    for cmd in (["add", "-A"], commit):
+        subprocess.check_call(["git", "-C", tmp_path] + cmd)
+
+    caplog.set_level(logging.DEBUG, logger='gitfame._gitfame')
+    caplog.clear()
+    main(['-s', '--warn-binary', str(tmp_path)])
+
+    warned = [
+        r.getMessage().split(':', 1)[1] for r in caplog.records
+        if r.name == 'gitfame._gitfame' and r.getMessage().startswith('binary:')]
+    assert warned == names

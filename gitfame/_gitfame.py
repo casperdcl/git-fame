@@ -271,8 +271,9 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         file_list = [i for i in file_list if (not include_files or (i in include_files)) if i not in exclude_files]
     else:
         file_list = [i for i in file_list if include_files.search(i) if not (exclude_files and exclude_files.search(i))]
-    for fname in set(file_list) - text_file_list:
-        getattr(log, "warn" if warn_binary else "debug")("binary:%s", fname.strip())
+    for fname in file_list:
+        if fname not in text_file_list:
+            getattr(log, "warning" if warn_binary else "debug")("binary:%s", fname.strip())
     file_list = [f for f in file_list if f in text_file_list] # preserve order
     log.log(logging.NOTSET, "files:%s", file_list)
     churn = churn or set()
@@ -330,7 +331,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             # `fname` is relative to `gitdir`, so only prefix the reported name
             display_fname = path.join(gitdir, fname) if prefix_gitdir else fname
             if isinstance(blame_out, Exception):
-                getattr(log, "warn" if warn_binary else "debug")(display_fname + ':' + str(blame_out))
+                getattr(log, "warning" if warn_binary else "debug")(display_fname + ':' + str(blame_out))
                 continue
             log.log(logging.NOTSET, blame_out)
 
@@ -356,8 +357,8 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         log.log(logging.NOTSET, blame_out)
 
         # Strip binary files
-        for fname in set(RE_STAT_BINARY.findall(blame_out)):
-            getattr(log, "warn" if warn_binary else "debug")("binary:%s", fname.strip())
+        for fname in dict.fromkeys(RE_STAT_BINARY.findall(blame_out)):
+            getattr(log, "warning" if warn_binary else "debug")("binary:%s", fname.strip())
         blame_out = RE_STAT_BINARY.sub('', blame_out)
 
         blame_out = RE_AUTHS_LOG.split(blame_out)
