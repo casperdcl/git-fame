@@ -169,9 +169,9 @@ It is also possible to run from within a python shell or script.
     >>> import gitfame
     >>> gitfame.main(['--sort=commits', '-wt', '/path/to/my/repo'])
 
-Finally, there is a live server for public GitHub repositories at `git-fame.cdcl.ml/gh/{owner}/{repo} <https://git-fame.cdcl.ml/docs>`_.
+Finally, there is a live server for public GitHub repositories at `git-fame.cdcl.ml/gh/{owner}/{repo} <https://git-fame.cdcl.ml/docs#/default/gh_gh__owner___repo__get>`_.
 
-The ``rendered by git-fame.cdcl.ml`` watermark is removed for sponsors of `casperdcl <https://github.com/casperdcl>`_: |Sponsor-Casper|
+|Sponsor-Casper| perks: the ``rendered by git-fame.cdcl.ml`` watermark is removed & some `options <https://git-fame.cdcl.ml/docs#/default/gh_gh__owner___repo__get>`_ are unlocked (non-default ``branch``, ``auth``, ``show``, ``ttl``).
 
 
 Documentation
@@ -340,7 +340,7 @@ Contributions are welcome.
 
 |Contributions|
 
-The ``rendered by git-fame.cdcl.ml`` watermark is removed for sponsors of `casperdcl <https://github.com/casperdcl>`_: |Sponsor-Casper|
+|Sponsor-Casper| perks: the ``rendered by git-fame.cdcl.ml`` watermark is removed & some `options <https://git-fame.cdcl.ml/docs#/default/gh_gh__owner___repo__get>`_ are unlocked (non-default ``branch``, ``auth``, ``show``, ``ttl``).
 
 LICENCE
 -------
