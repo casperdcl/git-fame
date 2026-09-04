@@ -16,9 +16,10 @@ def test_Max():
 
 def test_integer_stats():
     """Test integer representations"""
-    assert (_utils.int_cast_or_len(range(10)) == 10)
-    assert (_utils.int_cast_or_len('90 foo') == 6)
-    assert (_utils.int_cast_or_len('90') == 90)
+    assert (_utils.int_float_len(range(10)) == 10)
+    assert (_utils.int_float_len('90 foo') == 6)
+    assert (_utils.int_float_len('90') == 90)
+    assert (_utils.int_float_len(1.5) == 1.5)
 
 
 def test_print():

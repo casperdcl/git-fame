@@ -38,6 +38,10 @@ Options:
                       [default: 0:int]: automatic.
   --warn-binary  Don't silently skip files which appear to be binary data
                  [default: False].
+  --auth=<strat>  Credit commit trailers (`Co-authored-by`, `Assisted-by`):
+                  [default: git]|first|share, i.e.: only use 'git' author,
+                  only use 'first' trailer, or 'share' equally with git &
+                  all trailers.
   --show=<info>  Author information to show [default: name]|email.
                  Use 'name,email' to show both.
   -e, --show-email  Shortcut for `--show=email`.
@@ -69,8 +73,8 @@ from os import path
 
 import tabulate as tabber
 
-from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, int_cast_or_len, mapper, merge_stats,
-                     print_unicode, tqdm)
+from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, int_float_len, mapper, merge_stats, print_unicode,
+                     tqdm)
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
 try:
@@ -86,13 +90,13 @@ __license__ = __licence__ # weird foreign language
 log = logging.getLogger(__name__)
 
 # processing `blame --line-porcelain`
-RE_AUTHS_BLAME = re.compile(r'^\w+ \d+ \d+ (\d+)\nauthor (.+?)\nauthor-mail <(.*?)>\nauthor-time (\d+)',
+RE_AUTHS_BLAME = re.compile(r'^(\w+) \d+ \d+ (\d+)\nauthor (.+?)\nauthor-mail <(.*?)>\nauthor-time (\d+)',
                             flags=re.M | re.DOTALL)
 RE_NCOM_AUTH_EM = re.compile(r'^\s*(\d+)\s+(.*?)\s+<(.*)>\s*$', flags=re.M)
 RE_BLAME_BOUNDS = re.compile(r'^\w+\s+\d+\s+\d+(\s+\d+)?\s*$[^\t]*?^boundary\s*$[^\t]*?^\t.*?$\r?\n',
                              flags=re.M | re.DOTALL)
-# processing `log --format="aN%aN aE%aE at%at" --numstat`
-RE_AUTHS_LOG = re.compile(r"^aN(.+?) aE(.*?) at(\d+)\n\n", flags=re.M)
+# processing `log --format="aN%aN aE%aE at%at H%H" --numstat`
+RE_AUTHS_LOG = re.compile(r"^aN(.+?) aE(.*?) at(\d+) H(\w+)\n\n", flags=re.M)
 RE_STAT_BINARY = re.compile(r"^\s*?-\s*-.*?\n", flags=re.M)
 RE_RENAME = re.compile(r"\{.+? => (.+?)\}")
 # finds all non-escaped commas
@@ -206,7 +210,9 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         tab = [[str(i)] + j for i, j in enumerate(tab, 1)]
         COL_NAMES.insert(0, '#')
 
-    totals = 'Total ' + '\nTotal '.join("%s: %s" % i for i in sorted(stats_tot.items())) + '\n'
+    # round fractional loc (from `--auth=share`)
+    totals = 'Total ' + '\nTotal '.join(f"{k}: {f'{v:.0f}' if isinstance(v, float) else v}"
+                                        for k, v in sorted(stats_tot.items())) + '\n'
 
     if (backend := backend.lower()) in ("tabulate", "md", "markdown"):
         backend = "pipe"
@@ -255,9 +261,27 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
     return totals + table
 
 
+def _get_coauthors(git_cmd, branch, strat, since=(), until=()):
+    """Returns dict: {"<sha>": ("<author>", ["<credited>", ...])} of trailered commits"""
+    fmt = ("--format=%x02%H%x00%aN <%aE>%x00"
+           "%(trailers:key=Co-authored-by,key=Assisted-by,valueonly,separator=%x00)")
+    res = {}
+    for commit in check_output(git_cmd + ["log", fmt, branch] + list(since) + list(until)).split('\x02')[1:]:
+        sha, auth, *coauths = commit.strip().split('\x00')
+        if coauths := list(dict.fromkeys(filter(None, map(str.strip, coauths)))):
+            res[sha] = (auth, coauths)
+    if res:   # mailmap trailers
+        coauths = sorted({i for _, cos in res.values() for i in cos})
+        mailmap = dict(zip(coauths, check_output(git_cmd + ["check-mailmap", "--"] + coauths).strip().split('\n')))
+        res = {sha: (auth, [mailmap.get(i, i) for i in cos]) for sha, (auth, cos) in res.items()}
+    log.debug("co-authored:%d", len(res))
+    return {sha: (auth, cos[:1] if strat == 'first' else [auth] + cos) for sha, (auth, cos) in res.items()}
+
+
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None, silent_progress=False,
                     ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False, show=None,
-                    prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None, jobs=None):
+                    prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None, jobs=None,
+                    auth='git'):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "atimes": [int]}}"""
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
@@ -285,7 +309,8 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         if ignore_revs_file:
             base_cmd.extend(["--ignore-revs-file", ignore_revs_file])
     else:
-        base_cmd = git_cmd + ["log", "--format=aN%aN aE%aE at%at", "--numstat"] + since + until
+        base_cmd = git_cmd + ["log", "--format=aN%aN aE%aE at%at H%H", "--numstat"] + since + until
+    sha2auths = _get_coauthors(git_cmd, branch, auth, since, until) if auth != 'git' else {}
 
     if ignore_whitespace:
         base_cmd.append("-w")
@@ -296,17 +321,20 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
 
     auth_stats = {}
 
-    def stats_append(fname, auth, loc, tstamp):
-        tstamp = int(tstamp)
-        if (auth := str(auth)) not in auth_stats:
-            auth_stats[auth] = defaultdict(int, files=set(), atimes=[])
-        auth_stats[auth]["loc"] += loc
-        auth_stats[auth]["files"].add(fname)
-        auth_stats[auth]["atimes"].append(tstamp)
+    def new_stats():
+        return defaultdict(int, files=set(), atimes=[])
 
-        if bytype:
-            fext_key = f".{fext(fname) or '_None_ext'}"
-            auth_stats[auth][fext_key] += loc
+    def stats_append(fname, auths, loc, tstamp):
+        tstamp = int(tstamp)
+        loc = loc / len(auths) if len(auths) > 1 else loc
+        for auth in auths:
+            stats = auth_stats.setdefault(str(auth), new_stats())
+            stats["loc"] += loc
+            stats["files"].add(fname)
+            stats["atimes"].append(tstamp)
+
+            if bytype:
+                stats[f".{fext(fname) or '_None_ext'}"] += loc
 
     if churn & CHURN_SLOC:
 
@@ -345,10 +373,9 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                 # preventing user with nearest commit to boundary owning the LOC
                 blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
 
-            for loc, name, email, tstamp in RE_AUTHS_BLAME.findall(blame_out): # for each chunk
-                loc = int(loc)
-                auth = f'{name} <{email}>'
-                stats_append(display_fname, auth, loc, tstamp)
+            for sha, loc, name, email, tstamp in RE_AUTHS_BLAME.findall(blame_out): # for each chunk
+                auths = sha2auths[sha][1] if sha in sha2auths else [f'{name} <{email}>']
+                stats_append(display_fname, auths, int(loc), tstamp)
 
     else:
         with tqdm(total=1, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress, unit="repo") as t:
@@ -362,9 +389,9 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         blame_out = RE_STAT_BINARY.sub('', blame_out)
 
         blame_out = RE_AUTHS_LOG.split(blame_out)
-        blame_out = zip(blame_out[1::4], blame_out[2::4], blame_out[3::4], blame_out[4::4])
-        for name, email, tstamp, fnames in blame_out:
-            auth = f'{name} <{email}>'
+        blame_out = zip(*(blame_out[i::5] for i in range(1, 6)))
+        for name, email, tstamp, sha, fnames in blame_out:
+            auths = sha2auths[sha][1] if sha in sha2auths else [f'{name} <{email}>']
             fnames = fnames.split('\naN', 1)[0]
             for i in fnames.strip().split('\n'):
                 try:
@@ -375,7 +402,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
                     if (fname := RE_RENAME.sub(r'\\2', fname)) in file_list:
                         loc = int(inss) if churn & CHURN_INS and inss else 0
                         loc += int(dels) if churn & CHURN_DEL and dels else 0
-                        stats_append(fname, auth, loc, tstamp)
+                        stats_append(fname, auths, loc, tstamp)
 
     # quickly count commits (even if no surviving loc)
     log.log(logging.NOTSET, "authors:%s", list(auth_stats.keys()))
@@ -387,9 +414,13 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         auth = f'{name} <{em}>'
         auth2em[auth] = em
         auth2name[auth] = name
-        if auth not in auth_stats:
-            auth_stats[auth] = defaultdict(int, files=set(), atimes=[])
-        auth_stats[auth]["commits"] += int(ncom)
+        auth_stats.setdefault(auth, new_stats())["commits"] += int(ncom)
+    # transform shortlog according to --auth
+    for auth, auths in sha2auths.values():
+        auth_stats.setdefault(auth, new_stats())["commits"] -= 1
+        for who in auths:
+            auth_stats.setdefault(who, new_stats())["commits"] += 1 / len(auths)
+
     if not (show & SHOW_NAME and show & SHOW_EMAIL): # replace author with either email or name
         auth2new = auth2em if (show & SHOW_EMAIL) else auth2name
         log.debug(auth2new)
@@ -400,7 +431,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             if auth not in auth2new:
                 # https://github.com/casperdcl/git-fame/issues/122
                 auth2new[auth] = re.match('(.*) <(.*)>$', auth).group(2 if (show & SHOW_EMAIL) else 1) or auth
-            i = auth_stats.setdefault(auth2new[auth], defaultdict(int, files=set(), atimes=[]))
+            i = auth_stats.setdefault(auth2new[auth], new_stats())
             i["files"].update(stats["files"])
             for k, v in stats.items():
                 if k != 'files':
@@ -484,7 +515,8 @@ def run(args):
                       include_files=include_files, exclude_files=exclude_files, silent_progress=args.silent_progress,
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C, warn_binary=args.warn_binary,
                       bytype=args.bytype, show=args.show, prefix_gitdir=len(gitdirs) > 1, churn=churn,
-                      ignore_rev=args.ignore_rev, ignore_revs_file=args.ignore_revs_file, jobs=args.jobs or None)
+                      ignore_rev=args.ignore_rev, ignore_revs_file=args.ignore_revs_file, jobs=args.jobs or None,
+                      auth=args.auth)
 
     if len(gitdirs) > 1 and mapper is not map:
         # concurrent multi-repo processing
@@ -502,7 +534,7 @@ def run(args):
     stats_tot = {k: 0 for stats in auth_stats.values() for k in stats}
     log.debug(stats_tot)
     for k in stats_tot:
-        stats_tot[k] = sum(int_cast_or_len(stats.get(k, 0)) for stats in auth_stats.values())
+        stats_tot[k] = sum(int_float_len(stats.get(k, 0)) for stats in auth_stats.values())
     log.debug(stats_tot)
 
     # NOTE: future idea: show stats per file extension (or other grouping) in addition to per-author
@@ -535,6 +567,8 @@ def get_main_parser():
             o.help = "[default: loc]."
         elif o.dest == 'loc':
             o.choices = CHURN_SLOC | csv_permute(CHURN_INS, CHURN_DEL)
+        elif o.dest == 'auth':
+            o.choices = 'git', 'first', 'share'
         elif o.dest == 'cost':
             o.choices = csv_permute(COST_HOURS, COST_MONTHS)
         elif o.dest == 'show':
