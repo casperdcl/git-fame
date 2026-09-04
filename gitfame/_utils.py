@@ -25,7 +25,7 @@ except ImportError:
 __author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
 __date__ = "2016-2025"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
-__all__ = ["TERM_WIDTH", "int_cast_or_len", "Max", "fext", "tqdm", "check_output", "print_unicode", "Str", "mapper"]
+__all__ = ["TERM_WIDTH", "int_float_len", "Max", "fext", "tqdm", "check_output", "print_unicode", "Str", "mapper"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__ # weird foreign language
 
@@ -57,18 +57,19 @@ def fext(fn):
     return res[-1] if len(res) > 1 else ''
 
 
-def int_cast_or_len(i):
+def int_float_len(i):
     """
-    >>> int_cast_or_len(range(10))
+    >>> int_float_len(range(10))
     10
-    >>> int_cast_or_len('90 foo')
+    >>> int_float_len('90 foo')
     6
-    >>> int_cast_or_len('90')
+    >>> int_float_len('90')
     90
-
+    >>> int_float_len(1.5)
+    1.5
     """
     try:
-        return int(i)
+        return i if isinstance(i, float) else int(i)
     except (ValueError, TypeError):
         return len(i)
 
@@ -110,7 +111,7 @@ def Str(i):
 def merge_stats(left, right):
     """Add `right`'s values to `left` (modifies `left` in-place)"""
     for k, val in right.items():
-        if isinstance(val, int):
+        if isinstance(val, (int, float)):
             left[k] = left.get(k, 0) + val
         elif hasattr(val, 'extend'):
             left[k].extend(val)

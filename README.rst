@@ -218,6 +218,10 @@ Documentation
                           [default: 0:int]: automatic.
       --warn-binary  Don't silently skip files which appear to be binary data
                      [default: False].
+      --auth=<strat>  Credit commit trailers (`Co-authored-by`, `Assisted-by`):
+                      [default: git]|first|share, i.e.: only use 'git' author,
+                      only use 'first' trailer, or 'share' equally with git &
+                      all trailers.
       --show=<info>  Author information to show [default: name]|email.
                      Use 'name,email' to show both.
       -e, --show-email  Shortcut for `--show=email`.
@@ -282,7 +286,7 @@ Which can also be dynamically created for public GitHub repositories:
 
 .. code:: md
 
-   ![markdown-image](https://git-fame.cdcl.ml/gh/{owner}/{repo}?min=1)
+   ![markdown-image](https://git-fame.cdcl.ml/gh/{owner}/{repo}?min=1&auth=share)
 
 CODEOWNERS
 ~~~~~~~~~~
@@ -367,8 +371,8 @@ Citation information: |DOI-URI|
    :target: https://github.com/casperdcl/git-fame/issues
 .. |GitHub-PRs| image:: https://img.shields.io/github/issues-pr-closed/casperdcl/git-fame.svg?logo=github
    :target: https://github.com/casperdcl/git-fame/pulls
-.. |Contributions| image:: https://git-fame.cdcl.ml/gh/casperdcl/git-fame
-   :target: https://git-fame.cdcl.ml/gh/casperdcl/git-fame
+.. |Contributions| image:: https://git-fame.cdcl.ml/gh/casperdcl/git-fame?min=1&auth=share
+   :target: https://git-fame.cdcl.ml/gh/casperdcl/git-fame?auth=share
 .. |GitHub-Updated| image:: https://img.shields.io/github/last-commit/casperdcl/git-fame?label=pushed&logo=github
    :target: https://github.com/casperdcl/git-fame/pulse
 .. |Sponsor-Casper| image:: https://img.shields.io/badge/sponsor-FOSS-dc10ff.svg?logo=Contactless%20Payment

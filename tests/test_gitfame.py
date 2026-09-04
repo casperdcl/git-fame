@@ -34,20 +34,19 @@ stats_tot = {'files': 14, 'loc': 613, 'commits': 35}
 
 @fixture
 def git_repo(tmp_path):
-    """`git_repo({name: contents, ...}, path=tmp_path) -> path`: single-commit repo"""
-    def make(files, path=tmp_path):
+    """`git_repo({name: contents, ...}) -> path`: commits files"""
+    def init(files, path=tmp_path, message="initial"):
         subprocess.check_call(["git", "init", "-q", path])
         for name, content in files.items():
             dest = path / name
             dest.write_bytes(content) if isinstance(content, bytes) else dest.write_text(content)
-        commit = [
-            "-c", "user.name=tester", "-c", "user.email=tester@example.com", "commit", "--no-gpg-sign", "-qm",
-            "initial"]
-        for cmd in (["add", "-A"], commit):
+        for cmd in (["add", "-A"], [
+                "-c", "user.name=pytest", "-c", "user.email=pytest@local.host", "commit", "--no-gpg-sign", "--author",
+                "pytest <pytest@local.host>", "-qm", message]):
             subprocess.check_call(["git", "-C", path] + cmd)
         return path
 
-    return make
+    return init
 
 
 def test_tabulate():
@@ -244,7 +243,8 @@ def test_tabulate_unknown():
 @mark.parametrize('params', [['--sort', 'commits'], ['--no-regex'], ['--no-regex', '--incl', 'setup.py,README.rst'],
                              ['--excl', r'.*\.py'], ['--loc', 'ins,del'], ['--cost', 'hour'], ['--cost', 'month'],
                              ['--cost', 'month', '--excl', r'.*\.py'], ['-e'], ['-w'], ['-M'], ['-C'], ['-t'],
-                             ['--show=name,email'], ['--format=csv'], ['--format=svg'], ['-j', '1'], ['-j', '4']])
+                             ['--show=name,email'], ['--format=csv'], ['--format=svg'], ['-j', '1'], ['-j', '4'],
+                             ['--auth=first'], ['--auth=share', '--loc', 'ins,del']]) # yapf: disable
 def test_options(params):
     """Test command line options"""
     main(['-s'] + params)
@@ -335,6 +335,30 @@ def test_blame_failure_determinism(capsys, caplog, monkeypatch):
     # and the report itself is byte-identical (and non-empty)
     assert serial_out == parallel_out
     assert loads(serial_out)['total']['loc'] > 0
+
+
+@mark.parametrize(['strat', 'credit'], [('git', {'pytest': [6, 2, 2]}),
+                                        ('first', {'pytest': [2, 1, 1], 'assist': [4, 1, 1]}),
+                                        ('share', {'pytest': [4, 1.5, 2], 'assist': [2, 0.5, 1]})])
+@mark.parametrize('trailer', ['Co-authored-by', 'Assisted-by'])
+@mark.parametrize('loc', ['surviving', 'ins'])
+def test_coauthors(capsys, git_repo, loc, trailer, strat, credit):
+    """`{Co-authored,Assisted}-by` credit strategies (#101)"""
+    repo = git_repo({"solo.txt": "one\ntwo\n"})
+    git_repo({"shared.txt": "one\ntwo\nthree\nfour\n"}, repo,
+             message=f"shared\n\n{trailer}: assist <assist@local.host>")
+
+    main(['-s', '--format=json', '--loc', loc, '--auth', strat, str(repo)])
+    assert {i[0]: i[1:4] for i in loads(capsys.readouterr().out)['data']} == credit # {author: [loc, coms, fils]}
+
+
+def test_coauthors_mailmap(capsys, git_repo):
+    """`.mailmap` is applied to `Co-authored-by`"""
+    repo = git_repo({"shared.txt": "one\ntwo\n", ".mailmap": "pytest <pytest@local.host> <assist@local.host>\n"},
+                    message="shared\n\nCo-authored-by: assist <assist@local.host>")
+
+    main(['-s', '--format=json', '--auth=share', str(repo)])
+    assert [i[0] for i in loads(capsys.readouterr().out)['data']] == ['pytest']
 
 
 def test_warn_binary_order(caplog, git_repo):
