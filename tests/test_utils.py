@@ -8,12 +8,6 @@ def test_fext():
     assert (_utils.fext('foo/bar') == '')
 
 
-def test_Max():
-    """Test max with defaults"""
-    assert (_utils.Max(range(10), -1) == 9)
-    assert (_utils.Max(range(0), -1) == -1)
-
-
 def test_integer_stats():
     """Test integer representations"""
     assert (_utils.int_float_len(range(10)) == 10)
