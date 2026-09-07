@@ -25,7 +25,7 @@ except ImportError:
 __author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
 __date__ = "2016-2025"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
-__all__ = ["TERM_WIDTH", "int_float_len", "fext", "tqdm", "check_output", "print_unicode", "Str", "mapper"]
+__all__ = ["TERM_WIDTH", "int_float_len", "fext", "tqdm", "check_output", "print_unicode", "Str", "get_mapper"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__ # weird foreign language
 
@@ -45,6 +45,13 @@ def check_output(*a, **k):
     log.debug(' '.join(a[0][3:]))
     k.setdefault('stdout', subprocess.PIPE)
     return subprocess.Popen(*a, **k).communicate()[0].decode('utf-8', errors='replace') # nosec B603
+
+
+def get_mapper(max_workers=None, **tqdm_kwargs):
+    """`map` with progress; concurrent iff `max_workers != 1`"""
+    if max_workers != 1 and mapper is not map:
+        return partial(mapper, max_workers=max_workers, **tqdm_kwargs)
+    return lambda func, iterable: map(func, tqdm(iterable, **tqdm_kwargs))
 
 
 def fext(fn):

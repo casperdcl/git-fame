@@ -80,8 +80,8 @@ from os import path
 
 import tabulate as tabber
 
-from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, int_float_len, mapper, merge_stats, print_unicode,
-                     tqdm)
+from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, get_mapper, int_float_len, merge_stats,
+                     print_unicode, tqdm)
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
 try:
@@ -361,16 +361,11 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             except Exception as err:
                 return fname, err
 
-        if jobs != 1 and mapper is not map:
-            # concurrent multi-file processing
-            _mapper = partial(mapper, max_workers=jobs)
-        else:
+        # concurrent multi-file processing
+        _mapper = get_mapper(max_workers=jobs, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
+                             unit="file")
 
-            def _mapper(func, iterable, **kwargs):
-                return map(func, tqdm(iterable, **kwargs))
-
-        for fname, blame_out in _mapper(blame_file, file_list, desc=gitdir if prefix_gitdir else "Processing",
-                                        disable=silent_progress, unit="file"):
+        for fname, blame_out in _mapper(blame_file, file_list):
             # `fname` is relative to `gitdir`, so only prefix the reported name
             display_fname = path.join(gitdir, fname) if prefix_gitdir else fname
             if isinstance(blame_out, Exception):
@@ -541,18 +536,14 @@ def run(args):
                       ignore_revs=ignore_revs, ignore_revs_file=args.ignore_revs_file, ignore_authors=ignore_authors,
                       jobs=args.jobs or None, auth=args.auth)
 
-    if len(gitdirs) > 1 and mapper is not map:
-        # concurrent multi-repo processing
-        _mapper = partial(mapper, desc="Repos", unit="repo", miniters=1, disable=args.silent_progress
-                          or len(gitdirs) <= 1)
-    else:
-        _mapper = map
-    for res in _mapper(statter, gitdirs):
-        for auth, stats in res.items():
-            if auth in auth_stats:
-                merge_stats(auth_stats[auth], stats)
-            else:
-                auth_stats[auth] = stats
+    # concurrent multi-repo processing
+    _mapper = get_mapper(max_workers=1 if len(gitdirs) <= 1 else None, desc="Repos", unit="repo", miniters=1,
+                         disable=args.silent_progress or len(gitdirs) <= 1)
+    for auth, stats in chain.from_iterable(res.items() for res in _mapper(statter, gitdirs)):
+        if auth in auth_stats:
+            merge_stats(auth_stats[auth], stats)
+        else:
+            auth_stats[auth] = stats
 
     stats_tot = {k: 0 for stats in auth_stats.values() for k in stats}
     log.debug(stats_tot)
