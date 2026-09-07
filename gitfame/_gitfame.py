@@ -197,8 +197,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
         if cost & COST_HOURS:
             COL_NAMES.insert(1, 'hrs')
             tab = [i[:1] + [hours(auth_stats[i[0]]['atimes'])] + i[1:] for i in tab]
-
-        stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
+            stats_tot.setdefault('hours', '%.1f' % sum(i[1] for i in tab))
     # log.debug(auth_stats)
 
     for i, j in (("commits", "coms"), ("files", "fils"), ("hours", "hrs"), ("months", "mths")):
