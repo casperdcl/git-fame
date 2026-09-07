@@ -408,12 +408,9 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     log.log(logging.NOTSET, "authors:%s", list(auth_stats.keys()))
     auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch] + since + until)
     log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
-    auth2em = {}
-    auth2name = {}
+    auth2new = {}
     for (ncom, name, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
-        auth = f'{name} <{em}>'
-        auth2em[auth] = em
-        auth2name[auth] = name
+        auth2new[(auth := f'{name} <{em}>')] = em if show & SHOW_EMAIL else name
         auth_stats.setdefault(auth, new_stats())["commits"] += int(ncom)
     # transform shortlog according to --auth
     for auth, auths in sha2auths.values():
@@ -422,7 +419,6 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             auth_stats.setdefault(who, new_stats())["commits"] += 1 / len(auths)
 
     if not (show & SHOW_NAME and show & SHOW_EMAIL): # replace author with either email or name
-        auth2new = auth2em if (show & SHOW_EMAIL) else auth2name
         log.debug(auth2new)
         old = auth_stats
         auth_stats = {}
