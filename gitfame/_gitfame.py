@@ -117,8 +117,7 @@ CHURN_INS = {'ins', 'insert', 'insertion', 'insertions', 'add', 'addition', 'add
 CHURN_DEL = {'del', 'deletion', 'deletions', 'delete', '-'}
 SHOW_NAME = {'name', 'n'}
 SHOW_EMAIL = {'email', 'e'}
-FORMATS = ['yaml', 'yml', 'json', 'csv', 'tsv']
-FORMATS.extend(['svg', 'md', 'markdown', 'tabulate'])
+FORMATS = ['yaml', 'yml', 'json', 'csv', 'tsv', 'svg', 'md', 'markdown', 'tabulate']
 tabber._table_formats['fame'] = tabber.TableFormat(lineabove=None, linebelowheader=tabber.Line("", "─", "┼", ""),
                                                    linebetweenrows=None, linebelow=tabber.Line("", "─", "┴", ""),
                                                    headerrow=tabber.DataRow("", "│",
@@ -137,8 +136,7 @@ def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
 8aaeee237cb9d9028e7a2592a25ad8468b1f45e4/index.js#L114-L143
     """
     dates = sorted(dates)
-    diffInSec = [i - j for (i, j) in zip(dates[1:], dates[:-1])]
-    res = sum(i for i in diffInSec if i < maxCommitDiffInSec)
+    res = sum(diff for i, j in zip(dates[1:], dates) if (diff := i - j) < maxCommitDiffInSec)
     return (res/60.0 + firstCommitAdditionInMinutes) / 60.0
 
 
@@ -245,12 +243,8 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
             from io import StringIO
 
             res = StringIO()
-            t = csv.writer(res, delimiter=',' if backend == 'csv' else '\t')
-            t.writerow(tab['columns'])
-            t.writerows(tab['data'])
-            t.writerow('')
-            t.writerow(list(tab['total'].keys()))
-            t.writerow(list(tab['total'].values()))
+            csv.writer(res, delimiter=',' if backend == 'csv' else '\t').writerows(
+                chain([tab['columns']], tab['data'], ['', tab['total'], tab['total'].values()]))
             return res.getvalue().rstrip()
         else:      # pragma: nocover
             raise RuntimeError("Should be unreachable")
@@ -258,7 +252,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
     if backend not in tabber._table_formats:
         raise ValueError(f"Unknown backend:{backend}")
     log.debug("backend:tabulate:%s", backend)
-    COL_LENS = [max(len(Str(i[j])) for i in [COL_NAMES] + tab) for j in range(len(COL_NAMES))]
+    COL_LENS = [max(map(len, map(Str, col))) for col in zip(COL_NAMES, *tab)]
     COL_LENS[0] = min(width - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4, COL_LENS[0])
     tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
     table = tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
@@ -301,6 +295,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
     show = show or SHOW_NAME
+    log_binary = getattr(log, "warning" if warn_binary else "debug")
     git_cmd = ["git", "-C", gitdir]
     log.debug("base command:%s", git_cmd)
     file_list = check_output(git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
@@ -312,7 +307,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         file_list = [i for i in file_list if include_files.search(i) if not (exclude_files and exclude_files.search(i))]
     for fname in file_list:
         if fname not in text_file_list:
-            getattr(log, "warning" if warn_binary else "debug")("binary:%s", fname.strip())
+            log_binary("binary:%s", fname.strip())
     file_list = [f for f in file_list if f in text_file_list] # preserve order
     log.log(logging.NOTSET, "files:%s", file_list)
     churn = churn or set()
@@ -369,16 +364,11 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             # `fname` is relative to `gitdir`, so only prefix the reported name
             display_fname = path.join(gitdir, fname) if prefix_gitdir else fname
             if isinstance(blame_out, Exception):
-                getattr(log, "warning" if warn_binary else "debug")(display_fname + ':' + str(blame_out))
+                log_binary(display_fname + ':' + str(blame_out))
                 continue
             log.log(logging.NOTSET, blame_out)
 
-            if since:
-                # Strip boundary messages,
-                # preventing user with nearest commit to boundary owning the LOC
-                blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
-
-            if until:
+            if since or until:
                 # Strip boundary messages,
                 # preventing user with nearest commit to boundary owning the LOC
                 blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
@@ -395,7 +385,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
 
         # Strip binary files
         for fname in dict.fromkeys(RE_STAT_BINARY.findall(blame_out)):
-            getattr(log, "warning" if warn_binary else "debug")("binary:%s", fname.strip())
+            log_binary("binary:%s", fname.strip())
         blame_out = RE_STAT_BINARY.sub('', blame_out)
 
         blame_out = RE_AUTHS_LOG.split(blame_out)
