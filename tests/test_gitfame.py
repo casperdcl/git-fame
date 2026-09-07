@@ -80,6 +80,9 @@ def test_tabulate_cost():
     | Not Committed Yet    |     2 |      0 |    75 |      0 |      4 \
 | 12.2/ 0.0/28.6  |"""))
 
+    assert "Total hours" not in _gitfame.tabulate(auth_stats, stats_tot, cost={"months"}, width=256)
+    assert "Total months" not in _gitfame.tabulate(auth_stats, stats_tot, cost={"hours"}, width=256)
+
 
 def test_tabulate_yaml():
     """Test YAML tabulate"""
