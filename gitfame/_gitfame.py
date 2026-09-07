@@ -263,7 +263,7 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
 def _get_coauthors(git_cmd, branch, strat, since=(), until=()):
     """Returns dict: {"<sha>": ("<author>", ["<credited>", ...])} of trailered commits"""
     fmt = ("--format=%x02%H%x00%aN <%aE>%x00"
-           "%(trailers:key=Co-authored-by,key=Assisted-by,valueonly,separator=%x00)")
+           "%(trailers:key=Co-authored-by,key=Assisted-by,key=Generated-by,valueonly,separator=%x00)")
     res = {}
     for commit in check_output(git_cmd + ["log", fmt, branch] + list(since) + list(until)).split('\x02')[1:]:
         sha, auth, *coauths = commit.strip().split('\x00')

@@ -343,7 +343,7 @@ def test_blame_failure_determinism(capsys, caplog, monkeypatch):
 @mark.parametrize(['strat', 'credit'], [('git', {'pytest': [6, 2, 2]}),
                                         ('first', {'pytest': [2, 1, 1], 'assist': [4, 1, 1]}),
                                         ('share', {'pytest': [4, 1.5, 2], 'assist': [2, 0.5, 1]})])
-@mark.parametrize('trailer', ['Co-authored-by', 'Assisted-by'])
+@mark.parametrize('trailer', ['Co-authored-by', 'Assisted-by', 'Generated-by'])
 @mark.parametrize('loc', ['surviving', 'ins'])
 def test_coauthors(capsys, git_repo, loc, trailer, strat, credit):
     """`{Co-authored,Assisted}-by` credit strategies (#101)"""
