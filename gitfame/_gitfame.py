@@ -440,15 +440,10 @@ def run(args):
     if not args.excl:
         args.excl = ""
 
-    if isinstance(args.gitdir, str):
-        args.gitdir = [args.gitdir]
-    # strip `/`, `.git`
-    gitdirs = [i.rstrip(os.sep) for i in args.gitdir]
-    gitdirs = [path.join(*path.split(i)[:-1]) if path.split(i)[-1] == '.git' else i for i in args.gitdir]
-    # remove duplicates
-    for i, d in reversed(list(enumerate(gitdirs))):
-        if d in gitdirs[:i]:
-            gitdirs.pop(i)
+    # strip `/` suffix
+    gitdirs = [i.rstrip(os.sep) or os.sep for i in ([args.gitdir] if isinstance(args.gitdir, str) else args.gitdir)]
+    # strip `.git`, remove duplicates
+    gitdirs = list(dict.fromkeys(path.dirname(i) if path.basename(i) == '.git' else i for i in gitdirs))
     # recurse
     if args.recurse:
         nDirs = len(gitdirs)
