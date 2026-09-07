@@ -35,14 +35,14 @@ stats_tot = {'files': 14, 'loc': 613, 'commits': 35}
 @fixture
 def git_repo(tmp_path):
     """`git_repo({name: contents, ...}) -> path`: commits files"""
-    def init(files, path=tmp_path, message="initial"):
+    def init(files, path=tmp_path, message="initial", author="pytest <pytest@local.host>"):
         subprocess.check_call(["git", "init", "-q", path])
         for name, content in files.items():
             dest = path / name
             dest.write_bytes(content) if isinstance(content, bytes) else dest.write_text(content)
         for cmd in (["add", "-A"], [
                 "-c", "user.name=pytest", "-c", "user.email=pytest@local.host", "commit", "--no-gpg-sign", "--author",
-                "pytest <pytest@local.host>", "-qm", message]):
+                author, "-qm", message]):
             subprocess.check_call(["git", "-C", path] + cmd)
         return path
 
@@ -362,6 +362,49 @@ def test_coauthors_mailmap(capsys, git_repo):
 
     main(['-s', '--format=json', '--auth=share', str(repo)])
     assert [i[0] for i in loads(capsys.readouterr().out)['data']] == ['pytest']
+
+
+def test_ignore_revs(capsys, git_repo):
+    """`--ignore-rev` credits the previous commit & accepts a comma-separated list"""
+    repo = git_repo({"f.txt": "one\ntwo\nthree\n"})
+    for line in ("ONE\ntwo\nthree\n", "ONE\ntwo\nTHREE\n"):
+        git_repo({"f.txt": line}, repo, message="format", author="bot <bot@local.host>")
+    revs = subprocess.check_output(["git", "-C", repo, "log", "--format=%H"], text=True).split()[:2]
+
+    def loc(*params):
+        main(['-s', '--format=json'] + list(params) + [str(repo)])
+        return {i[0]: i[1] for i in loads(capsys.readouterr().out)['data']}
+
+    assert loc() == {'bot': 2, 'pytest': 1}
+    assert loc(f'--ignore-rev={revs[0]}') == {'bot': 1, 'pytest': 2}
+    assert loc('--ignore-rev=' + ','.join(revs) + ',') == {'bot': 0, 'pytest': 3}
+
+
+@fixture
+def bot_repo(git_repo):
+    """repo where `bot[x]` reformatted both of `pytest`'s lines"""
+    repo = git_repo({"f.txt": "one\ntwo\n"})
+    git_repo({"f.txt": "ONE\nTWO\n"}, repo, message="format", author="bot[x] <bot@local.host>")
+    return repo
+
+
+@mark.parametrize(['params', 'ignored'], [([], False), (['-n', '--ignore-author=bot[x]'], True),
+                                          ([r'--ignore-author=bot\[x\]'], True),
+                                          (['-n', '--ignore-author=nobody,bot[x]'], True),
+                                          (['--ignore-author=bot[x]'], False)])
+def test_ignore_author(capsys, bot_repo, params, ignored):
+    main(['-s', '--format=json'] + params + [str(bot_repo)])
+    credit = {i[0]: i[1:3] for i in loads(capsys.readouterr().out)['data']} # {author: [loc, coms]}
+
+    assert credit == ({'pytest': [2, 1], 'bot[x]': [0, 1]} if ignored else {'bot[x]': [2, 1], 'pytest': [0, 1]})
+
+
+def test_ignore_author_churn(capsys, caplog, bot_repo):
+    caplog.set_level(logging.WARNING, logger='gitfame._gitfame')
+    main(['-s', '--format=json', '--loc=ins', '-n', '--ignore-author=bot[x]', str(bot_repo)])
+
+    assert {i[0]: i[1] for i in loads(capsys.readouterr().out)['data']} == {'bot[x]': 2, 'pytest': 2}
+    assert any('--loc=surviving' in r.getMessage() for r in caplog.records)
 
 
 def test_warn_binary_order(caplog, git_repo):

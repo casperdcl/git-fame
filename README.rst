@@ -210,8 +210,9 @@ Documentation
                        Alters `--loc` default to imply 'ins' (COCOMO) or
                        'ins,del' (hours).
       -R, --recurse  Recursively find repositories & submodules within <gitdir>.
-      -n, --no-regex  Assume <f> are comma-separated exact matches
-                      rather than regular expressions [default: False].
+      -n, --no-regex  Treat `--incl`, `--excl` & `--ignore-author` as
+                      comma-separated exact matches rather than regular
+                      expressions [default: False].
                       NB: if regex is enabled ',' is equivalent to '|'.
       -s, --silent-progress    Suppress `tqdm` [default: False].
       -j=<n>, --jobs=<n>  Number of concurrent `git blame` threads per <gitfir>
@@ -232,10 +233,15 @@ Documentation
                                came from [default: False].
       -M             Detect intra-file line moves and copies [default: False].
       -C             Detect inter-file line moves and copies [default: False].
-      --ignore-rev=<rev>       Ignore changes made by the given revision
-                               (requires `--loc=surviving`).
-      --ignore-revs-file=<f>   Ignore revisions listed in the given file
-                               (requires `--loc=surviving`).
+      --ignore-rev=<rev>      Ignore changes made by the given revision
+                              (requires `--loc=surviving`).
+                              May be a comma-separated list.
+      --ignore-revs-file=<f>  Ignore revisions listed in the given file
+                              (requires `--loc=surviving`).
+      --ignore-author=<auth>  Ignore revisions from this author regex
+                              (requires `--loc=surviving`).
+                              In no-regex mode, may be a comma-separated list.
+                              Escape (\,) for a literal comma (may require \\, in shell).
       --format=<format>        Table format
           fame|svg|[default: md]|yaml|json|csv|tsv.
           Any `tabulate.tabulate_formats` is also accepted.
@@ -250,24 +256,22 @@ If multiple user names and/or emails correspond to the same user, aggregate
 FAQs
 ~~~~
 
-Options such as ``-w``, ``-M``, and ``-C`` can increase accuracy, but take
-longer to compute.
+- Options such as ``-w``, ``-M``, and ``-C`` can increase accuracy, but take longer to compute.
 
-Note that specifying ``--sort=hours`` or ``--sort=months`` requires ``--cost``
-to be specified appropriately.
+- Commits made by refactoring bots can be ignored using e.g. ``--ignore-author='pre-commit-ci[bot]' --no-regex``.
+  Surviving ``loc`` are reassigned to the previous committer, but commit counts are unaffected.
 
-Note that ``--cost=months`` (``--cost=COCOMO``) approximates
-`person-months <https://en.wikipedia.org/wiki/COCOMO>`_ and should be used with
-``--loc=ins``.
+  - For large numbers of commits, generate a file using ``git log --format=%H --author=... > .git-blame-ignore-revs`` and pass it to ``--ignore-revs-file`` instead.
 
-Meanwhile, ``--cost=hours`` (``--cost=commits``) approximates
-`person-hours <https://github.com/kimmobrunfeldt/git-hours/blob/8aaeee237cb9d9028e7a2592a25ad8468b1f45e4/index.js#L114-L143>`_.
+- ``--sort=hours`` and ``--sort=months`` require an appropriate ``--cost``:
 
-Extra care should be taken when using ``ins`` and/or ``del`` for ``--loc``
-since all historical files (including those no longer surviving) are counted.
-In such cases, ``--excl`` may need to be significantly extended.
-On the plus side, it is faster to compute ``ins`` and ``del`` compared to
-``surv``.
+  - ``--cost=months`` (``--cost=COCOMO``) approximates `person-months <https://en.wikipedia.org/wiki/COCOMO>`_ and should be used with ``--loc=ins``.
+
+  - ``--cost=hours`` (``--cost=commits``) approximates `person-hours <https://github.com/kimmobrunfeldt/git-hours/blob/8aaeee237cb9d9028e7a2592a25ad8468b1f45e4/index.js#L114-L143>`_.
+
+- Extra care should be taken when using ``ins`` and/or ``del`` for ``--loc`` since all historical files (including those no longer surviving) are counted.
+  In such cases, ``--excl`` may need to be significantly extended.
+  On the plus side, it is faster to compute ``ins`` and ``del`` compared to ``surv``.
 
 
 Examples

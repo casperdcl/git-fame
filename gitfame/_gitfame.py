@@ -30,8 +30,9 @@ Options:
                    Alters `--loc` default to imply 'ins' (COCOMO) or
                    'ins,del' (hours).
   -R, --recurse  Recursively find repositories & submodules within <gitdir>.
-  -n, --no-regex  Assume <f> are comma-separated exact matches
-                  rather than regular expressions [default: False].
+  -n, --no-regex  Treat `--incl`, `--excl` & `--ignore-author` as
+                  comma-separated exact matches rather than regular
+                  expressions [default: False].
                   NB: if regex is enabled ',' is equivalent to '|'.
   -s, --silent-progress    Suppress `tqdm` [default: False].
   -j=<n>, --jobs=<n>  Number of concurrent `git blame` threads per <gitfir>
@@ -52,10 +53,15 @@ Options:
                            came from [default: False].
   -M             Detect intra-file line moves and copies [default: False].
   -C             Detect inter-file line moves and copies [default: False].
-  --ignore-rev=<rev>       Ignore changes made by the given revision
-                           (requires `--loc=surviving`).
-  --ignore-revs-file=<f>   Ignore revisions listed in the given file
-                           (requires `--loc=surviving`).
+  --ignore-rev=<rev>      Ignore changes made by the given revision
+                          (requires `--loc=surviving`).
+                          May be a comma-separated list.
+  --ignore-revs-file=<f>  Ignore revisions listed in the given file
+                          (requires `--loc=surviving`).
+  --ignore-author=<auth>  Ignore revisions from this author regex
+                          (requires `--loc=surviving`).
+                          In no-regex mode, may be a comma-separated list.
+                          Escape (\,) for a literal comma (may require \\, in shell).
   --format=<format>        Table format
       fame|svg|[default: md]|yaml|json|csv|tsv.
       Any `tabulate.tabulate_formats` is also accepted.
@@ -69,6 +75,7 @@ import subprocess
 from collections import defaultdict
 from functools import partial
 from importlib.metadata import PackageNotFoundError, version
+from itertools import chain
 from os import path
 
 import tabulate as tabber
@@ -277,10 +284,19 @@ def _get_coauthors(git_cmd, branch, strat, since=(), until=()):
     return {sha: (auth, cos[:1] if strat == 'first' else [auth] + cos) for sha, (auth, cos) in res.items()}
 
 
+def _author_revs(git_cmd, branch, filters):
+    """Returns SHAs using `git log --format=%H <branch> <filters...>`"""
+    if not filters:
+        return []
+    revs = check_output(git_cmd + ["log", "--format=%H", branch] + list(filters)).split()
+    getattr(log, "debug" if revs else "warning")("ignore-author:%d revs", len(revs))
+    return revs
+
+
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None, silent_progress=False,
                     ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False, show=None,
-                    prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None, jobs=None,
-                    auth='git'):
+                    prefix_gitdir=False, churn=None, ignore_revs=(), ignore_revs_file=None, ignore_authors=(),
+                    until=None, jobs=None, auth='git'):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "atimes": [int]}}"""
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
@@ -303,8 +319,8 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
 
     if churn & CHURN_SLOC:
         base_cmd = git_cmd + ["blame", "--line-porcelain"] + since + until
-        if ignore_rev:
-            base_cmd.extend(["--ignore-rev", ignore_rev])
+        for rev in chain(ignore_revs, _author_revs(git_cmd, branch, ignore_authors)):
+            base_cmd.extend(["--ignore-rev", rev])
         if ignore_revs_file:
             base_cmd.extend(["--ignore-revs-file", ignore_revs_file])
     else:
@@ -495,6 +511,12 @@ def run(args):
         include_files = re.compile(args.incl)
         # include_files = re.compile(args.incl, flags=re.M)
 
+    ignore_revs = list(filter(None, args.ignore_rev.split(','))) if args.ignore_rev else []
+    # `git log` filters, OR-ed by `git`, so ',' is equivalent to '|' even in regex mode
+    ignore_authors = [i.replace('\\,', ',') for i in RE_CSPILT.split(args.ignore_author)] if args.ignore_author else []
+    if ignore_authors:
+        ignore_authors = (["-F"] if args.no_regex else []) + ["--author=" + i for i in ignore_authors]
+
     cost = set(args.cost.lower().split(',')) if args.cost else set()
     churn = set(args.loc.lower().split(',')) if args.loc else set()
     if not churn:
@@ -508,14 +530,16 @@ def run(args):
     if churn & (CHURN_INS | CHURN_DEL) and args.excl:
         log.warning("--loc=ins,del includes historical files"
                     " which may need to be added to --excl")
+    if not churn & CHURN_SLOC and (ignore_revs or args.ignore_revs_file or ignore_authors):
+        log.warning("--ignore-* requires --loc=surviving")
 
     auth_stats = {}
     statter = partial(_get_auth_stats, branch=args.branch, since=args.since, until=args.until,
                       include_files=include_files, exclude_files=exclude_files, silent_progress=args.silent_progress,
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C, warn_binary=args.warn_binary,
                       bytype=args.bytype, show=args.show, prefix_gitdir=len(gitdirs) > 1, churn=churn,
-                      ignore_rev=args.ignore_rev, ignore_revs_file=args.ignore_revs_file, jobs=args.jobs or None,
-                      auth=args.auth)
+                      ignore_revs=ignore_revs, ignore_revs_file=args.ignore_revs_file, ignore_authors=ignore_authors,
+                      jobs=args.jobs or None, auth=args.auth)
 
     if len(gitdirs) > 1 and mapper is not map:
         # concurrent multi-repo processing
