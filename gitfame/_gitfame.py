@@ -437,8 +437,7 @@ def run(args):
     if args.show_email:
         args.show = SHOW_EMAIL
 
-    if not args.excl:
-        args.excl = ""
+    args.excl = args.excl or ""
 
     # strip `/` suffix
     gitdirs = [i.rstrip(os.sep) or os.sep for i in ([args.gitdir] if isinstance(args.gitdir, str) else args.gitdir)]
@@ -446,39 +445,21 @@ def run(args):
     gitdirs = list(dict.fromkeys(path.dirname(i) if path.basename(i) == '.git' else i for i in gitdirs))
     # recurse
     if args.recurse:
-        nDirs = len(gitdirs)
-        i = 0
-        while i < nDirs:
-            if path.isdir(gitdirs[i]):
-                for root, dirs, fns in tqdm(os.walk(gitdirs[i]), desc="Recursing", unit="dir",
-                                            disable=args.silent_progress, leave=False):
-                    if '.git' in fns + dirs:
-                        if root not in gitdirs:
-                            gitdirs.append(root)
-                        if '.git' in dirs:
-                            dirs.remove('.git')
-            i += 1
+        for gitdir in [i for i in gitdirs if path.isdir(i)]:
+            for root, dirs, fns in tqdm(os.walk(gitdir), desc="Recursing", unit="dir", disable=args.silent_progress,
+                                        leave=False):
+                if '.git' in fns + dirs:
+                    if root not in gitdirs:
+                        gitdirs.append(root)
+                    if '.git' in dirs:
+                        dirs.remove('.git')
 
-    exclude_files = None
-    include_files = None
     if args.no_regex:
         exclude_files = set(RE_CSPILT.split(args.excl))
-        include_files = set()
-        if args.incl == ".*":
-            args.incl = ""
-        else:
-            include_files.update(RE_CSPILT.split(args.incl))
+        include_files = set() if args.incl == ".*" else set(RE_CSPILT.split(args.incl))
     else:
-        # cannot use findall in case of grouping:
-        # for i in include_files:
-        # for i in [include_files]:
-        #   for j in range(1, len(i)):
-        #     if i[j] == '(' and i[j - 1] != '\\':
-        #       raise ValueError('Parenthesis must be escaped'
-        #                        ' in include-files:\n\t' + i)
         exclude_files = re.compile(args.excl) if args.excl else None
         include_files = re.compile(args.incl)
-        # include_files = re.compile(args.incl, flags=re.M)
 
     ignore_revs = list(filter(None, args.ignore_rev.split(','))) if args.ignore_rev else []
     # `git log` filters, OR-ed by `git`, so ',' is equivalent to '|' even in regex mode
@@ -489,12 +470,7 @@ def run(args):
     cost = set(args.cost.lower().split(',')) if args.cost else set()
     churn = set(args.loc.lower().split(',')) if args.loc else set()
     if not churn:
-        if cost & COST_HOURS:
-            churn = CHURN_INS | CHURN_DEL
-        elif cost & COST_MONTHS:
-            churn = CHURN_INS
-        else:
-            churn = CHURN_SLOC
+        churn = CHURN_INS | CHURN_DEL if cost & COST_HOURS else CHURN_INS if cost & COST_MONTHS else CHURN_SLOC
 
     if churn & (CHURN_INS | CHURN_DEL) and args.excl:
         log.warning("--loc=ins,del includes historical files"
@@ -519,19 +495,11 @@ def run(args):
         else:
             auth_stats[auth] = stats
 
-    stats_tot = {k: 0 for stats in auth_stats.values() for k in stats}
+    stats_tot = {
+        k: sum(int_float_len(stats.get(k, 0)) for stats in auth_stats.values())
+        for k in dict.fromkeys(chain.from_iterable(auth_stats.values()))}
     log.debug(stats_tot)
-    for k in stats_tot:
-        stats_tot[k] = sum(int_float_len(stats.get(k, 0)) for stats in auth_stats.values())
-    log.debug(stats_tot)
-
     # NOTE: future idea: show stats per file extension (or other grouping) in addition to per-author
-    # extns = set()
-    # if args.bytype:
-    #   for stats in auth_stats.values():
-    #     extns.update([fext(i) for i in stats["files"]])
-    # log.debug(extns)
-
     print_unicode(tabulate(auth_stats, stats_tot, args.sort, args.bytype, args.format, cost, args.enum, args.min))
 
 
