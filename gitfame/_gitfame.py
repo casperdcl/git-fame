@@ -511,37 +511,25 @@ def get_main_parser():
     def csv_permute(a, b):
         return a | b | {k for i in a for j in b for k in (f"{i},{j}", f"{j},{i}")}
 
+    choices = {
+        'loc': CHURN_SLOC | csv_permute(CHURN_INS, CHURN_DEL), 'cost': csv_permute(COST_HOURS, COST_MONTHS),
+        'show': csv_permute(SHOW_NAME, SHOW_EMAIL), 'auth': ('git', 'first', 'share'), 'format': FORMATS,
+        'sort': ('loc', 'commits', 'files', 'hours', 'months'),
+        'log': ('FATAL', 'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET')}
+    # replace the (long) `choices` metavar with just the default
+    defaults = {'sort': "[default: loc].", 'format': "[default: md].", 'log': "[default: INFO]."}
+    completers = {'branch': ('cmd', "git branch"), 'ignore_revs_file': ('glob', "*git*rev*")}
     for o in parser._get_optional_actions():
-        if o.dest == 'branch':
+        if o.dest in choices:
+            o.choices = choices[o.dest]
+        if o.dest in defaults:
+            o.metavar, o.help = None, defaults[o.dest]
+        if o.dest in completers:
+            func, arg = completers[o.dest]
             try:
-                o.complete = shtab.cmd("git branch")
+                o.complete = getattr(shtab, func)(arg)
             except AttributeError:
                 log.debug("shtab>1.9.3 required")
-        elif o.dest == 'sort':
-            o.choices = 'loc', 'commits', 'files', 'hours', 'months'
-            o.metavar = None
-            o.help = "[default: loc]."
-        elif o.dest == 'loc':
-            o.choices = CHURN_SLOC | csv_permute(CHURN_INS, CHURN_DEL)
-        elif o.dest == 'auth':
-            o.choices = 'git', 'first', 'share'
-        elif o.dest == 'cost':
-            o.choices = csv_permute(COST_HOURS, COST_MONTHS)
-        elif o.dest == 'show':
-            o.choices = csv_permute(SHOW_NAME, SHOW_EMAIL)
-        elif o.dest == 'ignore_revs_file':
-            try:
-                o.complete = shtab.glob("*git*rev*")
-            except AttributeError:
-                log.debug("shtab>1.9.3 required")
-        elif o.dest == 'format':
-            o.choices = FORMATS
-            o.metavar = None
-            o.help = "[default: md]."
-        elif o.dest == 'log':
-            o.choices = 'FATAL', 'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'
-            o.metavar = None
-            o.help = "[default: INFO]."
     shtab.add_argument_to(parser)
     return parser
 
