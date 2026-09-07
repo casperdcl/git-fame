@@ -80,8 +80,8 @@ from os import path
 
 import tabulate as tabber
 
-from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, int_float_len, mapper, merge_stats, print_unicode,
-                     tqdm)
+from ._utils import (TERM_WIDTH, Str, TqdmStream, check_output, fext, get_mapper, int_float_len, merge_stats,
+                     print_unicode, tqdm)
 
 # version detector. Precedence: installed dist, git, 'UNKNOWN'
 try:
@@ -117,8 +117,7 @@ CHURN_INS = {'ins', 'insert', 'insertion', 'insertions', 'add', 'addition', 'add
 CHURN_DEL = {'del', 'deletion', 'deletions', 'delete', '-'}
 SHOW_NAME = {'name', 'n'}
 SHOW_EMAIL = {'email', 'e'}
-FORMATS = ['yaml', 'yml', 'json', 'csv', 'tsv']
-FORMATS.extend(['svg', 'md', 'markdown', 'tabulate'])
+FORMATS = ['yaml', 'yml', 'json', 'csv', 'tsv', 'svg', 'md', 'markdown', 'tabulate']
 tabber._table_formats['fame'] = tabber.TableFormat(lineabove=None, linebelowheader=tabber.Line("", "─", "┼", ""),
                                                    linebetweenrows=None, linebelow=tabber.Line("", "─", "┴", ""),
                                                    headerrow=tabber.DataRow("", "│",
@@ -137,8 +136,7 @@ def hours(dates, maxCommitDiffInSec=120 * 60, firstCommitAdditionInMinutes=120):
 8aaeee237cb9d9028e7a2592a25ad8468b1f45e4/index.js#L114-L143
     """
     dates = sorted(dates)
-    diffInSec = [i - j for (i, j) in zip(dates[1:], dates[:-1])]
-    res = sum(i for i in diffInSec if i < maxCommitDiffInSec)
+    res = sum(diff for i, j in zip(dates[1:], dates) if (diff := i - j) < maxCommitDiffInSec)
     return (res/60.0 + firstCommitAdditionInMinutes) / 60.0
 
 
@@ -245,12 +243,8 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
             from io import StringIO
 
             res = StringIO()
-            t = csv.writer(res, delimiter=',' if backend == 'csv' else '\t')
-            t.writerow(tab['columns'])
-            t.writerows(tab['data'])
-            t.writerow('')
-            t.writerow(list(tab['total'].keys()))
-            t.writerow(list(tab['total'].values()))
+            csv.writer(res, delimiter=',' if backend == 'csv' else '\t').writerows(
+                chain([tab['columns']], tab['data'], ['', tab['total'], tab['total'].values()]))
             return res.getvalue().rstrip()
         else:      # pragma: nocover
             raise RuntimeError("Should be unreachable")
@@ -258,13 +252,17 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
     if backend not in tabber._table_formats:
         raise ValueError(f"Unknown backend:{backend}")
     log.debug("backend:tabulate:%s", backend)
-    COL_LENS = [max(len(Str(i[j])) for i in [COL_NAMES] + tab) for j in range(len(COL_NAMES))]
+    COL_LENS = [max(map(len, map(Str, col))) for col in zip(COL_NAMES, *tab)]
     COL_LENS[0] = min(width - sum(COL_LENS[1:]) - len(COL_LENS) * 3 - 4, COL_LENS[0])
     tab = [[i[0][:COL_LENS[0]]] + i[1:] for i in tab]
     table = tabber.tabulate(tab, COL_NAMES, tablefmt=backend, floatfmt='.0f')
     if svg:
         return table2svg(table, backend)
     return totals + table
+
+
+def new_stats():
+    return defaultdict(int, files=set(), atimes=[])
 
 
 def _get_coauthors(git_cmd, branch, strat, since=(), until=()):
@@ -301,6 +299,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     until = ["--until", until] if until else []
     since = ["--since", since] if since else []
     show = show or SHOW_NAME
+    log_binary = getattr(log, "warning" if warn_binary else "debug")
     git_cmd = ["git", "-C", gitdir]
     log.debug("base command:%s", git_cmd)
     file_list = check_output(git_cmd + ["ls-files", "--with-tree", branch]).strip().split('\n')
@@ -312,7 +311,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         file_list = [i for i in file_list if include_files.search(i) if not (exclude_files and exclude_files.search(i))]
     for fname in file_list:
         if fname not in text_file_list:
-            getattr(log, "warning" if warn_binary else "debug")("binary:%s", fname.strip())
+            log_binary("binary:%s", fname.strip())
     file_list = [f for f in file_list if f in text_file_list] # preserve order
     log.log(logging.NOTSET, "files:%s", file_list)
     churn = churn or set()
@@ -336,9 +335,6 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
 
     auth_stats = {}
 
-    def new_stats():
-        return defaultdict(int, files=set(), atimes=[])
-
     def stats_append(fname, auths, loc, tstamp):
         tstamp = int(tstamp)
         loc = loc / len(auths) if len(auths) > 1 else loc
@@ -361,29 +357,19 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             except Exception as err:
                 return fname, err
 
-        if jobs != 1 and mapper is not map:
-            # concurrent multi-file processing
-            _mapper = partial(mapper, max_workers=jobs)
-        else:
+        # concurrent multi-file processing
+        _mapper = get_mapper(max_workers=jobs, desc=gitdir if prefix_gitdir else "Processing", disable=silent_progress,
+                             unit="file")
 
-            def _mapper(func, iterable, **kwargs):
-                return map(func, tqdm(iterable, **kwargs))
-
-        for fname, blame_out in _mapper(blame_file, file_list, desc=gitdir if prefix_gitdir else "Processing",
-                                        disable=silent_progress, unit="file"):
+        for fname, blame_out in _mapper(blame_file, file_list):
             # `fname` is relative to `gitdir`, so only prefix the reported name
             display_fname = path.join(gitdir, fname) if prefix_gitdir else fname
             if isinstance(blame_out, Exception):
-                getattr(log, "warning" if warn_binary else "debug")(display_fname + ':' + str(blame_out))
+                log_binary(display_fname + ':' + str(blame_out))
                 continue
             log.log(logging.NOTSET, blame_out)
 
-            if since:
-                # Strip boundary messages,
-                # preventing user with nearest commit to boundary owning the LOC
-                blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
-
-            if until:
+            if since or until:
                 # Strip boundary messages,
                 # preventing user with nearest commit to boundary owning the LOC
                 blame_out = RE_BLAME_BOUNDS.sub('', blame_out)
@@ -400,7 +386,7 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
 
         # Strip binary files
         for fname in dict.fromkeys(RE_STAT_BINARY.findall(blame_out)):
-            getattr(log, "warning" if warn_binary else "debug")("binary:%s", fname.strip())
+            log_binary("binary:%s", fname.strip())
         blame_out = RE_STAT_BINARY.sub('', blame_out)
 
         blame_out = RE_AUTHS_LOG.split(blame_out)
@@ -423,12 +409,9 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
     log.log(logging.NOTSET, "authors:%s", list(auth_stats.keys()))
     auth_commits = check_output(git_cmd + ["shortlog", "-s", "-e", branch] + since + until)
     log.debug(RE_NCOM_AUTH_EM.findall(auth_commits.strip()))
-    auth2em = {}
-    auth2name = {}
+    auth2new = {}
     for (ncom, name, em) in RE_NCOM_AUTH_EM.findall(auth_commits.strip()):
-        auth = f'{name} <{em}>'
-        auth2em[auth] = em
-        auth2name[auth] = name
+        auth2new[(auth := f'{name} <{em}>')] = em if show & SHOW_EMAIL else name
         auth_stats.setdefault(auth, new_stats())["commits"] += int(ncom)
     # transform shortlog according to --auth
     for auth, auths in sha2auths.values():
@@ -437,21 +420,12 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
             auth_stats.setdefault(who, new_stats())["commits"] += 1 / len(auths)
 
     if not (show & SHOW_NAME and show & SHOW_EMAIL): # replace author with either email or name
-        auth2new = auth2em if (show & SHOW_EMAIL) else auth2name
         log.debug(auth2new)
-        old = auth_stats
-        auth_stats = {}
-
+        old, auth_stats = auth_stats, {}
         for auth, stats in old.items():
-            if auth not in auth2new:
-                # https://github.com/casperdcl/git-fame/issues/122
+            if auth not in auth2new:                 # --since/--until (#122)
                 auth2new[auth] = re.match('(.*) <(.*)>$', auth).group(2 if (show & SHOW_EMAIL) else 1) or auth
-            i = auth_stats.setdefault(auth2new[auth], new_stats())
-            i["files"].update(stats["files"])
-            for k, v in stats.items():
-                if k != 'files':
-                    i[k] += v
-        del old
+            merge_stats(auth_stats.setdefault(auth2new[auth], new_stats()), stats)
 
     return auth_stats
 
@@ -463,53 +437,29 @@ def run(args):
     if args.show_email:
         args.show = SHOW_EMAIL
 
-    if not args.excl:
-        args.excl = ""
+    args.excl = args.excl or ""
 
-    if isinstance(args.gitdir, str):
-        args.gitdir = [args.gitdir]
-    # strip `/`, `.git`
-    gitdirs = [i.rstrip(os.sep) for i in args.gitdir]
-    gitdirs = [path.join(*path.split(i)[:-1]) if path.split(i)[-1] == '.git' else i for i in args.gitdir]
-    # remove duplicates
-    for i, d in reversed(list(enumerate(gitdirs))):
-        if d in gitdirs[:i]:
-            gitdirs.pop(i)
+    # strip `/` suffix
+    gitdirs = [i.rstrip(os.sep) or os.sep for i in ([args.gitdir] if isinstance(args.gitdir, str) else args.gitdir)]
+    # strip `.git`, remove duplicates
+    gitdirs = list(dict.fromkeys(path.dirname(i) if path.basename(i) == '.git' else i for i in gitdirs))
     # recurse
     if args.recurse:
-        nDirs = len(gitdirs)
-        i = 0
-        while i < nDirs:
-            if path.isdir(gitdirs[i]):
-                for root, dirs, fns in tqdm(os.walk(gitdirs[i]), desc="Recursing", unit="dir",
-                                            disable=args.silent_progress, leave=False):
-                    if '.git' in fns + dirs:
-                        if root not in gitdirs:
-                            gitdirs.append(root)
-                        if '.git' in dirs:
-                            dirs.remove('.git')
-            i += 1
+        for gitdir in [i for i in gitdirs if path.isdir(i)]:
+            for root, dirs, fns in tqdm(os.walk(gitdir), desc="Recursing", unit="dir", disable=args.silent_progress,
+                                        leave=False):
+                if '.git' in fns + dirs:
+                    if root not in gitdirs:
+                        gitdirs.append(root)
+                    if '.git' in dirs:
+                        dirs.remove('.git')
 
-    exclude_files = None
-    include_files = None
     if args.no_regex:
         exclude_files = set(RE_CSPILT.split(args.excl))
-        include_files = set()
-        if args.incl == ".*":
-            args.incl = ""
-        else:
-            include_files.update(RE_CSPILT.split(args.incl))
+        include_files = set() if args.incl == ".*" else set(RE_CSPILT.split(args.incl))
     else:
-        # cannot use findall in case of grouping:
-        # for i in include_files:
-        # for i in [include_files]:
-        #   for j in range(1, len(i)):
-        #     if i[j] == '(' and i[j - 1] != '\\':
-        #       raise ValueError('Parenthesis must be escaped'
-        #                        ' in include-files:\n\t' + i)
         exclude_files = re.compile(args.excl) if args.excl else None
         include_files = re.compile(args.incl)
-        # include_files = re.compile(args.incl, flags=re.M)
 
     ignore_revs = list(filter(None, args.ignore_rev.split(','))) if args.ignore_rev else []
     # `git log` filters, OR-ed by `git`, so ',' is equivalent to '|' even in regex mode
@@ -520,12 +470,7 @@ def run(args):
     cost = set(args.cost.lower().split(',')) if args.cost else set()
     churn = set(args.loc.lower().split(',')) if args.loc else set()
     if not churn:
-        if cost & COST_HOURS:
-            churn = CHURN_INS | CHURN_DEL
-        elif cost & COST_MONTHS:
-            churn = CHURN_INS
-        else:
-            churn = CHURN_SLOC
+        churn = CHURN_INS | CHURN_DEL if cost & COST_HOURS else CHURN_INS if cost & COST_MONTHS else CHURN_SLOC
 
     if churn & (CHURN_INS | CHURN_DEL) and args.excl:
         log.warning("--loc=ins,del includes historical files"
@@ -541,32 +486,20 @@ def run(args):
                       ignore_revs=ignore_revs, ignore_revs_file=args.ignore_revs_file, ignore_authors=ignore_authors,
                       jobs=args.jobs or None, auth=args.auth)
 
-    if len(gitdirs) > 1 and mapper is not map:
-        # concurrent multi-repo processing
-        _mapper = partial(mapper, desc="Repos", unit="repo", miniters=1, disable=args.silent_progress
-                          or len(gitdirs) <= 1)
-    else:
-        _mapper = map
-    for res in _mapper(statter, gitdirs):
-        for auth, stats in res.items():
-            if auth in auth_stats:
-                merge_stats(auth_stats[auth], stats)
-            else:
-                auth_stats[auth] = stats
+    # concurrent multi-repo processing
+    _mapper = get_mapper(max_workers=1 if len(gitdirs) <= 1 else None, desc="Repos", unit="repo", miniters=1,
+                         disable=args.silent_progress or len(gitdirs) <= 1)
+    for auth, stats in chain.from_iterable(res.items() for res in _mapper(statter, gitdirs)):
+        if auth in auth_stats:
+            merge_stats(auth_stats[auth], stats)
+        else:
+            auth_stats[auth] = stats
 
-    stats_tot = {k: 0 for stats in auth_stats.values() for k in stats}
+    stats_tot = {
+        k: sum(int_float_len(stats.get(k, 0)) for stats in auth_stats.values())
+        for k in dict.fromkeys(chain.from_iterable(auth_stats.values()))}
     log.debug(stats_tot)
-    for k in stats_tot:
-        stats_tot[k] = sum(int_float_len(stats.get(k, 0)) for stats in auth_stats.values())
-    log.debug(stats_tot)
-
     # NOTE: future idea: show stats per file extension (or other grouping) in addition to per-author
-    # extns = set()
-    # if args.bytype:
-    #   for stats in auth_stats.values():
-    #     extns.update([fext(i) for i in stats["files"]])
-    # log.debug(extns)
-
     print_unicode(tabulate(auth_stats, stats_tot, args.sort, args.bytype, args.format, cost, args.enum, args.min))
 
 
@@ -578,37 +511,25 @@ def get_main_parser():
     def csv_permute(a, b):
         return a | b | {k for i in a for j in b for k in (f"{i},{j}", f"{j},{i}")}
 
+    choices = {
+        'loc': CHURN_SLOC | csv_permute(CHURN_INS, CHURN_DEL), 'cost': csv_permute(COST_HOURS, COST_MONTHS),
+        'show': csv_permute(SHOW_NAME, SHOW_EMAIL), 'auth': ('git', 'first', 'share'), 'format': FORMATS,
+        'sort': ('loc', 'commits', 'files', 'hours', 'months'),
+        'log': ('FATAL', 'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET')}
+    # replace the (long) `choices` metavar with just the default
+    defaults = {'sort': "[default: loc].", 'format': "[default: md].", 'log': "[default: INFO]."}
+    completers = {'branch': ('cmd', "git branch"), 'ignore_revs_file': ('glob', "*git*rev*")}
     for o in parser._get_optional_actions():
-        if o.dest == 'branch':
+        if o.dest in choices:
+            o.choices = choices[o.dest]
+        if o.dest in defaults:
+            o.metavar, o.help = None, defaults[o.dest]
+        if o.dest in completers:
+            func, arg = completers[o.dest]
             try:
-                o.complete = shtab.cmd("git branch")
+                o.complete = getattr(shtab, func)(arg)
             except AttributeError:
                 log.debug("shtab>1.9.3 required")
-        elif o.dest == 'sort':
-            o.choices = 'loc', 'commits', 'files', 'hours', 'months'
-            o.metavar = None
-            o.help = "[default: loc]."
-        elif o.dest == 'loc':
-            o.choices = CHURN_SLOC | csv_permute(CHURN_INS, CHURN_DEL)
-        elif o.dest == 'auth':
-            o.choices = 'git', 'first', 'share'
-        elif o.dest == 'cost':
-            o.choices = csv_permute(COST_HOURS, COST_MONTHS)
-        elif o.dest == 'show':
-            o.choices = csv_permute(SHOW_NAME, SHOW_EMAIL)
-        elif o.dest == 'ignore_revs_file':
-            try:
-                o.complete = shtab.glob("*git*rev*")
-            except AttributeError:
-                log.debug("shtab>1.9.3 required")
-        elif o.dest == 'format':
-            o.choices = FORMATS
-            o.metavar = None
-            o.help = "[default: md]."
-        elif o.dest == 'log':
-            o.choices = 'FATAL', 'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'
-            o.metavar = None
-            o.help = "[default: INFO]."
     shtab.add_argument_to(parser)
     return parser
 

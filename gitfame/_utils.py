@@ -25,7 +25,7 @@ except ImportError:
 __author__ = "Casper da Costa-Luis <casper.dcl@physics.org>"
 __date__ = "2016-2025"
 __licence__ = "[MPLv2.0](https://mozilla.org/MPL/2.0/)"
-__all__ = ["TERM_WIDTH", "int_float_len", "Max", "fext", "tqdm", "check_output", "print_unicode", "Str", "mapper"]
+__all__ = ["TERM_WIDTH", "int_float_len", "fext", "tqdm", "check_output", "print_unicode", "Str", "get_mapper"]
 __copyright__ = ' '.join(("Copyright (c)", __date__, __author__, __licence__))
 __license__ = __licence__ # weird foreign language
 
@@ -47,13 +47,16 @@ def check_output(*a, **k):
     return subprocess.Popen(*a, **k).communicate()[0].decode('utf-8', errors='replace') # nosec B603
 
 
-def blank_col(rows, i, blanks):
-    return all(r[i] in blanks for r in rows)
+def get_mapper(max_workers=None, **tqdm_kwargs):
+    """`map` with progress; concurrent iff `max_workers != 1`"""
+    if max_workers != 1 and mapper is not map:
+        return partial(mapper, max_workers=max_workers, **tqdm_kwargs)
+    return lambda func, iterable: map(func, tqdm(iterable, **tqdm_kwargs))
 
 
 def fext(fn):
     """File extension"""
-    res = fn.split('.')
+    res = fn.rsplit('.', 1)
     return res[-1] if len(res) > 1 else ''
 
 
@@ -72,22 +75,6 @@ def int_float_len(i):
         return i if isinstance(i, float) else int(i)
     except (ValueError, TypeError):
         return len(i)
-
-
-def Max(it, empty_default=0):
-    """
-    >>> Max(range(10), -1)
-    9
-    >>> Max(range(0), -1)
-    -1
-
-    """
-    try:
-        return max(it)
-    except ValueError as e:
-        if 'empty' in str(e):
-            return empty_default
-        raise      # pragma: no cover
 
 
 def print_unicode(msg, end='\n', err='?'):
