@@ -234,6 +234,7 @@ Documentation
       -C             Detect inter-file line moves and copies [default: False].
       --ignore-rev=<rev>       Ignore changes made by the given revision
                                (requires `--loc=surviving`).
+                               May be a comma-separated list.
       --ignore-revs-file=<f>   Ignore revisions listed in the given file
                                (requires `--loc=surviving`).
       --format=<format>        Table format

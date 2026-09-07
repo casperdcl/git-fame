@@ -54,6 +54,7 @@ Options:
   -C             Detect inter-file line moves and copies [default: False].
   --ignore-rev=<rev>       Ignore changes made by the given revision
                            (requires `--loc=surviving`).
+                           May be a comma-separated list.
   --ignore-revs-file=<f>   Ignore revisions listed in the given file
                            (requires `--loc=surviving`).
   --format=<format>        Table format
@@ -279,7 +280,7 @@ def _get_coauthors(git_cmd, branch, strat, since=(), until=()):
 
 def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclude_files=None, silent_progress=False,
                     ignore_whitespace=False, M=False, C=False, warn_binary=False, bytype=False, show=None,
-                    prefix_gitdir=False, churn=None, ignore_rev="", ignore_revs_file=None, until=None, jobs=None,
+                    prefix_gitdir=False, churn=None, ignore_revs=(), ignore_revs_file=None, until=None, jobs=None,
                     auth='git'):
     """Returns dict: {"<author>": {"loc": int, "files": {}, "commits": int, "atimes": [int]}}"""
     until = ["--until", until] if until else []
@@ -303,8 +304,8 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
 
     if churn & CHURN_SLOC:
         base_cmd = git_cmd + ["blame", "--line-porcelain"] + since + until
-        if ignore_rev:
-            base_cmd.extend(["--ignore-rev", ignore_rev])
+        for rev in ignore_revs:
+            base_cmd.extend(["--ignore-rev", rev])
         if ignore_revs_file:
             base_cmd.extend(["--ignore-revs-file", ignore_revs_file])
     else:
@@ -495,6 +496,8 @@ def run(args):
         include_files = re.compile(args.incl)
         # include_files = re.compile(args.incl, flags=re.M)
 
+    ignore_revs = list(filter(None, args.ignore_rev.split(','))) if args.ignore_rev else []
+
     cost = set(args.cost.lower().split(',')) if args.cost else set()
     churn = set(args.loc.lower().split(',')) if args.loc else set()
     if not churn:
@@ -508,13 +511,15 @@ def run(args):
     if churn & (CHURN_INS | CHURN_DEL) and args.excl:
         log.warning("--loc=ins,del includes historical files"
                     " which may need to be added to --excl")
+    if not churn & CHURN_SLOC and (ignore_revs or args.ignore_revs_file):
+        log.warning("--ignore-* requires --loc=surviving")
 
     auth_stats = {}
     statter = partial(_get_auth_stats, branch=args.branch, since=args.since, until=args.until,
                       include_files=include_files, exclude_files=exclude_files, silent_progress=args.silent_progress,
                       ignore_whitespace=args.ignore_whitespace, M=args.M, C=args.C, warn_binary=args.warn_binary,
                       bytype=args.bytype, show=args.show, prefix_gitdir=len(gitdirs) > 1, churn=churn,
-                      ignore_rev=args.ignore_rev, ignore_revs_file=args.ignore_revs_file, jobs=args.jobs or None,
+                      ignore_revs=ignore_revs, ignore_revs_file=args.ignore_revs_file, jobs=args.jobs or None,
                       auth=args.auth)
 
     if len(gitdirs) > 1 and mapper is not map:
