@@ -261,6 +261,10 @@ def tabulate(auth_stats, stats_tot, sort='loc', bytype=False, backend='md', cost
     return totals + table
 
 
+def new_stats():
+    return defaultdict(int, files=set(), atimes=[])
+
+
 def _get_coauthors(git_cmd, branch, strat, since=(), until=()):
     """Returns dict: {"<sha>": ("<author>", ["<credited>", ...])} of trailered commits"""
     fmt = ("--format=%x02%H%x00%aN <%aE>%x00"
@@ -330,9 +334,6 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
         base_cmd.extend(["-C", "-C"]) # twice to include file creation
 
     auth_stats = {}
-
-    def new_stats():
-        return defaultdict(int, files=set(), atimes=[])
 
     def stats_append(fname, auths, loc, tstamp):
         tstamp = int(tstamp)
@@ -420,19 +421,11 @@ def _get_auth_stats(gitdir, branch="HEAD", since=None, include_files=None, exclu
 
     if not (show & SHOW_NAME and show & SHOW_EMAIL): # replace author with either email or name
         log.debug(auth2new)
-        old = auth_stats
-        auth_stats = {}
-
+        old, auth_stats = auth_stats, {}
         for auth, stats in old.items():
-            if auth not in auth2new:
-                # https://github.com/casperdcl/git-fame/issues/122
+            if auth not in auth2new:                 # --since/--until (#122)
                 auth2new[auth] = re.match('(.*) <(.*)>$', auth).group(2 if (show & SHOW_EMAIL) else 1) or auth
-            i = auth_stats.setdefault(auth2new[auth], new_stats())
-            i["files"].update(stats["files"])
-            for k, v in stats.items():
-                if k != 'files':
-                    i[k] += v
-        del old
+            merge_stats(auth_stats.setdefault(auth2new[auth], new_stats()), stats)
 
     return auth_stats
 
